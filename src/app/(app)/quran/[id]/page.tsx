@@ -1,6 +1,9 @@
+import { redirect } from 'next/navigation';
 import { TranslationSelector } from '@/components/translation-selector';
 import { CopyButton } from '@/components/copy-button';
 import Link from 'next/link';
+import { supabaseServer } from '@/lib/supabase-server';
+import { getUserPreferences } from '@/lib/journey';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -32,8 +35,19 @@ const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:
 
 export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { translation: translationId = '203' } = await searchParams;
+  const { translation: urlTranslation } = await searchParams;
   const chapterId = parseInt(id, 10);
+
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let defaultTranslationId = 203;
+  if (user) {
+    const prefs = await getUserPreferences(user.id);
+    defaultTranslationId = prefs.translation_id;
+  }
+
+  const translationId = urlTranslation || defaultTranslationId.toString();
 
   let chapter: ChapterData | null = null;
   let verses: Verse[] = [];
