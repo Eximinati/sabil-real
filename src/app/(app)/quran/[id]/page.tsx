@@ -1,4 +1,3 @@
-import { getChapter, getVerses, getTranslations } from '@/lib/qf-api';
 import { TranslationSelector } from '@/components/translation-selector';
 import { CopyButton } from '@/components/copy-button';
 import Link from 'next/link';
@@ -29,6 +28,8 @@ interface ChapterData {
   revelation_place: string;
 }
 
+const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
+
 export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { translation: translationId = '131' } = await searchParams;
@@ -37,24 +38,29 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   let chapter: ChapterData | null = null;
   let verses: Verse[] = [];
   let error: string | null = null;
-
   let translations: Array<{ id: number; name: string; author_name: string; language_name: string }> = [];
 
   try {
-    const [chapterData, versesData, translationsData] = await Promise.all([
-      getChapter(chapterId),
-      getVerses(chapterId, { translations: translationId }),
-      getTranslations(),
+    const [chapterRes, versesRes, translationsRes] = await Promise.all([
+      fetch(`${API_BASE}/api/chapters`, { cache: 'no-store' }),
+      fetch(`${API_BASE}/api/verses/${chapterId}?translation=${translationId}`, { cache: 'no-store' }),
+      fetch(`${API_BASE}/api/translations`, { cache: 'no-store' }),
     ]);
-    chapter = chapterData;
-    verses = versesData.verses;
-    translations = translationsData;
+
+    const chapterData = await chapterRes.json();
+    const versesData = await versesRes.json();
+    const translationsData = await translationsRes.json();
+
+    const chaptersList = chapterData.chapters ?? chapterData;
+    chapter = chaptersList.find((c: ChapterData) => c.id === chapterId);
+    verses = versesData.verses ?? [];
+    translations = translationsData.translations ?? translationsData;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to fetch chapter';
   }
 
   const selectedTranslation = translations.find(
-    (t) => t.id === parseInt(translationId, 10)
+    (t: { id: number }) => t.id === parseInt(translationId, 10)
   );
   const translatorLabel = selectedTranslation
     ? `${selectedTranslation.author_name} (${selectedTranslation.language_name})`
@@ -135,6 +141,14 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
                   <p className="text-[#4B5563] text-[15px] leading-[1.8]">
                     {translation?.text || 'Translation unavailable'}
                   </p>
+                  <div className="mt-3 text-right">
+                    <Link
+                      href={`/tafsir?surah=${chapterId}&verse=${verseNumber}`}
+                      className="text-xs text-[#2D6A4F] hover:underline"
+                    >
+                      Tafsir →
+                    </Link>
+                  </div>
                 </div>
               </div>
             );

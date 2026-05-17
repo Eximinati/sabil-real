@@ -1,4 +1,3 @@
-import { getChapters } from '@/lib/qf-api';
 import { SurahSearch } from '@/components/surah-search';
 
 export const dynamic = 'force-dynamic';
@@ -11,12 +10,20 @@ interface Chapter {
   revelation_place: string;
 }
 
+const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
+
+async function getChaptersFromApi(): Promise<Chapter[]> {
+  const res = await fetch(`${API_BASE}/api/chapters`, { cache: 'no-store' });
+  const data = await res.json();
+  return data.chapters ?? data;
+}
+
 export default async function QuranPage() {
   let chapters: Chapter[] = [];
   let error: string | null = null;
 
   try {
-    chapters = await getChapters();
+    chapters = await getChaptersFromApi();
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to fetch chapters';
   }

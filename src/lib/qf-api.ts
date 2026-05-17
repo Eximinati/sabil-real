@@ -43,15 +43,17 @@ export interface Translation {
 export interface Tafsir {
   id: number;
   name: string;
-  author_name: string;
+  author_name: string | null;
   language_name: string;
 }
 
 export interface HadithReference {
   id: number;
-  hadith_name: string;
-  hadith_number: string;
-  book_name: string;
+  collection?: string;
+  hadith_number?: string;
+  our_hadith_number?: number;
+  hadith_name?: string;
+  book_name?: string;
 }
 
 export interface VersesResponse {
@@ -131,15 +133,92 @@ export async function getTranslations(): Promise<Translation[]> {
 }
 
 export async function getTafsirs(): Promise<Tafsir[]> {
-  return qfFetch<Tafsir[]>('/content/api/v4/resources/tafsirs');
+  const data = await qfFetch<{ tafsirs: Tafsir[] }>('/content/api/v4/resources/tafsirs');
+  return data.tafsirs ?? [];
 }
 
-export async function getTafsirForSurah(tafsirId: number, chapterId: number): Promise<unknown> {
-  return qfFetch<unknown>(`/content/api/v4/tafsirs/${tafsirId}/by_chapter/${chapterId}`);
+export interface TafsirVerse {
+  id: number;
+  resource_id: number;
+  verse_id: number;
+  text: string;
+  language_name: string;
+  resource_name: string;
+  verse_key: string;
+  verse_number: number;
+  chapter_id: number;
+}
+
+export interface Pagination {
+  per_page: number;
+  current_page: number;
+  next_page: number | null;
+  total_pages: number;
+  total_records: number;
+}
+
+export interface TafsirResponse {
+  tafsirs: TafsirVerse[];
+  pagination: Pagination;
+}
+
+export async function getTafsirForSurah(
+  tafsirId: number, 
+  chapterId: number,
+  page: number = 1
+): Promise<TafsirResponse> {
+  return qfFetch<TafsirResponse>(
+    `/content/api/v4/tafsirs/${tafsirId}/by_chapter/${chapterId}`,
+    { per_page: '50', page: page.toString() }
+  );
 }
 
 export async function getHadithReferences(verseKey: string): Promise<HadithReference[]> {
-  return qfFetch<HadithReference[]>(`/content/api/v4/verses/${verseKey}/hadith-references`);
+  const data = await qfFetch<{ hadith_references: HadithReference[] }>(
+    `/content/api/v4/verses/${verseKey}/hadith-references`
+  );
+  return data.hadith_references ?? [];
+}
+
+export interface HadithBody {
+  lang: string;
+  chapterNumber: string;
+  chapterTitle: string;
+  body: string;
+  urn: number;
+  grades: Array<{
+    graded_by: string;
+    grade: string;
+  }>;
+}
+
+export interface Hadith {
+  urn: number;
+  collection: string;
+  bookNumber: string;
+  chapterId: string;
+  hadithNumber: string;
+  name: string;
+  hadith: HadithBody[];
+}
+
+export interface HadithsResponse {
+  hadiths: Hadith[];
+  page: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export async function getHadiths(
+  verseKey: string,
+  page: number = 1,
+  language: string = 'en'
+): Promise<HadithsResponse> {
+  const data = await qfFetch<HadithsResponse>(
+    `/content/api/v4/verses/${verseKey}/hadiths`,
+    { page: page.toString(), limit: '5', language }
+  );
+  return data;
 }
 
 export async function searchQuran(
