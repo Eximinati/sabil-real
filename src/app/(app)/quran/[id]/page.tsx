@@ -32,7 +32,7 @@ const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:
 
 export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { translation: translationId = '131' } = await searchParams;
+  const { translation: translationId = '203' } = await searchParams;
   const chapterId = parseInt(id, 10);
 
   let chapter: ChapterData | null = null;

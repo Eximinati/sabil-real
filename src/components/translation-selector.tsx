@@ -18,7 +18,7 @@ export function TranslationSelector() {
   const [loading, setLoading] = useState(true);
 
   const chapterId = params.id as string;
-  const currentTranslation = searchParams.get('translation') || '131';
+  const currentTranslation = searchParams.get('translation') || '203';
 
   useEffect(() => {
     fetch('/api/translations')

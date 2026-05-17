@@ -9,7 +9,7 @@ export async function GET(
     const { chapterId } = await params;
     const { searchParams } = new URL(request.url);
     
-    const translation = searchParams.get('translation') || '131';
+    const translation = searchParams.get('translation') || '203';
     const page = parseInt(searchParams.get('page') || '1', 10);
     
     const verses = await getVerses(parseInt(chapterId, 10), {

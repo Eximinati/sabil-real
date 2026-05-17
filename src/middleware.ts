@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
     const publicPaths = ['/', '/login', '/register', '/test'];
     const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith('/api/auth'));
     
-    if (!isPublicPath && pathname.startsWith('/quran')) {
+    if (!isPublicPath && (pathname.startsWith('/quran') || pathname.startsWith('/journey'))) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }

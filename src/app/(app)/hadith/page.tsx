@@ -1,34 +1,22 @@
-import { getChapters } from '@/lib/qf-api';
-import { HadithPageContent } from '@/components/hadith-page-content';
+import { redirect } from 'next/navigation';
+import { supabaseServer } from '@/lib/supabase-server';
+import { HadithBrowser } from '@/components/hadith-browser';
 
-interface Chapter {
-  id: number;
-  name_simple: string;
-  name_arabic: string;
-  verses_count: number;
+interface PageProps {
+  searchParams: Promise<{ collection?: string; number?: string }>;
 }
 
 export const dynamic = 'force-dynamic';
 
-export default async function HadithPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ surah?: string; verse?: string }>;
-}) {
-  const { surah, verse } = await searchParams;
+export default async function HadithPage({ searchParams }: PageProps) {
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const chaptersRes = await fetch(
-    process.env.NODE_ENV === 'production' ? '/api/chapters' : 'http://localhost:3000/api/chapters',
-    { cache: 'no-store' }
-  );
-  const chaptersData = await chaptersRes.json();
-  const chapters = (Array.isArray(chaptersData) ? chaptersData : []) as Chapter[];
+  if (!user) {
+    redirect('/login');
+  }
 
-  return (
-    <HadithPageContent
-      chapters={chapters}
-      initialSurah={surah}
-      initialVerse={verse}
-    />
-  );
+  const { collection, number } = await searchParams;
+
+  return <HadithBrowser initialCollection={collection} initialNumber={number} />;
 }
