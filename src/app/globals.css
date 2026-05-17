@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #F9F6F1;
+  --color-surface: #FFFFFF;
+  --color-border: #E8E0D5;
+  --color-primary: #2D6A4F;
+  --color-primary-hover: #1B4332;
+  --color-accent: #B7922A;
+  --color-text: #1A1A1A;
+  --color-text-muted: #6B7280;
+  --color-error: #DC2626;
+}
+
+html {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.font-arabic {
+  font-family: 'Amiri', 'Scheherazade New', serif;
+}
+
+html, body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
