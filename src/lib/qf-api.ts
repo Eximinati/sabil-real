@@ -103,7 +103,7 @@ export async function getVerses(
   params?: { translations?: string; page?: number; per_page?: number }
 ): Promise<VersesResponse> {
   const queryParams: Record<string, string> = {
-    words: 'true',
+    words: 'false',
     translation_fields: 'text',
     fields: 'text_uthmani',
   };
@@ -118,11 +118,16 @@ export async function getVerses(
     queryParams.per_page = params.per_page.toString();
   }
   
-  return qfFetch<VersesResponse>(`/content/api/v4/verses/by_chapter/${chapterId}`, queryParams);
+  console.log('Fetching verses:', QF_API_BASE + `/content/api/v4/verses/by_chapter/${chapterId}`, queryParams);
+  const response = await qfFetch<VersesResponse>(`/content/api/v4/verses/by_chapter/${chapterId}`, queryParams);
+  console.log('Verses response:', JSON.stringify(response).slice(0, 500));
+  return response;
 }
 
 export async function getTranslations(): Promise<Translation[]> {
-  return qfFetch<Translation[]>('/content/api/v4/resources/translations');
+  const data = await qfFetch<{ translations: Translation[] }>('/content/api/v4/resources/translations');
+  console.log('Translations response:', JSON.stringify(data).slice(0, 500));
+  return data.translations;
 }
 
 export async function getTafsirs(): Promise<Tafsir[]> {
