@@ -1,4 +1,4 @@
-import { getChapter, getVerses } from '@/lib/qf-api';
+import { getChapter, getVerses, getTranslations } from '@/lib/qf-api';
 import { TranslationSelector } from '@/components/translation-selector';
 import { CopyButton } from '@/components/copy-button';
 import Link from 'next/link';
@@ -38,16 +38,27 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   let verses: Verse[] = [];
   let error: string | null = null;
 
+  let translations: Array<{ id: number; name: string; author_name: string; language_name: string }> = [];
+
   try {
-    const [chapterData, versesData] = await Promise.all([
+    const [chapterData, versesData, translationsData] = await Promise.all([
       getChapter(chapterId),
       getVerses(chapterId, { translations: translationId }),
+      getTranslations(),
     ]);
     chapter = chapterData;
     verses = versesData.verses;
+    translations = translationsData;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to fetch chapter';
   }
+
+  const selectedTranslation = translations.find(
+    (t) => t.id === parseInt(translationId, 10)
+  );
+  const translatorLabel = selectedTranslation
+    ? `${selectedTranslation.author_name} (${selectedTranslation.language_name})`
+    : 'Translation';
 
   const showBismillah = chapterId !== 1 && chapterId !== 9;
   const prevChapter = chapterId > 1 ? chapterId - 1 : null;
@@ -100,7 +111,6 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
           {verses.map((verse) => {
             const translation = verse.translations?.find((t) => t.resource_id === parseInt(translationId, 10));
             const verseNumber = parseInt(verse.verse_key.split(':')[1], 10);
-            const translatorName = translation?.resource_name || 'Sahih International';
 
             return (
               <div
@@ -121,7 +131,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
                   {verse.text_uthmani}
                 </p>
                 <div className="border-t border-[#E8E0D5] pt-4">
-                  <p className="text-[#6B7280] text-xs mb-2">{translatorName}</p>
+                  <p className="text-[#6B7280] text-xs mb-2">{translatorLabel}</p>
                   <p className="text-[#4B5563] text-[15px] leading-[1.8]">
                     {translation?.text || 'Translation unavailable'}
                   </p>

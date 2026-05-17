@@ -54,7 +54,6 @@ export function TranslationSelector() {
       <select
         value={currentTranslation}
         onChange={handleChange}
-        defaultValue="131"
         className="border border-[#E8E0D5] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#2D6A4F]"
       >
         {translations.map((t) => (
