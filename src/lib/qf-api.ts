@@ -221,14 +221,49 @@ export async function getHadiths(
   return data;
 }
 
+export interface SearchWord {
+  text: string;
+  highlight: boolean;
+}
+
+export interface SearchTranslation {
+  text: string;
+  highlighted: string;
+  resource_name: string;
+  language_name: string;
+}
+
+export interface SearchResult {
+  verse_key: string;
+  verse_id: number;
+  text: string;
+  highlighted: string;
+  words: SearchWord[];
+  translations: SearchTranslation[];
+}
+
+export interface SearchResponse {
+  search: {
+    query: string;
+    total_results: number;
+    current_page: number;
+    total_pages: number;
+    results: SearchResult[];
+  };
+}
+
 export async function searchQuran(
-  query: string, 
-  size: number = 10, 
-  page: number = 1
-): Promise<unknown> {
-  return qfFetch<unknown>('/search/v4/search', {
+  query: string,
+  page: number = 1,
+  size: number = 10,
+  language: string = 'en',
+  translationId: number = 131
+): Promise<SearchResponse> {
+  return qfFetch<SearchResponse>('/search/v4/search', {
     q: query,
     size: size.toString(),
     page: page.toString(),
+    language,
+    translations: translationId.toString(),
   });
 }
