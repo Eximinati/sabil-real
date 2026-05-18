@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useAudioPlayerContext } from './audio-player-provider';
 import { useFocusMode } from './focus-mode-provider';
 import { useToast } from '@/hooks/use-toast';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
+import { useReadingProgress } from '@/hooks/use-reading-progress';
+import { useReadingHistory } from '@/hooks/use-reading-history';
 import { CopyButton } from './copy-button';
 import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
@@ -68,9 +70,13 @@ export function VerseReaderClient({
   const { state, playSurah } = useAudioPlayerContext();
   const { isFocusMode } = useFocusMode();
   const toast = useToast();
+  const { updateProgress, getProgressForChapter } = useReadingProgress(chapterId);
+  const { addToHistory } = useReadingHistory();
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [cachedAudio, setCachedAudio] = useState<Record<number, AudioFile[]>>({});
+  const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasRestoredScroll = useRef(false);
 
   const showBismillah = chapterId !== 1 && chapterId !== 9;
   const readingTime = estimateReadingTime(versesCount);
@@ -78,6 +84,57 @@ export function VerseReaderClient({
 
   const isActive = (verseKey: string) => state.currentVerseKey === verseKey;
   const isPlaying = (verseKey: string) => isActive(verseKey) && state.isPlaying;
+
+  useEffect(() => {
+    fetch('/api/bookmarks')
+      .then(res => res.json())
+      .then(data => {
+        if (data.bookmarks) {
+          const bookmarked = new Set<string>(
+            data.bookmarks
+              .filter((b: any) => b.surah_id === chapterId)
+              .map((b: any) => `verse-${b.verse_number}`)
+          );
+          setBookmarkedVerses(bookmarked);
+        }
+      })
+      .catch(console.error);
+  }, [chapterId]);
+
+  useEffect(() => {
+    addToHistory({
+      surahId: chapterId,
+      surahName: chapterName,
+      surahNameArabic: chapterNameArabic,
+      lastVerse: 1,
+      timestamp: Date.now(),
+    });
+  }, [chapterId, chapterName, chapterNameArabic, addToHistory]);
+
+  useEffect(() => {
+    if (!hasRestoredScroll.current && verses.length > 0) {
+      const progress = getProgressForChapter(chapterId);
+      if (progress && progress.scroll_position > 0) {
+        setTimeout(() => {
+          window.scrollTo({ top: progress.scroll_position, behavior: 'auto' });
+          hasRestoredScroll.current = true;
+        }, 100);
+      } else {
+        hasRestoredScroll.current = true;
+      }
+    }
+  }, [verses, chapterId, getProgressForChapter]);
+
+  const handleScroll = useCallback(() => {
+    if (chapterId) {
+      updateProgress(1, window.scrollY);
+    }
+  }, [chapterId, updateProgress]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   const handlePlayVerse = async (verseKey: string, files: AudioFile[]) => {
     if (files.length > 0) {
@@ -106,6 +163,42 @@ export function VerseReaderClient({
     }
 
 handlePlayVerse(verseKey, files);
+  };
+
+  const toggleBookmark = async (verseNumber: number) => {
+    const verseKey = `verse-${verseNumber}`;
+    const isCurrentlyBookmarked = bookmarkedVerses.has(verseKey);
+
+    setBookmarkedVerses(prev => {
+      const updated = new Set(prev);
+      if (isCurrentlyBookmarked) {
+        updated.delete(verseKey);
+      } else {
+        updated.add(verseKey);
+      }
+      return updated;
+    });
+
+    try {
+      const method = isCurrentlyBookmarked ? 'DELETE' : 'POST';
+      await fetch('/api/bookmarks', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ surah_id: chapterId, verse_number: verseNumber }),
+      });
+      toast.success(isCurrentlyBookmarked ? 'Bookmark removed' : 'Verse bookmarked');
+    } catch {
+      setBookmarkedVerses(prev => {
+        const updated = new Set(prev);
+        if (isCurrentlyBookmarked) {
+          updated.add(verseKey);
+        } else {
+          updated.delete(verseKey);
+        }
+        return updated;
+      });
+      toast.error('Failed to update bookmark');
+    }
   };
 
   return (
@@ -238,6 +331,29 @@ handlePlayVerse(verseKey, files);
                     {verseNumber}
                   </span>
                   <div className="flex items-center gap-2 md:gap-3 -mt-1">
+                    <button
+                      onClick={() => toggleBookmark(verseNumber)}
+                      className={`w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full transition-all ${
+                        bookmarkedVerses.has(`verse-${verseNumber}`)
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-accent)] hover:text-white hover:border-[var(--color-accent)]'
+                      }`}
+                      aria-label={bookmarkedVerses.has(`verse-${verseNumber}`) ? 'Remove bookmark' : 'Add bookmark'}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill={bookmarkedVerses.has(`verse-${verseNumber}`) ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                        />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => handleLoadAndPlay(verse.verse_key)}
                       disabled={loadingAudio}

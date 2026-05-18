@@ -1,4 +1,5 @@
 import { SurahSearch } from '@/components/surah-search';
+import { ContinueReading } from '@/components/continue-reading';
 import { getApiUrl } from '@/lib/api-url';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,8 @@ export default async function QuranPage() {
         <p className="text-[var(--color-text-muted)] text-sm mt-2">The Noble Quran</p>
         <p className="text-[var(--color-text-muted)] text-sm mt-1">114 Surahs · Begin your reading</p>
       </div>
+
+      <ContinueReading />
 
       <SurahSearch chapters={chapters} />
     </div>
