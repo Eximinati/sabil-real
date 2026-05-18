@@ -122,6 +122,7 @@ export async function getVerses(
     words: 'false',
     translation_fields: 'text',
     fields: 'text_uthmani',
+    per_page: '300',
   };
   
   if (params?.translations) {
@@ -134,15 +135,11 @@ export async function getVerses(
     queryParams.per_page = params.per_page.toString();
   }
   
-  console.log('Fetching verses:', QF_API_BASE + `/content/api/v4/verses/by_chapter/${chapterId}`, queryParams);
-  const response = await qfFetch<VersesResponse>(`/content/api/v4/verses/by_chapter/${chapterId}`, queryParams);
-  console.log('Verses response:', JSON.stringify(response).slice(0, 500));
-  return response;
+  return qfFetch<VersesResponse>(`/content/api/v4/verses/by_chapter/${chapterId}`, queryParams);
 }
 
 export async function getTranslations(): Promise<Translation[]> {
   const data = await qfFetch<{ translations: Translation[] }>('/content/api/v4/resources/translations');
-  console.log('Translations response:', JSON.stringify(data).slice(0, 500));
   return data.translations;
 }
 

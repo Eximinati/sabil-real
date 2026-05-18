@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from './signout-button';
 import { ThemeToggle } from './theme-toggle';
+import { useFocusMode } from './focus-mode-provider';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -40,8 +41,14 @@ function NavItem({ href, children }: { href: string; children: React.ReactNode }
 }
 
 function DesktopSidebar({ email }: { email: string }) {
+  const { isFocusMode } = useFocusMode();
+  
   return (
-    <aside className="w-[240px] bg-[var(--sidebar-bg)] text-white flex flex-col fixed h-screen hidden md:flex">
+    <aside 
+      className={`${
+        isFocusMode ? 'w-0 opacity-0' : 'w-[240px] opacity-100'
+      } bg-[var(--sidebar-bg)] text-white flex flex-col fixed h-screen hidden md:flex transition-all duration-300 ease-in-out overflow-hidden`}
+    >
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>
         <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
@@ -153,6 +160,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
 
 export function AppShell({ children, userEmail }: AppShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { isFocusMode } = useFocusMode();
 
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)]">
@@ -160,7 +168,9 @@ export function AppShell({ children, userEmail }: AppShellProps) {
 
       <button
         onClick={() => setMobileNavOpen(true)}
-        className="fixed top-4 left-4 z-50 bg-[var(--color-primary)] text-white p-3 rounded-lg shadow-md md:hidden hover:bg-[var(--color-primary-hover)] transition-colors"
+        className={`fixed top-4 left-4 z-50 bg-[var(--color-primary)] text-white p-3 rounded-lg shadow-md md:hidden hover:bg-[var(--color-primary-hover)] transition-all duration-300 ${
+          isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
         aria-label="Open menu"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +180,11 @@ export function AppShell({ children, userEmail }: AppShellProps) {
 
       {mobileNavOpen && <MobileNav email={userEmail} onClose={() => setMobileNavOpen(false)} />}
 
-      <main className="flex-1 md:ml-[240px] min-h-screen">
+      <main 
+        className={`flex-1 min-h-screen transition-all duration-300 ease-in-out ${
+          isFocusMode ? 'md:ml-0' : 'md:ml-[240px]'
+        }`}
+      >
         {children}
       </main>
     </div>

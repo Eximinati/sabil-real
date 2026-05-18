@@ -11,10 +11,12 @@ export async function GET(
     
     const translation = searchParams.get('translation') || '203';
     const page = parseInt(searchParams.get('page') || '1', 10);
+    const perPage = parseInt(searchParams.get('per_page') || '300', 10);
     
     const verses = await getVerses(parseInt(chapterId, 10), {
       translations: translation,
       page,
+      per_page: perPage,
     });
     
     return NextResponse.json(verses);

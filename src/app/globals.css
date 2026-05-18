@@ -69,12 +69,32 @@
   --sidebar-bg: linear-gradient(to bottom, #1A2A21, #111611);
 }
 
+.focus-mode {
+  --sidebar-width: 0px;
+}
+
+.focus-mode .desktop-sidebar {
+  display: none;
+}
+
 html {
   font-family: var(--font-sans);
 }
 
 .font-arabic {
   font-family: var(--font-arabic);
+}
+
+.arabic-text {
+  font-family: var(--font-arabic);
+  line-height: 2.4;
+  letter-spacing: 0.02em;
+}
+
+.arabic-text-focus {
+  font-family: var(--font-arabic);
+  line-height: 2.6;
+  letter-spacing: 0.03em;
 }
 
 html, body {

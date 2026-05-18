@@ -2,6 +2,7 @@
 
 import { useAudioPlayerContext } from './audio-player-provider';
 import { reciters, SPEEDS } from '@/data/reciters';
+import { useFocusMode } from './focus-mode-provider';
 import { useState } from 'react';
 
 function formatTime(seconds: number): string {
@@ -22,6 +23,7 @@ export function AudioPlayer() {
     replaySurah,
     audioFiles,
   } = useAudioPlayerContext();
+  const { isFocusMode } = useFocusMode();
   const [minimized, setMinimized] = useState(false);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
@@ -41,10 +43,20 @@ export function AudioPlayer() {
     resetPlayer();
   };
 
+  const playerClasses = `fixed bottom-0 z-50 transition-all duration-300 ease-in-out ${
+    isFocusMode ? 'md:left-0' : 'md:left-[240px]'
+  }`;
+
+  const containerClasses = `bg-[var(--color-surface)]/95 backdrop-blur-md safe-area-bottom ${
+    isFocusMode 
+      ? 'mx-2 md:mx-4 mb-2 rounded-2xl border-x border-t border-[var(--color-border)]' 
+      : 'border-t border-[var(--color-border)] rounded-t-2xl md:rounded-t-3xl'
+  }`;
+
   if (state.isCompleted) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:left-[240px]">
-        <div className="bg-[var(--color-surface)]/95 backdrop-blur-md border-t border-[var(--color-border)] safe-area-bottom">
+      <div className={playerClasses}>
+        <div className={`${containerClasses}`}>
           <div className="max-w-[900px] mx-auto px-4 md:px-6 py-6 md:py-8">
             <div className="text-center">
               <p className="text-[var(--color-text)] text-lg font-medium mb-1">
@@ -80,8 +92,8 @@ export function AudioPlayer() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:left-[240px]">
-      <div className="bg-[var(--color-surface)]/95 backdrop-blur-md border-t border-[var(--color-border)] safe-area-bottom rounded-t-2xl md:rounded-t-3xl">
+    <div className={`${playerClasses} left-0 right-0`}>
+      <div className={`${containerClasses}`}>
         <div className="max-w-[900px] mx-auto px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center gap-2 md:gap-4">
             {audioFiles && (

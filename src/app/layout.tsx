@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { AudioPlayerProvider } from '@/components/audio-player-provider';
+import { FocusModeProvider } from '@/components/focus-mode-provider';
 
 export const metadata: Metadata = {
   title: 'Sabil — Your Guided Islamic Journey',
@@ -44,7 +45,9 @@ export default function RootLayout({
         <ThemeProvider>
           <ToastProvider>
             <AudioPlayerProvider>
-              {children}
+              <FocusModeProvider>
+                {children}
+              </FocusModeProvider>
             </AudioPlayerProvider>
           </ToastProvider>
         </ThemeProvider>
