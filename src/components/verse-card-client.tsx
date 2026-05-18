@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAudioPlayerContext } from './audio-player-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -25,49 +25,67 @@ interface VerseCardProps {
     }>;
   };
   verseNumber: number;
+  verseIndex: number;
   chapterId: number;
   translatorLabel: string;
   translationId: number;
 }
 
-export function VerseCardClient({ verse, verseNumber, chapterId, translatorLabel, translationId }: VerseCardProps) {
-  const { state, playVerse } = useAudioPlayerContext();
+export function VerseCardClient({ verse, verseNumber, verseIndex, chapterId, translatorLabel, translationId }: VerseCardProps) {
+  const { state, playSurah } = useAudioPlayerContext();
   const toast = useToast();
   const [loadingAudio, setLoadingAudio] = useState(false);
+  const [cachedAudio, setCachedAudio] = useState<Record<number, AudioFile[]>>({});
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const isActive = state.currentVerseKey === verse.verse_key;
+  const isPlaying = isActive && state.isPlaying;
   const translation = verse.translations?.find(t => t.resource_id === translationId);
 
+  useEffect(() => {
+    if (isActive && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [isActive]);
+
   const handlePlayClick = async () => {
-    const currentReciterId = getStoredReciterId() || 5;
-    setLoadingAudio(true);
+    const reciterId = getStoredReciterId() || 5;
     
-    try {
-      const res = await fetch(`/api/audio/${currentReciterId}/${chapterId}`);
-      const data = await res.json();
-      
-      if (data.error) throw new Error(data.error);
-      
-      const audioFiles: AudioFile[] = data.audio_files || [];
-      const audio = audioFiles.find((f: AudioFile) => f.verse_key === verse.verse_key);
-      
-      if (audio?.url) {
-        playVerse(verse.verse_key, chapterId, currentReciterId, audio.url);
-      } else {
-        toast.error('Audio not available for this verse');
+    let files = cachedAudio[reciterId];
+    if (!files) {
+      setLoadingAudio(true);
+      try {
+        const res = await fetch(`/api/audio/${reciterId}/${chapterId}`);
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        files = data.audio_files || [];
+        setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
+      } catch {
+        toast.error('Failed to load audio');
+        setLoadingAudio(false);
+        return;
       }
-    } catch (error) {
-      toast.error('Failed to load audio');
-    } finally {
       setLoadingAudio(false);
+    }
+    
+    if (files.length > 0) {
+      playSurah(chapterId, reciterId, files);
+    } else {
+      toast.error('Audio not available');
     }
   };
 
   return (
     <div
-      className={`bg-[var(--color-surface)] border rounded-xl p-4 md:p-6 mb-4 transition-all relative group ${
+      ref={cardRef}
+      className={`bg-[var(--color-surface)] border rounded-xl p-4 md:p-6 mb-4 transition-all duration-300 relative group ${
         isActive
-          ? 'border-[var(--color-primary)] shadow-[0_0_0_1px_var(--color-primary)] bg-[var(--color-primary)]/5'
+          ? 'border-[var(--color-primary)] shadow-[0_0_12px_-4px_var(--color-primary)] bg-[var(--color-primary)]/[0.03]'
           : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
       }`}
     >
@@ -77,17 +95,17 @@ export function VerseCardClient({ verse, verseNumber, chapterId, translatorLabel
           disabled={loadingAudio}
           className={`w-8 h-8 flex items-center justify-center rounded-full transition-all flex-shrink-0 ${
             isActive
-              ? 'bg-[var(--color-primary)] text-white'
+              ? 'bg-[var(--color-primary)] text-white shadow-lg'
               : 'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)]'
-          }`}
-          aria-label={isActive && state.isPlaying ? 'Pause' : 'Play verse'}
+          } ${isPlaying ? 'animate-pulse-soft' : ''}`}
+          aria-label={isPlaying ? 'Pause' : 'Play verse'}
         >
           {loadingAudio ? (
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : isActive && state.isPlaying ? (
+          ) : isPlaying ? (
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <rect x="6" y="4" width="4" height="16" rx="1" />
               <rect x="14" y="4" width="4" height="16" rx="1" />
@@ -102,7 +120,11 @@ export function VerseCardClient({ verse, verseNumber, chapterId, translatorLabel
       </div>
 
       <div className="flex items-start mb-4">
-        <span className="w-7 h-7 flex items-center justify-center bg-[var(--color-accent)] text-white rounded-full text-xs font-medium">
+        <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium transition-colors ${
+          isActive
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'bg-[var(--color-accent)] text-white'
+        }`}>
           {verseNumber}
         </span>
       </div>

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { TranslationSelector } from '@/components/translation-selector';
 import { ReciterSelector } from '@/components/reciter-selector';
+import { SurahControls } from '@/components/surah-controls';
 import { VerseCardClient } from '@/components/verse-card-client';
 import { AudioPlayer } from '@/components/audio-player';
 import Link from 'next/link';
@@ -102,6 +103,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
             {chapter && (
               <span className="text-[var(--color-text-muted)] hidden sm:inline">{chapter.verses_count} verses</span>
             )}
+            <SurahControls chapterId={chapterId} />
             <ReciterSelector />
             <TranslationSelector />
           </div>
@@ -131,7 +133,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
         )}
 
         <div className="max-w-3xl mx-auto">
-          {verses.map((verse) => {
+          {verses.map((verse, index) => {
             const verseNumber = parseInt(verse.verse_key.split(':')[1], 10);
 
             return (
@@ -139,6 +141,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
                 key={verse.id}
                 verse={verse}
                 verseNumber={verseNumber}
+                verseIndex={index}
                 chapterId={chapterId}
                 translatorLabel={translatorLabel}
                 translationId={parseInt(translationId, 10)}

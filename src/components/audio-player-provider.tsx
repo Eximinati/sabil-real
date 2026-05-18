@@ -1,16 +1,24 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useAudioPlayer, AudioState } from '@/hooks/use-audio-player';
+import { useAudioPlayer, AudioState, AudioFile } from '@/hooks/use-audio-player';
 
 interface AudioPlayerContextValue {
   state: AudioState;
-  playVerse: (verseKey: string, chapter: number, reciter: number, audioUrl: string) => void;
+  playVerse: (verseKey: string, chapter: number, reciter: number, audioUrl: string, verseIndex?: number) => void;
+  playSurah: (chapter: number, reciter: number, audioFiles: AudioFile[]) => void;
   play: () => void;
   pause: () => void;
   toggle: () => void;
   seek: (time: number) => void;
   clearError: () => void;
+  nextVerse: () => void;
+  previousVerse: () => void;
+  setPlaybackSpeed: (speed: number) => void;
+  resetPlayer: () => void;
+  replaySurah: () => void;
+  audioFiles: AudioFile[] | null;
+  setAudioFiles: (files: AudioFile[]) => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);

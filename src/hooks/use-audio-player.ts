@@ -11,6 +11,10 @@ export interface AudioState {
   currentTime: number;
   isLoading: boolean;
   error: string | null;
+  playbackSpeed: number;
+  isCompleted: boolean;
+  totalVerses: number;
+  currentVerseIndex: number;
 }
 
 export interface AudioFile {
@@ -19,17 +23,27 @@ export interface AudioFile {
   duration: string | null;
 }
 
-interface UseAudioPlayerReturn {
+export interface UseAudioPlayerReturn {
   state: AudioState;
-  playVerse: (verseKey: string, chapter: number, reciter: number, audioUrl: string) => void;
+  playVerse: (verseKey: string, chapter: number, reciter: number, audioUrl: string, verseIndex?: number) => void;
+  playSurah: (chapter: number, reciter: number, audioFiles: AudioFile[]) => void;
   play: () => void;
   pause: () => void;
   toggle: () => void;
   seek: (time: number) => void;
   clearError: () => void;
+  nextVerse: () => void;
+  previousVerse: () => void;
+  setPlaybackSpeed: (speed: number) => void;
+  resetPlayer: () => void;
+  replaySurah: () => void;
+  audioFiles: AudioFile[] | null;
+  setAudioFiles: (files: AudioFile[]) => void;
 }
 
 const RECITER_STORAGE_KEY = 'sabil-reciter-id';
+const SPEED_STORAGE_KEY = 'sabil-playback-speed';
+const SPEEDS = [0.75, 1, 1.25, 1.5];
 
 function parseDuration(durationStr: string | null): number {
   if (!durationStr) return 0;
@@ -44,8 +58,22 @@ function parseDuration(durationStr: string | null): number {
   return parseFloat(durationStr) || 0;
 }
 
+const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
+
+function resolveAudioUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url.replace('cdn.quran.com', 'verses.quran.foundation');
+  }
+  return `${QURAN_AUDIO_BASE}/${url}`;
+}
+
 export function useAudioPlayer(): UseAudioPlayerReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioFilesRef = useRef<AudioFile[] | null>(null);
+  const currentChapterRef = useRef<number | null>(null);
+  const currentReciterRef = useRef<number | null>(null);
+  
   const [state, setState] = useState<AudioState>({
     isPlaying: false,
     currentVerseKey: null,
@@ -55,13 +83,69 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     currentTime: 0,
     isLoading: false,
     error: null,
+    playbackSpeed: 1,
+    isCompleted: false,
+    totalVerses: 0,
+    currentVerseIndex: 0,
   });
 
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [audioFiles, setAudioFiles] = useState<AudioFile[] | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedSpeed = localStorage.getItem(SPEED_STORAGE_KEY);
+      if (storedSpeed) {
+        setState(prev => ({ ...prev, playbackSpeed: parseFloat(storedSpeed) }));
+      }
+    }
+  }, []);
+
+  const playNextVerse = useCallback(() => {
+    const files = audioFilesRef.current;
+    if (!files || files.length === 0) {
+      setState(prev => ({ ...prev, isPlaying: false, isCompleted: true }));
+      return;
+    }
+
+    setState(prev => {
+      const currentIndex = prev.currentVerseIndex;
+      const nextIndex = currentIndex + 1;
+
+      if (nextIndex >= files.length) {
+        return { ...prev, isPlaying: false, isCompleted: true, currentTime: 0 };
+      }
+
+      const nextAudio = files[nextIndex];
+      const resolvedUrl = resolveAudioUrl(nextAudio.url);
+      
+      if (!resolvedUrl) {
+        return { ...prev, isPlaying: false, error: 'Invalid audio URL' };
+      }
+
+      setCurrentUrl(resolvedUrl);
+      if (audioRef.current) {
+        audioRef.current.src = resolvedUrl;
+        audioRef.current.load();
+        audioRef.current.play().catch(() => {});
+      }
+
+      return {
+        ...prev,
+        currentVerseKey: nextAudio.verse_key,
+        currentVerseIndex: nextIndex,
+        currentTime: 0,
+        duration: 0,
+        isLoading: true,
+      };
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio();
+      audioRef.current.playbackRate = state.playbackSpeed;
+      
       audioRef.current.addEventListener('timeupdate', () => {
         if (audioRef.current) {
           setState(prev => ({ ...prev, currentTime: audioRef.current!.currentTime }));
@@ -73,28 +157,10 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         }
       });
       audioRef.current.addEventListener('ended', () => {
-        setState(prev => ({ ...prev, isPlaying: false, currentTime: 0 }));
+        playNextVerse();
       });
-      audioRef.current.addEventListener('error', (e) => {
-        const mediaError = audioRef.current?.error;
-        let errorMsg = 'Audio failed to load';
-        if (mediaError) {
-          switch (mediaError.code) {
-            case MediaError.MEDIA_ERR_ABORTED:
-              errorMsg = 'Audio playback aborted';
-              break;
-            case MediaError.MEDIA_ERR_NETWORK:
-              errorMsg = 'Network error loading audio';
-              break;
-            case MediaError.MEDIA_ERR_DECODE:
-              errorMsg = 'Audio decoding error';
-              break;
-            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-              errorMsg = 'Audio format not supported';
-              break;
-          }
-        }
-        setState(prev => ({ ...prev, isPlaying: false, isLoading: false, error: errorMsg }));
+      audioRef.current.addEventListener('error', () => {
+        setState(prev => ({ ...prev, isPlaying: false, isLoading: false, error: 'Audio failed to load' }));
       });
     }
     return () => {
@@ -103,19 +169,15 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         audioRef.current.src = '';
       }
     };
-  }, []);
+  }, [playNextVerse]);
 
-const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
-
-  const resolveAudioUrl = (url: string): string => {
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url.replace('cdn.quran.com', 'verses.quran.foundation');
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = state.playbackSpeed;
     }
-    return `${QURAN_AUDIO_BASE}/${url}`;
-  };
+  }, [state.playbackSpeed]);
 
-  const playVerse = useCallback((verseKey: string, chapter: number, reciter: number, audioUrl: string) => {
+  const playVerse = useCallback((verseKey: string, chapter: number, reciter: number, audioUrl: string, verseIndex?: number) => {
     if (!audioRef.current) return;
 
     const resolvedUrl = resolveAudioUrl(audioUrl);
@@ -124,8 +186,13 @@ const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
       return;
     }
 
-    setState(prev => ({ ...prev, isLoading: true, error: null, isPlaying: true }));
+    setState(prev => ({ ...prev, isLoading: true, error: null, isPlaying: true, isCompleted: false }));
     setCurrentUrl(resolvedUrl);
+    audioFilesRef.current = null;
+    setAudioFiles(null);
+    currentReciterRef.current = reciter;
+    currentChapterRef.current = chapter;
+    
     audioRef.current.src = resolvedUrl;
     audioRef.current.load();
 
@@ -136,14 +203,56 @@ const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
       reciterId: reciter,
       currentTime: 0,
       duration: 0,
+      currentVerseIndex: verseIndex ?? 0,
     }));
 
     audioRef.current.play().then(() => {
       setState(prev => ({ ...prev, isLoading: false }));
-    }).catch((err) => {
-      setState(prev => ({ ...prev, isPlaying: false, isLoading: false, error: 'Audio failed to load' }));
+    }).catch(() => {
+      setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
     });
   }, []);
+
+  const playSurah = useCallback((chapter: number, reciter: number, files: AudioFile[]) => {
+    if (files.length === 0) return;
+
+    audioFilesRef.current = files;
+    setAudioFiles(files);
+    currentReciterRef.current = reciter;
+    currentChapterRef.current = chapter;
+
+    const firstAudio = files[0];
+    const resolvedUrl = resolveAudioUrl(firstAudio.url);
+    
+    if (!resolvedUrl) {
+      setState(prev => ({ ...prev, error: 'Invalid audio URL' }));
+      return;
+    }
+
+    setState({
+      isPlaying: true,
+      currentVerseKey: firstAudio.verse_key,
+      currentChapter: chapter,
+      reciterId: reciter,
+      duration: 0,
+      currentTime: 0,
+      isLoading: true,
+      error: null,
+      playbackSpeed: state.playbackSpeed,
+      isCompleted: false,
+      totalVerses: files.length,
+      currentVerseIndex: 0,
+    });
+
+    setCurrentUrl(resolvedUrl);
+    audioRef.current!.src = resolvedUrl;
+    audioRef.current!.load();
+    audioRef.current!.play().then(() => {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }).catch(() => {
+      setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
+    });
+  }, [state.playbackSpeed]);
 
   const play = useCallback(() => {
     if (audioRef.current && currentUrl) {
@@ -178,6 +287,121 @@ const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
+  const nextVerse = useCallback(() => {
+    const files = audioFilesRef.current;
+    if (!files || files.length === 0) return;
+    
+    setState(prev => {
+      const nextIndex = prev.currentVerseIndex + 1;
+      if (nextIndex >= files.length) return prev;
+
+      const nextAudio = files[nextIndex];
+      const resolvedUrl = resolveAudioUrl(nextAudio.url);
+      
+      if (!resolvedUrl) return { ...prev, error: 'Invalid audio URL' };
+
+      setCurrentUrl(resolvedUrl);
+      if (audioRef.current) {
+        audioRef.current.src = resolvedUrl;
+        audioRef.current.load();
+        audioRef.current.play().then(() => {
+          setState(s => ({ ...s, isLoading: false }));
+        }).catch(() => {
+          setState(s => ({ ...s, isLoading: false, isPlaying: false }));
+        });
+      }
+
+      return {
+        ...prev,
+        currentVerseKey: nextAudio.verse_key,
+        currentVerseIndex: nextIndex,
+        currentTime: 0,
+        duration: 0,
+        isLoading: true,
+        isCompleted: false,
+      };
+    });
+  }, []);
+
+  const previousVerse = useCallback(() => {
+    const files = audioFilesRef.current;
+    if (!files || files.length === 0) return;
+    
+    setState(prev => {
+      const prevIndex = prev.currentVerseIndex - 1;
+      if (prevIndex < 0) return prev;
+
+      const prevAudio = files[prevIndex];
+      const resolvedUrl = resolveAudioUrl(prevAudio.url);
+      
+      if (!resolvedUrl) return { ...prev, error: 'Invalid audio URL' };
+
+      setCurrentUrl(resolvedUrl);
+      if (audioRef.current) {
+        audioRef.current.src = resolvedUrl;
+        audioRef.current.load();
+        audioRef.current.play().then(() => {
+          setState(s => ({ ...s, isLoading: false }));
+        }).catch(() => {
+          setState(s => ({ ...s, isLoading: false, isPlaying: false }));
+        });
+      }
+
+      return {
+        ...prev,
+        currentVerseKey: prevAudio.verse_key,
+        currentVerseIndex: prevIndex,
+        currentTime: 0,
+        duration: 0,
+        isLoading: true,
+        isCompleted: false,
+      };
+    });
+  }, []);
+
+  const setPlaybackSpeed = useCallback((speed: number) => {
+    setState(prev => ({ ...prev, playbackSpeed: speed }));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SPEED_STORAGE_KEY, speed.toString());
+    }
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed;
+    }
+  }, []);
+
+  const resetPlayer = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+    audioFilesRef.current = null;
+    setAudioFiles(null);
+    setCurrentUrl(null);
+    setState(prev => ({
+      ...prev,
+      isPlaying: false,
+      currentVerseKey: null,
+      currentChapter: null,
+      reciterId: null,
+      duration: 0,
+      currentTime: 0,
+      isLoading: false,
+      error: null,
+      isCompleted: false,
+      totalVerses: 0,
+      currentVerseIndex: 0,
+    }));
+  }, []);
+
+  const replaySurah = useCallback(() => {
+    const files = audioFilesRef.current;
+    const reciter = currentReciterRef.current;
+    const chapter = currentChapterRef.current;
+    
+    if (!files || files.length === 0 || !reciter || !chapter) return;
+    playSurah(chapter, reciter, files);
+  }, [playSurah]);
+
   useEffect(() => {
     if (audioRef.current) {
       if (state.isPlaying && currentUrl && audioRef.current.src !== currentUrl) {
@@ -188,7 +412,23 @@ const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
     }
   }, [state.isPlaying, currentUrl]);
 
-  return { state, playVerse, play, pause, toggle, seek, clearError };
+  return {
+    state,
+    playVerse,
+    playSurah,
+    play,
+    pause,
+    toggle,
+    seek,
+    clearError,
+    nextVerse,
+    previousVerse,
+    setPlaybackSpeed,
+    resetPlayer,
+    replaySurah,
+    audioFiles,
+    setAudioFiles,
+  };
 }
 
 export function getStoredReciterId(): number | null {
@@ -202,3 +442,5 @@ export function setStoredReciterId(id: number): void {
     localStorage.setItem(RECITER_STORAGE_KEY, id.toString());
   }
 }
+
+export { SPEEDS };
