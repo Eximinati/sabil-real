@@ -173,6 +173,7 @@ export function AudioPlayer() {
                       value={state.currentTime}
                       onChange={(e) => seek(parseFloat(e.target.value))}
                       disabled={state.isLoading}
+                      aria-label="Seek through audio"
                       className="w-full h-1.5 md:h-2 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 md:[&::-webkit-slider-thumb]:w-4 md:[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[var(--color-primary)] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
                       style={{
                         background: `linear-gradient(to right, var(--color-primary) ${progress}%, var(--color-border) ${progress}%)`,

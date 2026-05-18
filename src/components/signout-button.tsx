@@ -15,6 +15,7 @@ export function SignOutButton() {
     <button
       type="button"
       onClick={handleSignOut}
+      aria-label="Sign out of account"
       className="text-white/70 hover:text-white text-sm transition-colors"
     >
       Sign Out

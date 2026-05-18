@@ -33,7 +33,7 @@ function NavItem({ href, children }: { href: string; children: React.ReactNode }
           ? 'bg-white/20 text-white font-medium'
           : 'text-white/60 hover:text-white hover:bg-white/10'
       }`}
-      title={href}
+      aria-current={isActive ? 'page' : undefined}
     >
       {children}
     </Link>
@@ -171,9 +171,9 @@ export function AppShell({ children, userEmail }: AppShellProps) {
         className={`fixed top-4 left-4 z-50 bg-[var(--color-primary)] text-white p-3 rounded-lg shadow-md md:hidden hover:bg-[var(--color-primary-hover)] transition-all duration-300 ${
           isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
-        aria-label="Open menu"
+        aria-label="Open navigation menu"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -181,6 +181,7 @@ export function AppShell({ children, userEmail }: AppShellProps) {
       {mobileNavOpen && <MobileNav email={userEmail} onClose={() => setMobileNavOpen(false)} />}
 
       <main 
+        id="main-content"
         className={`flex-1 min-h-screen transition-all duration-300 ease-in-out ${
           isFocusMode ? 'md:ml-0' : 'md:ml-[240px]'
         }`}

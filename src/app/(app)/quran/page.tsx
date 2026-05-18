@@ -1,38 +1,24 @@
 import { SurahSearch } from '@/components/surah-search';
+import { getApiUrl } from '@/lib/api-url';
 
 export const dynamic = 'force-dynamic';
 
-interface Chapter {
-  id: number;
-  name_simple: string;
-  name_arabic: string;
-  verses_count: number;
-  revelation_place: string;
-}
-
-const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
-
-async function getChaptersFromApi(): Promise<Chapter[]> {
-  const res = await fetch(`${API_BASE}/api/chapters`, { cache: 'no-store' });
+async function getChaptersFromApi(): Promise<any[]> {
+  const res = await fetch(getApiUrl('/chapters'), { cache: 'no-store' });
   const data = await res.json();
   return data.chapters ?? data;
 }
 
 export default async function QuranPage() {
-  let chapters: Chapter[] = [];
-  let error: string | null = null;
+  let chapters: any[] = [];
 
   try {
     chapters = await getChaptersFromApi();
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Failed to fetch chapters';
-  }
-
-  if (error) {
     return (
       <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
-        <div className="p-4 bg-red-50 border border-red-200 text-[var(--color-error)] rounded-lg">
-          {error}
+        <div className="p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] rounded-lg text-center">
+          Couldn't load Surah list. Please check your connection and refresh.
         </div>
       </div>
     );

@@ -6,12 +6,24 @@ import { AudioPlayerProvider } from '@/components/audio-player-provider';
 import { FocusModeProvider } from '@/components/focus-mode-provider';
 
 export const metadata: Metadata = {
-  title: 'Sabil — Your Guided Islamic Journey',
-  description: 'A structured, gentle journey through the Qur\'an, one day at a time.',
+  title: 'Sabil — Your Quran Companion',
+  description: 'A guided journey through the Quran. Read, reflect, and grow in understanding one day at a time.',
+  keywords: ['Quran', 'Islam', 'Tafsir', 'Hadith', 'Islamic Learning', 'Daily Reading'],
+  authors: [{ name: 'Sabil' }],
   openGraph: {
-    title: 'Sabil — Your Guided Islamic Journey',
-    description: 'A structured, gentle journey through the Qur\'an, one day at a time.',
+    title: 'Sabil — Your Quran Companion',
+    description: 'A guided journey through the Quran. Read, reflect, and grow in understanding one day at a time.',
     type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Sabil — Your Quran Companion',
+    description: 'A guided journey through the Quran.',
+  },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
   },
 };
 

@@ -2,21 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-interface Collection {
-  id: string;
-  name: string;
-  arabic: string;
-}
-
-interface HadithData {
-  number: number;
-  arabic: string;
-  english: string;
-  collection: string;
-  name: string;
-  section?: string;
-}
+import { EmptyState } from './ui/empty-state';
+import { useToast } from '@/hooks/use-toast';
 
 export function HadithBrowser({
   initialCollection,
@@ -27,9 +14,10 @@ export function HadithBrowser({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [collections, setCollections] = useState<Collection[]>([]);
+  const toast = useToast();
+  const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hadith, setHadith] = useState<HadithData | null>(null);
+  const [hadith, setHadith] = useState<any>(null);
   const [hadithLoading, setHadithLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,13 +32,17 @@ export function HadithBrowser({
         setCollections(data.collections || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        toast.error('Could not load collections');
+        setLoading(false);
+      });
+  }, [toast]);
 
   useEffect(() => {
     if (collection && number) {
       setHadithLoading(true);
       setError(null);
+      setHadith(null);
       fetch(`/api/hadith/${collection}/${number}`)
         .then((res) => res.json())
         .then((data) => {
@@ -62,7 +54,7 @@ export function HadithBrowser({
           }
         })
         .catch(() => {
-          setError('Failed to load hadith');
+          setError('Could not load this hadith');
           setHadith(null);
         })
         .finally(() => setHadithLoading(false));
@@ -98,8 +90,8 @@ export function HadithBrowser({
     return (
       <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-[var(--color-border)] animate-pulse rounded-xl h-48 mb-4" />
-          <div className="bg-[var(--color-border)] animate-pulse rounded-xl h-48" />
+          <div className="h-48 bg-[var(--color-border)] animate-pulse rounded-xl mb-4" />
+          <div className="h-48 bg-[var(--color-border)] animate-pulse rounded-xl" />
         </div>
       </div>
     );
@@ -117,38 +109,52 @@ export function HadithBrowser({
 
       {!collection ? (
         <div className="max-w-[680px] mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {collections.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => handleCollectionSelect(c.id)}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 text-left hover:border-[var(--color-primary)] transition-colors card-hover"
-              >
-                <span className="font-arabic text-[22px] text-[var(--color-accent)] block" dir="rtl">
-                  {c.arabic}
-                </span>
-                <span className="text-sm text-[var(--color-text-muted)] mt-1 block">{c.name}</span>
-              </button>
-            ))}
-          </div>
+          {collections.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {collections.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => handleCollectionSelect(c.id)}
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 text-left hover:border-[var(--color-primary)] transition-colors card-hover"
+                  aria-label={`Select ${c.name} collection`}
+                >
+                  <span className="font-arabic text-[22px] text-[var(--color-accent)] block" dir="rtl">
+                    {c.arabic}
+                  </span>
+                  <span className="text-sm text-[var(--color-text-muted)] mt-1 block">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon="hadith"
+              title="No collections available"
+              description="Could not load hadith collections. Please refresh and try again."
+              actionLabel="Refresh"
+              onAction={() => window.location.reload()}
+            />
+          )}
         </div>
       ) : (
         <div className="max-w-[680px] mx-auto">
           <button
             onClick={() => router.push('/hadith')}
             className="text-[var(--color-primary)] hover:underline mb-6 block"
+            aria-label="Back to collections"
           >
             ← Back to Collections
           </button>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-8">
-            <label className="text-sm text-[var(--color-text-muted)]">Enter hadith number:</label>
+            <label htmlFor="hadith-number" className="text-sm text-[var(--color-text-muted)]">Enter hadith number:</label>
             <input
+              id="hadith-number"
               type="number"
               value={number}
               onChange={(e) => router.push(`/hadith?collection=${collection}&number=${e.target.value}`)}
               min={1}
               className="border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 w-24 transition-all"
+              aria-label="Hadith number"
             />
             <button
               onClick={handleRead}
@@ -168,9 +174,11 @@ export function HadithBrowser({
               </div>
             </div>
           ) : error ? (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 text-center">
-              <p className="text-[var(--color-error)]">{error}</p>
-            </div>
+            <EmptyState
+              icon="hadith"
+              title="Could not load hadith"
+              description="The hadith you requested could not be found."
+            />
           ) : hadith ? (
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 md:p-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -186,12 +194,9 @@ export function HadithBrowser({
               
               <div className="border-t border-[var(--color-border)] pt-4">
                 {hadith.english ? (
-                  <p 
-                    className="text-[15px] leading-[1.9] text-[var(--color-text)]"
-                    dangerouslySetInnerHTML={{ 
-                      __html: hadith.english.replace(/<script[^>]*>.*?<\/script>/gi, '')
-                    }}
-                  />
+                  <p className="text-[15px] leading-[1.9] text-[var(--color-text)]">
+                    {hadith.english}
+                  </p>
                 ) : (
                   <div className="text-center py-4">
                     <p className="text-[var(--color-text-muted)] text-sm">
@@ -209,18 +214,26 @@ export function HadithBrowser({
                   onClick={() => navigateHadith(-1)}
                   disabled={parseInt(number, 10) <= 1}
                   className="text-sm text-[var(--color-primary)] hover:underline disabled:opacity-50"
+                  aria-label="Previous hadith"
                 >
                   ← Previous
                 </button>
                 <button
                   onClick={() => navigateHadith(1)}
                   className="text-sm text-[var(--color-primary)] hover:underline"
+                  aria-label="Next hadith"
                 >
                   Next →
                 </button>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <EmptyState
+              icon="hadith"
+              title="Select a hadith"
+              description="Enter a hadith number above to view it."
+            />
+          )}
         </div>
       )}
     </div>

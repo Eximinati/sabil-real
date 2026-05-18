@@ -5,36 +5,11 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { getLessonByDay, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
 import { ReflectionInput } from '@/components/reflection-input';
 import { LessonCompleteButton } from '@/components/lesson-complete-button';
+import { getApiUrl } from '@/lib/api-url';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface PageProps {
   params: Promise<{ day: string }>;
-}
-
-const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
-
-interface Verse {
-  id: number;
-  verse_key: string;
-  text_uthmani: string;
-  translations: Array<{
-    text: string;
-    resource_id: number;
-    resource_name: string;
-  }>;
-}
-
-interface Chapter {
-  id: number;
-  name_simple: string;
-  name_arabic: string;
-}
-
-interface HadithData {
-  number: number;
-  arabic: string;
-  english: string;
-  collection: string;
-  name: string;
 }
 
 export const dynamic = 'force-dynamic';
@@ -54,8 +29,13 @@ export default async function LessonPage({ params }: PageProps) {
   if (!lesson) {
     return (
       <div className="px-6 pt-12 pb-12 max-w-[740px] mx-auto">
-        <p className="text-center text-[var(--color-text-muted)]">Lesson not available</p>
-        <Link href="/journey" className="block text-center text-[var(--color-primary)] mt-4 hover:underline">← Back to Journey</Link>
+        <EmptyState
+          icon="journey"
+          title="Lesson not available"
+          description="This lesson may have been removed or the link is incorrect."
+          actionLabel="Back to Journey"
+          actionHref="/journey"
+        />
       </div>
     );
   }
@@ -67,38 +47,42 @@ export default async function LessonPage({ params }: PageProps) {
   const preferences = await getUserPreferences(user.id);
   const initialReflection = await getUserReflection(user.id, lesson.id);
 
-  const chaptersRes = await fetch(`${API_BASE}/api/chapters`, { cache: 'no-store' });
-  const chaptersData = await chaptersRes.json();
-  const chapters = (Array.isArray(chaptersData) ? chaptersData : []) as Chapter[];
+  let chapters: any[] = [];
+  try {
+    const chaptersRes = await fetch(getApiUrl('/chapters'), { cache: 'no-store' });
+    const chaptersData = await chaptersRes.json();
+    chapters = Array.isArray(chaptersData) ? chaptersData : [];
+  } catch (e) {
+    chapters = [];
+  }
 
-  const verses: Array<{ verse: Verse | null; chapterName: string }> = [];
+  const verses: Array<{ verse: any | null; chapterName: string }> = [];
   
   for (const verseKey of lesson.verse_keys) {
     const [chapterId] = verseKey.split(':');
     try {
       const verseRes = await fetch(
-        `${API_BASE}/api/verses/by_key/${verseKey}?translation=${preferences.translation_id}`,
+        getApiUrl(`/verses/by_key/${verseKey}?translation=${preferences.translation_id}`),
         { cache: 'no-store' }
       );
       const verseData = await verseRes.json();
       const chapter = chapters.find(c => c.id === parseInt(chapterId));
-      const verse = verseData?.verse || null;
-      verses.push({ verse, chapterName: chapter?.name_simple || `Chapter ${chapterId}` });
+      verses.push({ verse: verseData?.verse || null, chapterName: chapter?.name_simple || `Chapter ${chapterId}` });
     } catch (e) {
       verses.push({ verse: null, chapterName: `Chapter ${chapterId}` });
     }
   }
 
-  let hadith: HadithData | null = null;
+  let hadith: any = null;
   if (lesson.hadith_collection && lesson.hadith_number) {
     try {
       const hadithRes = await fetch(
-        `${API_BASE}/api/hadith/${lesson.hadith_collection}/${lesson.hadith_number}`
+        getApiUrl(`/hadith/${lesson.hadith_collection}/${lesson.hadith_number}`)
       );
       const hadithData = await hadithRes.json();
       hadith = hadithData?.hadith || null;
     } catch (e) {
-      // Ignore hadith fetch errors
+      hadith = null;
     }
   }
 

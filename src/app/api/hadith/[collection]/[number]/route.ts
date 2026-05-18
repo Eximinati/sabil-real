@@ -25,8 +25,6 @@ export async function GET(
     
     const data = await res.json();
     
-    console.log('Full hadith data:', JSON.stringify(data, null, 2));
-    
     const hadithItem = data.hadiths?.[0];
     
     const englishText = 

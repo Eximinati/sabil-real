@@ -1,6 +1,7 @@
 import { VerseReaderClient } from '@/components/verse-reader-client';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
+import { getApiUrl } from '@/lib/api-url';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -9,31 +10,29 @@ interface PageProps {
 
 export const dynamic = 'force-dynamic';
 
-interface Verse {
-  id: number;
-  verse_key: string;
-  text_uthmani: string;
-  translations: Array<{
-    text: string;
-    resource_id: number;
-    resource_name: string;
-  }>;
-}
-
-interface ChapterData {
-  id: number;
-  name_simple: string;
-  name_arabic: string;
-  verses_count: number;
-  revelation_place: string;
-}
-
-const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
-
 export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { translation: urlTranslation } = await searchParams;
   const chapterId = parseInt(id, 10);
+
+  if (isNaN(chapterId) || chapterId < 1 || chapterId > 114) {
+    return (
+      <div className="md:ml-[240px] min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md text-center p-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--color-error)]/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-[var(--color-error)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">Surah not found</h2>
+          <p className="text-[var(--color-text-muted)] text-sm mb-6">The Surah you&apos;re looking for doesn&apos;t exist.</p>
+          <a href="/quran" className="px-5 py-2 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity text-sm font-medium">
+            ← Back to Surah list
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
@@ -46,16 +45,16 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
 
   const translationId = urlTranslation || defaultTranslationId.toString();
 
-  let chapter: ChapterData | null = null;
-  let verses: Verse[] = [];
+  let chapter: any = null;
+  let verses: any[] = [];
   let error: string | null = null;
-  let translations: Array<{ id: number; name: string; author_name: string; language_name: string }> = [];
+  let translations: any[] = [];
 
   try {
     const [chapterRes, versesRes, translationsRes] = await Promise.all([
-      fetch(`${API_BASE}/api/chapters`, { cache: 'no-store' }),
-      fetch(`${API_BASE}/api/verses/${chapterId}?translation=${translationId}`, { cache: 'no-store' }),
-      fetch(`${API_BASE}/api/translations`, { cache: 'no-store' }),
+      fetch(getApiUrl('/chapters'), { cache: 'no-store' }),
+      fetch(getApiUrl(`/verses/${chapterId}?translation=${translationId}`), { cache: 'no-store' }),
+      fetch(getApiUrl('/translations'), { cache: 'no-store' }),
     ]);
 
     const chapterData = await chapterRes.json();
@@ -63,7 +62,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
     const translationsData = await translationsRes.json();
 
     const chaptersList = chapterData.chapters ?? chapterData;
-    chapter = chaptersList.find((c: ChapterData) => c.id === chapterId);
+    chapter = chaptersList.find((c: any) => c.id === chapterId);
     verses = versesData.verses ?? [];
     translations = translationsData.translations ?? translationsData;
   } catch (e) {
@@ -71,7 +70,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   }
 
   const selectedTranslation = translations.find(
-    (t: { id: number }) => t.id === parseInt(translationId, 10)
+    (t: any) => t.id === parseInt(translationId, 10)
   );
   const translatorLabel = selectedTranslation
     ? `${selectedTranslation.author_name} (${selectedTranslation.language_name})`
@@ -83,9 +82,15 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   if (error) {
     return (
       <div className="md:ml-[240px] min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-md text-center p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
-          <p className="text-[var(--color-error)] mb-4">{error}</p>
-          <a href="/quran" className="text-[var(--color-primary)] hover:underline">
+        <div className="max-w-md text-center p-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--color-error)]/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-[var(--color-error)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">Couldn&apos;t load this Surah</h2>
+          <p className="text-[var(--color-text-muted)] text-sm mb-6">Please check your connection and try again.</p>
+          <a href="/quran" className="px-5 py-2 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity text-sm font-medium">
             ← Back to Surah list
           </a>
         </div>
