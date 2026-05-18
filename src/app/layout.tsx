@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
+import { AudioPlayerProvider } from '@/components/audio-player-provider';
 
 export const metadata: Metadata = {
   title: 'Sabil — Your Guided Islamic Journey',
@@ -42,7 +43,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <ThemeProvider>
           <ToastProvider>
-            {children}
+            <AudioPlayerProvider>
+              {children}
+            </AudioPlayerProvider>
           </ToastProvider>
         </ThemeProvider>
       </body>

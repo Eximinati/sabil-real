@@ -23,7 +23,7 @@ export function CopyButton({ text, translation }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors md:opacity-0 md:group-hover:opacity-100"
+      className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 p-1"
       title="Copy verse"
     >
       {copied ? (

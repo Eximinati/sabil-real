@@ -47,8 +47,6 @@ function DesktopSidebar({ email }: { email: string }) {
         <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
       </div>
 
-      <div className="h-px bg-white/10 mx-4 mb-4" />
-
       <nav className="flex-1 px-2 space-y-1">
         <NavItem href="/journey">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +87,7 @@ function DesktopSidebar({ email }: { email: string }) {
         </NavItem>
       </nav>
 
-      <div className="p-4 border-t border-white/10 space-y-3">
+      <div className="p-4 space-y-3">
         <ThemeToggle />
         <p className="text-white/60 text-sm truncate" title={email}>{email}</p>
         <SignOutButton />
@@ -117,7 +115,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
           </button>
         </div>
 
-        <div className="h-px bg-white/10 mx-4 mb-4" />
+        <div className="h-px bg-white/10 mx-4 mt-4" />
 
         <nav className="flex-1 px-2 space-y-1">
           {navItems.map((item) => {
@@ -143,7 +141,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10 space-y-3">
+        <div className="p-4 space-y-3">
           <ThemeToggle />
           <p className="text-white/60 text-sm truncate" title={email}>{email}</p>
           <SignOutButton />

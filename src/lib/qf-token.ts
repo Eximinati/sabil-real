@@ -24,6 +24,11 @@ interface TokenResponse {
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
 
+export function clearCachedToken(): void {
+  cachedToken = null;
+  tokenExpiry = null;
+}
+
 function getBasicAuthHeader(): string {
   const credentials = Buffer.from(`${QF_CLIENT_ID}:${QF_CLIENT_SECRET}`).toString('base64');
   return `Basic ${credentials}`;

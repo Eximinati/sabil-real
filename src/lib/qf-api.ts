@@ -5,7 +5,7 @@
  * Use getQFToken() to get a valid access token before each request.
  */
 
-import { getQFToken } from './qf-token';
+import { getQFToken, clearCachedToken } from './qf-token';
 
 const QF_API_BASE = process.env.QF_API_BASE!;
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID!;
@@ -66,9 +66,9 @@ export interface VersesResponse {
   };
 }
 
-async function qfFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
+async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn401 = true): Promise<T> {
   const token = await getQFToken();
-  
+
   const url = new URL(QF_API_BASE + path);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -82,6 +82,20 @@ async function qfFetch<T>(path: string, params?: Record<string, string>): Promis
       'x-client-id': QF_CLIENT_ID,
     },
   });
+
+  if (response.status === 401 && retryOn401) {
+    clearCachedToken();
+    return qfFetch<T>(path, params, false);
+  }
+
+  if (response.status === 403) {
+    throw new Error('Access denied. Check client credentials.');
+  }
+
+  if (response.status === 429) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    return qfFetch<T>(path, params, retryOn401);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -240,6 +254,31 @@ export interface SearchResult {
   highlighted: string;
   words: SearchWord[];
   translations: SearchTranslation[];
+}
+
+export interface AudioFile {
+  verse_key: string;
+  url: string;
+  duration: string | null;
+}
+
+export interface RecitationResponse {
+  audio_files: AudioFile[];
+}
+
+export async function getChapterRecitationAudio(
+  recitationId: number,
+  chapterNumber: number,
+  perPage: number = 50
+): Promise<AudioFile[]> {
+  const data = await qfFetch<RecitationResponse>(
+    `/content/api/v4/recitations/${recitationId}/by_chapter/${chapterNumber}`,
+    {
+      per_page: perPage.toString(),
+      fields: 'verse_key,url,duration',
+    }
+  );
+  return data.audio_files ?? [];
 }
 
 export interface SearchResponse {

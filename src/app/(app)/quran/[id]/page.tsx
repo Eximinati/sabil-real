@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { TranslationSelector } from '@/components/translation-selector';
-import { CopyButton } from '@/components/copy-button';
+import { ReciterSelector } from '@/components/reciter-selector';
+import { VerseCardClient } from '@/components/verse-card-client';
+import { AudioPlayer } from '@/components/audio-player';
 import Link from 'next/link';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
@@ -85,7 +87,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   const nextChapter = chapterId < 114 ? chapterId + 1 : null;
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen pb-48 md:pb-20">
       <div className="sticky top-0 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)] z-10">
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -100,6 +102,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
             {chapter && (
               <span className="text-[var(--color-text-muted)] hidden sm:inline">{chapter.verses_count} verses</span>
             )}
+            <ReciterSelector />
             <TranslationSelector />
           </div>
         </div>
@@ -129,42 +132,17 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
 
         <div className="max-w-3xl mx-auto">
           {verses.map((verse) => {
-            const translation = verse.translations?.find((t) => t.resource_id === parseInt(translationId, 10));
             const verseNumber = parseInt(verse.verse_key.split(':')[1], 10);
 
             return (
-              <div
+              <VerseCardClient
                 key={verse.id}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 mb-4 hover:border-[var(--color-primary)] transition-colors relative group"
-              >
-                <CopyButton text={verse.text_uthmani} translation={translation?.text} />
-                
-                <div className="flex items-start mb-4">
-                  <span className="w-7 h-7 flex items-center justify-center bg-[var(--color-accent)] text-white rounded-full text-xs font-medium">
-                    {verseNumber}
-                  </span>
-                </div>
-                <p
-                  className="font-arabic text-[22px] md:text-[26px] leading-[2.2] text-[var(--color-text)] text-right mb-4"
-                  dir="rtl"
-                >
-                  {verse.text_uthmani}
-                </p>
-                <div className="border-t border-[var(--color-border)] pt-4">
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2">{translatorLabel}</p>
-                  <p className="text-[var(--color-text-secondary)] text-[14px] md:text-[15px] leading-[1.8]">
-                    {translation?.text || 'Translation unavailable'}
-                  </p>
-                  <div className="mt-3 text-right">
-                    <Link
-                      href={`/tafsir?surah=${chapterId}&verse=${verseNumber}`}
-                      className="text-xs text-[var(--color-primary)] hover:underline"
-                    >
-                      Tafsir →
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                verse={verse}
+                verseNumber={verseNumber}
+                chapterId={chapterId}
+                translatorLabel={translatorLabel}
+                translationId={parseInt(translationId, 10)}
+              />
             );
           })}
         </div>
@@ -222,6 +200,8 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
           )}
         </div>
       </div>
+
+      <AudioPlayer />
     </div>
   );
 }
