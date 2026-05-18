@@ -29,7 +29,7 @@ export function TafsirSelector({ initialTafsirs }: TafsirSelectorProps) {
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-[#6B7280] mb-3">Select Tafsir</h3>
+      <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">Select Tafsir</h3>
       <div className="space-y-2">
         {tafsirs.map((tafsir) => (
           <button
@@ -37,12 +37,12 @@ export function TafsirSelector({ initialTafsirs }: TafsirSelectorProps) {
             onClick={() => handleSelect(tafsir.id.toString())}
             className={`w-full text-left p-3 rounded-lg border transition-colors ${
               currentTafsir === tafsir.id.toString()
-                ? 'border-[#2D6A4F] bg-[#F0F9F4]'
-                : 'border-[#E8E0D5] hover:border-[#2D6A4F]'
+                ? 'border-[var(--color-primary)] bg-[var(--color-bg)]'
+                : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
             }`}
           >
-            <p className="font-medium text-[#1A1A1A]">{tafsir.author_name}</p>
-            <p className="text-sm text-[#6B7280]">{tafsir.language_name}</p>
+            <p className="font-medium text-[var(--color-text)]">{tafsir.author_name}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{tafsir.language_name}</p>
           </button>
         ))}
       </div>

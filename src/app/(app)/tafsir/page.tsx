@@ -61,7 +61,6 @@ export default async function TafsirPage({
         cache: 'no-store'
       });
       const data = await res.json();
-      console.log('Tafsir page received:', JSON.stringify(data).slice(0, 500));
       
       if (data && data.tafsirs) {
         tafsirVerses = data.tafsirs as TafsirVerse[];
@@ -70,19 +69,18 @@ export default async function TafsirPage({
       selectedTafsir = tafsirs.find((t) => t.id === parseInt(tafsir, 10));
       selectedChapter = chapters.find((c) => c.id === parseInt(surah, 10));
     } catch (e) {
-      console.error('Tafsir fetch error:', e);
       tafsirVerses = [];
     }
   }
 
   return (
-    <div className="px-16 pt-12 pb-12">
+    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-8">
-        <h1 className="font-arabic text-[36px] text-[#B7922A]" dir="rtl">التفسير</h1>
-        <p className="text-[#6B7280] text-sm mt-2">Quranic Exegesis</p>
+        <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">التفسير</h1>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">Quranic Exegesis</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-6 md:gap-8 mb-8 max-w-4xl mx-auto">
         <div>
           <TafsirSelector initialTafsirs={tafsirs} />
         </div>
@@ -92,13 +90,13 @@ export default async function TafsirPage({
       </div>
 
       {tafsir && surah && selectedTafsir && selectedChapter && (
-        <div>
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="font-arabic text-[28px] text-[#B7922A]" dir="rtl">
+            <h2 className="font-arabic text-[26px] md:text-[28px] text-[var(--color-accent)]" dir="rtl">
               {selectedChapter.name_arabic}
             </h2>
-            <p className="text-[#1A1A1A] font-medium mt-2">{selectedChapter.name_simple}</p>
-            <p className="text-sm text-[#6B7280] mt-1">{selectedTafsir.author_name || selectedTafsir.name}</p>
+            <p className="text-[var(--color-text)] font-medium mt-2">{selectedChapter.name_simple}</p>
+            <p className="text-sm text-[var(--color-text-muted)] mt-1">{selectedTafsir.author_name || selectedTafsir.name}</p>
           </div>
 
           {tafsirVerses.length > 0 ? (
@@ -106,24 +104,27 @@ export default async function TafsirPage({
               {tafsirVerses.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white border border-[#E8E0D5] rounded-xl p-5 shadow-sm"
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-5"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="w-7 h-7 flex items-center justify-center bg-[#B7922A] text-white rounded-full text-xs">
+                    <span className="w-7 h-7 flex items-center justify-center bg-[var(--color-accent)] text-white rounded-full text-xs">
                       {item.verse_key.split(':')[1]}
                     </span>
-                    <span className="text-sm text-[#6B7280]">Verse {item.verse_key}</span>
-                    <span className="text-xs text-[#6B7280] ml-auto">{item.resource_name}</span>
+                    <span className="text-sm text-[var(--color-text-muted)]">Verse {item.verse_key}</span>
+                    <span className="text-xs text-[var(--color-text-muted)] ml-auto">{item.resource_name}</span>
                   </div>
                   <div
-                    className="text-[#1A1A1A] text-[15px] leading-relaxed"
+                    className="text-[var(--color-text)] text-[14px] md:text-[15px] leading-relaxed font-arabic"
+                    dir="rtl"
                     dangerouslySetInnerHTML={{ __html: stripDangerousTags(item.text || '') }}
                   />
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[#6B7280] text-center">No tafsir content available for this selection.</p>
+            <div className="text-center py-8">
+              <p className="text-[var(--color-text-muted)]">No tafsir content available for this selection.</p>
+            </div>
           )}
         </div>
       )}

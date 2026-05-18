@@ -52,42 +52,55 @@ export default async function SettingsPage() {
       }) 
     : 'Unknown';
 
+  const userInitials = user.email ? user.email.charAt(0).toUpperCase() : '?';
+
   return (
-    <div className="px-16 pt-12 pb-12">
+    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-10">
-        <h1 className="font-arabic text-[36px] text-[#B7922A]" dir="rtl">الإعدادات</h1>
-        <p className="text-[#6B7280] text-sm mt-2">Settings</p>
+        <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">الإعدادات</h1>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">Settings</p>
       </div>
 
       <div className="max-w-[680px] mx-auto space-y-8">
         <div>
-          <h2 className="text-sm font-medium text-[#6B7280] uppercase tracking-wider mb-4">Account</h2>
-          <div className="bg-white border border-[#E8E0D5] rounded-xl p-6">
-            <div className="mb-4">
-              <p className="text-sm text-[#6B7280]">Email</p>
-              <p className="text-[#1A1A1A] font-medium">{user.email}</p>
+          <h2 className="section-heading">Account</h2>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 bg-[var(--color-primary)] text-white rounded-full flex items-center justify-center font-medium text-lg">
+                {userInitials}
+              </div>
+              <div>
+                <p className="text-[var(--color-text)] font-medium truncate max-w-[200px]">{user.email}</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Account</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-[#6B7280]">Member since</p>
-              <p className="text-[#1A1A1A]">{createdDate}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[var(--color-border)]">
+              <div>
+                <p className="text-sm text-[var(--color-text-muted)]">Email</p>
+                <p className="text-[var(--color-text)]">{user.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--color-text-muted)]">Member since</p>
+                <p className="text-[var(--color-text)]">{createdDate}</p>
+              </div>
             </div>
           </div>
         </div>
 
         <div>
-          <h2 className="text-sm font-medium text-[#6B7280] uppercase tracking-wider mb-4">Reading Preferences</h2>
-          <div className="bg-white border border-[#E8E0D5] rounded-xl p-6">
-            <div className="mb-4">
-              <p className="text-sm text-[#6B7280] mb-1">Current Translation</p>
-              <p className="text-[#1A1A1A]">
+          <h2 className="section-heading">Reading Preferences</h2>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
+            <div className="mb-6">
+              <p className="text-sm text-[var(--color-text-muted)] mb-1">Current Translation</p>
+              <p className="text-[var(--color-text)]">
                 {currentTranslation 
                   ? `${currentTranslation.author_name} (${currentTranslation.language_name})`
                   : `ID: ${preferences.translation_id}`}
               </p>
             </div>
             <div className="mb-6">
-              <p className="text-sm text-[#6B7280] mb-1">Current Tafsir</p>
-              <p className="text-[#1A1A1A]">
+              <p className="text-sm text-[var(--color-text-muted)] mb-1">Current Tafsir</p>
+              <p className="text-[var(--color-text)]">
                 {currentTafsir 
                   ? `${currentTafsir.name} - ${currentTafsir.author_name}`
                   : `ID: ${preferences.tafsir_id}`}
@@ -101,12 +114,12 @@ export default async function SettingsPage() {
         </div>
 
         <div>
-          <h2 className="text-sm font-medium text-[#6B7280] uppercase tracking-wider mb-4">About</h2>
-          <div className="bg-white border border-[#E8E0D5] rounded-xl p-6">
-            <p className="text-[#2D6A4F] font-semibold text-lg mb-1">Sabil</p>
-            <p className="text-sm text-[#6B7280] mb-3">Phase 1 — Foundation</p>
-            <p className="text-[#1A1A1A] mb-3">A guided Islamic learning platform</p>
-            <p className="text-sm text-[#6B7280]">Built with Quran Foundation API</p>
+          <h2 className="section-heading">About</h2>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
+            <p className="text-[var(--color-primary)] font-semibold text-lg mb-1">Sabil</p>
+            <p className="text-sm text-[var(--color-text-muted)] mb-3">Your Guided Islamic Journey</p>
+            <p className="text-[var(--color-text)] mb-3">A structured, gentle journey through the Qur'an, one day at a time.</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Built with Quran Foundation API</p>
           </div>
         </div>
       </div>

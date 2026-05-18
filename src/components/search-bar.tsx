@@ -28,7 +28,7 @@ export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
     <form onSubmit={handleSubmit} className="max-w-[600px] mx-auto">
       <div className="relative">
         <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -41,13 +41,13 @@ export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search in Arabic or English..."
-          className="w-full border-2 border-[#E8E0D5] rounded-xl px-12 py-3 text-base focus:outline-none focus:border-[#2D6A4F] transition-colors"
+          className="w-full border-2 border-[var(--color-border)] rounded-xl px-12 py-3 md:py-4 text-base focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
         />
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1A1A1A]"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xl"
           >
             ×
           </button>

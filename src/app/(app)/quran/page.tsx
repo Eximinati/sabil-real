@@ -31,7 +31,7 @@ export default async function QuranPage() {
   if (error) {
     return (
       <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
-        <div className="p-4 bg-red-50 border border-red-200 text-[#DC2626] rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 text-[var(--color-error)] rounded-lg">
           {error}
         </div>
       </div>
@@ -41,9 +41,9 @@ export default async function QuranPage() {
   return (
     <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
       <div className="text-center mb-10">
-        <h1 className="font-arabic text-[36px] text-[#B7922A]" dir="rtl">القرآن الكريم</h1>
-        <p className="text-[#6B7280] text-sm mt-2">The Noble Quran</p>
-        <p className="text-[#6B7280] text-sm mt-1">114 Surahs · Begin your reading</p>
+        <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">القرآن الكريم</h1>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">The Noble Quran</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-1">114 Surahs · Begin your reading</p>
       </div>
 
       <SurahSearch chapters={chapters} />

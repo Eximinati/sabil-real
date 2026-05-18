@@ -85,45 +85,45 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   const nextChapter = chapterId < 114 ? chapterId + 1 : null;
 
   return (
-    <div className="min-h-screen">
-      <div className="sticky top-0 bg-[#F9F6F1] z-10 border-b border-[#E8E0D5] px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/quran" className="text-[#2D6A4F] hover:underline">
+    <div className="min-h-screen pb-20 md:pb-0">
+      <div className="sticky top-0 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)] z-10">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link href="/quran" className="text-[var(--color-primary)] hover:underline text-sm">
               ← Back
             </Link>
-            <span className="text-[#6B7280]">|</span>
-            <span className="text-[#1A1A1A] font-medium">{chapter?.name_simple}</span>
-            <span className="font-arabic text-[#B7922A] mr-2" dir="rtl">{chapter?.name_arabic}</span>
+            <span className="text-[var(--color-text-muted)] hidden md:inline">|</span>
+            <span className="text-[var(--color-text)] font-medium text-sm md:text-base">{chapter?.name_simple}</span>
+            <span className="font-arabic text-[var(--color-accent)] mr-1 hidden md:inline" dir="rtl">{chapter?.name_arabic}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 text-sm">
             {chapter && (
-              <span className="text-sm text-[#6B7280]">{chapter.verses_count} verses</span>
+              <span className="text-[var(--color-text-muted)] hidden sm:inline">{chapter.verses_count} verses</span>
             )}
             <TranslationSelector />
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-8">
+      <div className="px-4 md:px-6 py-6 md:py-8">
         {error && (
-          <div className="max-w-3xl mx-auto p-4 bg-red-50 border border-red-200 text-[#DC2626] rounded-lg mb-6">
+          <div className="max-w-3xl mx-auto p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-[var(--color-error)] rounded-lg mb-6">
             {error}
           </div>
         )}
 
         {chapter && (
           <div className="text-center mb-8 max-w-3xl mx-auto">
-            <span className="font-arabic text-[36px] text-[#B7922A] block" dir="rtl">
+            <span className="font-arabic text-[32px] md:text-[36px] text-[var(--color-accent)] block" dir="rtl">
               {chapter.name_arabic}
             </span>
-            <h1 className="text-[#1A1A1A] text-xl font-medium mt-3">{chapter.name_simple}</h1>
+            <h1 className="text-[var(--color-text)] text-xl font-medium mt-3">{chapter.name_simple}</h1>
           </div>
         )}
 
         {showBismillah && (
           <div className="text-center mb-8 max-w-3xl mx-auto">
-            <p className="font-arabic text-[24px] text-[#1A1A1A]" dir="rtl">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+            <p className="font-arabic text-[22px] md:text-[24px] text-[var(--color-text)]" dir="rtl">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
           </div>
         )}
 
@@ -135,30 +135,30 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
             return (
               <div
                 key={verse.id}
-                className="bg-white border border-[#E8E0D5] rounded-xl p-6 mb-4 hover:border-[#2D6A4F] transition-colors relative"
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 mb-4 hover:border-[var(--color-primary)] transition-colors relative group"
               >
                 <CopyButton text={verse.text_uthmani} translation={translation?.text} />
                 
                 <div className="flex items-start mb-4">
-                  <span className="w-7 h-7 flex items-center justify-center bg-[#B7922A] text-white rounded-full text-xs font-medium">
+                  <span className="w-7 h-7 flex items-center justify-center bg-[var(--color-accent)] text-white rounded-full text-xs font-medium">
                     {verseNumber}
                   </span>
                 </div>
                 <p
-                  className="font-arabic text-[26px] leading-[2.2] text-[#1A1A1A] text-right mb-4"
+                  className="font-arabic text-[22px] md:text-[26px] leading-[2.2] text-[var(--color-text)] text-right mb-4"
                   dir="rtl"
                 >
                   {verse.text_uthmani}
                 </p>
-                <div className="border-t border-[#E8E0D5] pt-4">
-                  <p className="text-[#6B7280] text-xs mb-2">{translatorLabel}</p>
-                  <p className="text-[#4B5563] text-[15px] leading-[1.8]">
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">{translatorLabel}</p>
+                  <p className="text-[var(--color-text-secondary)] text-[14px] md:text-[15px] leading-[1.8]">
                     {translation?.text || 'Translation unavailable'}
                   </p>
                   <div className="mt-3 text-right">
                     <Link
                       href={`/tafsir?surah=${chapterId}&verse=${verseNumber}`}
-                      className="text-xs text-[#2D6A4F] hover:underline"
+                      className="text-xs text-[var(--color-primary)] hover:underline"
                     >
                       Tafsir →
                     </Link>
@@ -169,32 +169,57 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
           })}
         </div>
 
-        <div className="max-w-3xl mx-auto mt-12 text-center border-t border-[#E8E0D5] pt-8">
-          <p className="font-arabic text-xl text-[#B7922A] mb-6" dir="rtl">
+        <div className="max-w-3xl mx-auto mt-12 text-center border-t border-[var(--color-border)] pt-8">
+          <p className="font-arabic text-xl text-[var(--color-accent)] mb-6" dir="rtl">
             {chapter?.name_arabic}
           </p>
-          <div className="flex justify-center gap-8">
+          <div className="flex justify-center gap-4 md:gap-8">
             {prevChapter ? (
               <Link
                 href={`/quran/${prevChapter}`}
-                className="text-[#2D6A4F] hover:underline"
+                className="text-[var(--color-primary)] hover:underline text-sm"
               >
                 ← Previous Surah
               </Link>
             ) : (
-              <span className="text-[#6B7280]" />
+              <span className="text-[var(--color-text-muted)]" />
             )}
             {nextChapter ? (
               <Link
                 href={`/quran/${nextChapter}`}
-                className="text-[#2D6A4F] hover:underline"
+                className="text-[var(--color-primary)] hover:underline text-sm"
               >
                 Next Surah →
               </Link>
             ) : (
-              <span className="text-[#6B7280]" />
+              <span className="text-[var(--color-text-muted)]" />
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] p-4 md:hidden safe-area-bottom">
+        <div className="flex justify-between max-w-3xl mx-auto">
+          {prevChapter ? (
+            <Link
+              href={`/quran/${prevChapter}`}
+              className="text-[var(--color-primary)] text-sm flex items-center gap-1"
+            >
+              ← Prev
+            </Link>
+          ) : (
+            <span />
+          )}
+          {nextChapter ? (
+            <Link
+              href={`/quran/${nextChapter}`}
+              className="text-[var(--color-primary)] text-sm flex items-center gap-1"
+            >
+              Next →
+            </Link>
+          ) : (
+            <span />
+          )}
         </div>
       </div>
     </div>

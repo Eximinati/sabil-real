@@ -15,7 +15,7 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
 
   if (isCompleted) {
     return (
-      <div className="flex items-center justify-center gap-2 text-[#2D6A4F] py-4">
+      <div className="flex items-center justify-center gap-2 text-[var(--color-primary)] py-4">
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
@@ -34,7 +34,7 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
       });
       router.refresh();
     } catch (e) {
-      console.error('Failed to complete lesson:', e);
+      // Silent fail
     }
     setLoading(false);
   };
@@ -43,7 +43,7 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
     <button
       onClick={handleComplete}
       disabled={loading}
-      className="w-full bg-[#2D6A4F] text-white rounded-xl py-4 text-base font-medium hover:bg-[#1B4332] transition-colors disabled:opacity-50"
+      className="w-full bg-[var(--color-primary)] text-white rounded-xl py-4 text-base font-medium hover:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all disabled:opacity-50"
     >
       {loading ? 'Saving...' : 'Mark as Complete'}
     </button>

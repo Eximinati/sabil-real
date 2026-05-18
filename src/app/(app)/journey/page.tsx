@@ -42,26 +42,26 @@ export default async function JourneyPage() {
   const totalLessons = lessons.length;
 
   return (
-    <div className="px-16 pt-12 pb-12">
+    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-10">
-        <h1 className="font-arabic text-[36px] text-[#B7922A]" dir="rtl">رحلتي</h1>
-        <p className="text-[#6B7280] text-sm mt-2">My Journey</p>
-        <p className="text-[#6B7280] text-sm mt-1 max-w-lg mx-auto">
+        <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">رحلتي</h1>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">My Journey</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-1 max-w-lg mx-auto">
           Your guided path to understanding Islam, one day at a time.
         </p>
       </div>
 
-      <div className="max-w-[400px] mx-auto mb-12">
-        <p className="text-center text-[#6B7280] text-sm mb-2">
+      <div className="max-w-[480px] mx-auto mb-12">
+        <p className="text-center text-[var(--color-text-muted)] text-sm mb-2">
           Day {completedCount + 1} of {totalLessons}
         </p>
-        <div className="h-2 bg-[#E8E0D5] rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#2D6A4F] rounded-full transition-all duration-300"
+            className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-300"
             style={{ width: `${totalLessons > 0 ? (completedCount / totalLessons) * 100 : 0}%` }}
           />
         </div>
-        <p className="text-center text-[#6B7280] text-sm mt-2">{completedCount} days completed</p>
+        <p className="text-center text-[var(--color-text-muted)] text-sm mt-2">{completedCount} days completed</p>
       </div>
 
       <div className="max-w-[680px] mx-auto space-y-4">
@@ -73,18 +73,18 @@ export default async function JourneyPage() {
           return (
             <div
               key={lesson.id}
-              className={`bg-white border rounded-xl p-5 ${!unlocked ? 'opacity-60 cursor-not-allowed' : 'hover:border-[#2D6A4F] transition-colors'}`}
+              className={`bg-[var(--color-surface)] border rounded-xl p-4 md:p-5 card-hover ${!unlocked ? 'opacity-60 cursor-not-allowed' : 'hover:border-[var(--color-primary)] border-[var(--color-border)]'}`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <span className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium ${
+                  <span className={`w-9 h-9 md:w-[36px] md:h-[36px] flex items-center justify-center rounded-full text-sm font-medium flex-shrink-0 ${
                     status === 'completed' 
-                      ? 'bg-[#2D6A4F] text-white' 
+                      ? 'bg-[var(--color-primary)] text-white' 
                       : status === 'in_progress'
-                        ? 'bg-[#B7922A] text-white'
+                        ? 'bg-[var(--color-accent)] text-white'
                         : unlocked
-                          ? 'bg-[#B7922A] text-white'
-                          : 'bg-[#E8E0D5] text-[#6B7280]'
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'bg-[var(--color-border)] text-[var(--color-text-muted)]'
                   }`}>
                     {status === 'completed' ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,32 +95,37 @@ export default async function JourneyPage() {
                     )}
                   </span>
                   <div>
-                    <h3 className={`font-medium ${status === 'completed' ? 'text-[#6B7280]' : 'text-[#1A1A1A]'}`}>
+                    <h3 className={`font-medium ${status === 'completed' ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text)]'}`}>
                       {lesson.title}
                     </h3>
                     {lesson.subtitle && (
-                      <p className="text-sm text-[#6B7280]">{lesson.subtitle}</p>
+                      <p className="text-sm text-[var(--color-text-muted)]">{lesson.subtitle}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4 ml-13 md:ml-0">
                   {unlocked ? (
                     <>
-                      <span className="text-xs text-[#6B7280]">~{lesson.estimated_minutes} min</span>
+                      <span className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ~{lesson.estimated_minutes} min
+                      </span>
                       {status === 'completed' ? (
-                        <span className="text-sm text-[#2D6A4F]">Review</span>
+                        <span className="text-sm text-[var(--color-primary)]">Review</span>
                       ) : status === 'in_progress' ? (
                         <a
                           href={`/journey/${lesson.day_number}`}
-                          className="bg-[#2D6A4F] text-white px-4 py-2 rounded-lg text-sm"
+                          className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
                         >
                           Continue →
                         </a>
                       ) : (
                         <a
                           href={`/journey/${lesson.day_number}`}
-                          className="bg-[#2D6A4F] text-white px-4 py-2 rounded-lg text-sm"
+                          className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
                         >
                           Begin →
                         </a>
@@ -128,8 +133,13 @@ export default async function JourneyPage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-xs text-[#6B7280]">~{lesson.estimated_minutes} min</span>
-                      <svg className="w-5 h-5 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ~{lesson.estimated_minutes} min
+                      </span>
+                      <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </>
@@ -138,17 +148,17 @@ export default async function JourneyPage() {
               </div>
 
               {unlocked && (
-                <div className="mt-3">
-                  <span className="inline-block px-2 py-1 bg-[#F0F9F4] text-[#2D6A4F] rounded text-xs">
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="inline-block px-2.5 py-1 bg-[var(--color-bg)] text-[var(--color-primary)] rounded text-xs">
                     {lesson.topic}
                   </span>
                   {status === 'in_progress' && (
-                    <span className="ml-2 px-2 py-1 bg-[#B7922A] text-white rounded text-xs">
+                    <span className="px-2.5 py-1 bg-[var(--color-accent)]/10 text-[var(--color-accent)] rounded text-xs font-medium">
                       In Progress
                     </span>
                   )}
                   {status === 'completed' && (
-                    <span className="ml-2 px-2 py-1 bg-[#2D6A4F] text-white rounded text-xs">
+                    <span className="px-2.5 py-1 bg-[var(--color-primary)] text-white rounded text-xs">
                       Completed
                     </span>
                   )}

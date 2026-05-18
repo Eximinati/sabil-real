@@ -27,7 +27,7 @@ export function SurahSelector({ chapters }: SurahSelectorProps) {
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-[#6B7280] mb-3">Select Surah</h3>
+      <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">Select Surah</h3>
       <div className="max-h-[400px] overflow-y-auto space-y-2">
         {chapters.map((chapter) => (
           <button
@@ -35,17 +35,17 @@ export function SurahSelector({ chapters }: SurahSelectorProps) {
             onClick={() => handleSelect(chapter.id.toString())}
             className={`w-full flex items-center gap-3 py-2 px-3 rounded-lg border transition-colors ${
               currentSurah === chapter.id.toString()
-                ? 'border-[#2D6A4F] bg-[#F0F9F4]'
-                : 'border-[#E8E0D5] hover:border-[#2D6A4F]'
+                ? 'border-[var(--color-primary)] bg-[var(--color-bg)]'
+                : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
             }`}
           >
-            <span className="w-6 h-6 flex items-center justify-center border border-[#E8E0D5] rounded-full text-xs text-[#6B7280]">
+            <span className="w-6 h-6 flex items-center justify-center border border-[var(--color-border)] rounded-full text-xs text-[var(--color-text-muted)]">
               {chapter.id}
             </span>
-            <span className="font-arabic text-[16px] text-[#1A1A1A]" dir="rtl">
+            <span className="font-arabic text-[16px] text-[var(--color-text)]" dir="rtl">
               {chapter.name_arabic}
             </span>
-            <span className="text-sm text-[#6B7280] ml-auto">{chapter.name_simple}</span>
+            <span className="text-sm text-[var(--color-text-muted)] ml-auto">{chapter.name_simple}</span>
           </button>
         ))}
       </div>

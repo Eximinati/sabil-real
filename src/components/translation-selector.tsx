@@ -24,7 +24,6 @@ export function TranslationSelector() {
     fetch('/api/translations')
       .then((res) => res.json())
       .then((data) => {
-        console.log('TranslationSelector fetched:', data);
         if (Array.isArray(data)) {
           setTranslations(data);
         } else if (data.translations && Array.isArray(data.translations)) {
@@ -32,8 +31,7 @@ export function TranslationSelector() {
         }
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to load translations:', err);
+      .catch(() => {
         setLoading(false);
       });
   }, []);
@@ -45,16 +43,16 @@ export function TranslationSelector() {
   };
 
   if (loading) {
-    return <span className="text-sm text-[#6B7280]">Loading...</span>;
+    return <span className="text-sm text-[var(--color-text-muted)]">Loading...</span>;
   }
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-[#6B7280]">Translation:</span>
+      <span className="text-sm text-[var(--color-text-muted)] hidden sm:inline">Translation:</span>
       <select
         value={currentTranslation}
         onChange={handleChange}
-        className="border border-[#E8E0D5] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#2D6A4F]"
+        className="border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-sm bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
       >
         {translations.map((t) => (
           <option key={t.id} value={t.id}>

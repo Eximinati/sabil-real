@@ -52,7 +52,7 @@ export default async function SearchPage({
     const chaptersData = await chaptersRes.json();
     chapters = chaptersData.chapters ?? chaptersData;
   } catch (e) {
-    console.error('Failed to fetch chapters:', e);
+    // Silent fail
   }
 
   if (query && query.trim()) {
@@ -62,7 +62,6 @@ export default async function SearchPage({
         { cache: 'no-store' }
       );
       const searchData = await searchRes.json();
-      console.log('Search response:', JSON.stringify(searchData).slice(0, 500));
       searchResults = searchData.results || [];
       total = searchData.total || 0;
       totalPages = searchData.total_pages || 0;
@@ -72,10 +71,10 @@ export default async function SearchPage({
   }
 
   return (
-    <div className="px-16 pt-12 pb-12">
+    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-8">
-        <h1 className="font-arabic text-[36px] text-[#B7922A]" dir="rtl">البحث</h1>
-        <p className="text-[#6B7280] text-sm mt-2">Search the Quran</p>
+        <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">البحث</h1>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">Search the Quran</p>
       </div>
 
       <div className="mb-8">
@@ -85,15 +84,18 @@ export default async function SearchPage({
       {query && query.trim() && (
         <div className="max-w-4xl mx-auto">
           {error ? (
-            <p className="text-[#DC2626] text-center">Error: {error}</p>
+            <p className="text-[var(--color-error)] text-center">Error: {error}</p>
           ) : searchResults.length === 0 ? (
-            <div className="text-center">
-              <p className="text-[#6B7280]">No results found for '{query}'</p>
-              <p className="text-sm text-[#6B7280] mt-2">Try searching in Arabic or use different keywords</p>
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 mx-auto text-[var(--color-border)] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <p className="text-[var(--color-text-muted)]">No results found for '{query}'</p>
+              <p className="text-sm text-[var(--color-text-muted)] mt-2">Try searching in Arabic or use different keywords</p>
             </div>
           ) : (
             <>
-              <p className="text-[#6B7280] text-sm mb-6">
+              <p className="text-[var(--color-text-muted)] text-sm mb-6">
                 {total} results for '{query}'
               </p>
 
@@ -106,15 +108,15 @@ export default async function SearchPage({
                   return (
                     <div
                       key={index}
-                      className="bg-white border border-[#E8E0D5] rounded-xl p-5 shadow-sm"
+                      className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-5 shadow-sm hover:border-[var(--color-primary)] transition-colors"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <span className="px-3 py-1 bg-[#B7922A] text-white rounded-full text-xs">
+                        <span className="px-3 py-1 bg-[var(--color-accent)] text-white rounded-full text-xs">
                           {chapterName} {result.verse_key.split(':')[1]}
                         </span>
                         <a
                           href={`/quran/${chapterId}`}
-                          className="text-xs text-[#2D6A4F] hover:underline"
+                          className="text-xs text-[var(--color-primary)] hover:underline"
                         >
                           Open Surah →
                         </a>
@@ -122,7 +124,7 @@ export default async function SearchPage({
 
                       {result.highlighted ? (
                         <p
-                          className="font-arabic text-[22px] text-right text-[#1A1A1A] mb-3 leading-relaxed"
+                          className="font-arabic text-[20px] md:text-[22px] text-right text-[var(--color-text)] mb-3 leading-relaxed"
                           dir="rtl"
                           dangerouslySetInnerHTML={{
                             __html: formatHighlightedText(result.highlighted),
@@ -130,7 +132,7 @@ export default async function SearchPage({
                         />
                       ) : (
                         <p
-                          className="font-arabic text-[22px] text-right text-[#1A1A1A] mb-3 leading-relaxed"
+                          className="font-arabic text-[20px] md:text-[22px] text-right text-[var(--color-text)] mb-3 leading-relaxed"
                           dir="rtl"
                         >
                           {result.text}
@@ -139,16 +141,16 @@ export default async function SearchPage({
 
                       {translation && (
                         <div>
-                          <p className="text-xs text-[#6B7280] mb-1">{translation.resource_name}</p>
+                          <p className="text-xs text-[var(--color-text-muted)] mb-1">{translation.resource_name}</p>
                           {translation.highlighted ? (
                             <p
-                              className="text-[15px] text-[#4B5563] leading-relaxed"
+                              className="text-[14px] md:text-[15px] text-[var(--color-text-secondary)] leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: formatHighlightedText(translation.highlighted),
                               }}
                             />
                           ) : (
-                            <p className="text-[15px] text-[#4B5563] leading-relaxed">
+                            <p className="text-[14px] md:text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
                               {translation.text}
                             </p>
                           )}
@@ -164,29 +166,29 @@ export default async function SearchPage({
                   {currentPage > 1 ? (
                     <a
                       href={`/search?q=${encodeURIComponent(query)}&page=${currentPage - 1}`}
-                      className="border border-[#E8E0D5] rounded-lg px-4 py-2 text-sm hover:border-[#2D6A4F] transition-colors"
+                      className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
                     >
                       ← Previous
                     </a>
                   ) : (
-                    <span className="border border-[#E8E0D5] rounded-lg px-4 py-2 text-sm text-[#6B7280]">
+                    <span className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)]">
                       ← Previous
                     </span>
                   )}
 
-                  <span className="text-sm text-[#6B7280]">
+                  <span className="text-sm text-[var(--color-text-muted)]">
                     Page {currentPage} of {totalPages}
                   </span>
 
                   {currentPage < totalPages ? (
                     <a
                       href={`/search?q=${encodeURIComponent(query)}&page=${currentPage + 1}`}
-                      className="border border-[#E8E0D5] rounded-lg px-4 py-2 text-sm hover:border-[#2D6A4F] transition-colors"
+                      className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
                     >
                       Next →
                     </a>
                   ) : (
-                    <span className="border border-[#E8E0D5] rounded-lg px-4 py-2 text-sm text-[#6B7280]">
+                    <span className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)]">
                       Next →
                     </span>
                   )}

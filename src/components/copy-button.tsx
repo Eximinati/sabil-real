@@ -20,11 +20,11 @@ export function CopyButton({ text, translation }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-4 right-4 text-[#6B7280] hover:text-[#2D6A4F] transition-colors"
+      className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors md:opacity-0 md:group-hover:opacity-100"
       title="Copy verse"
     >
       {copied ? (
-        <span className="text-xs text-[#2D6A4F]">Copied!</span>
+        <span className="text-xs text-[var(--color-primary)] animate-fade-in">Copied!</span>
       ) : (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
