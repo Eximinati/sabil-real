@@ -1,85 +1,90 @@
-export const dynamic = 'force-dynamic';
+'use client';
 
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? '' 
-  : 'http://localhost:3000';
+import { useToast } from '@/hooks/use-toast';
 
-async function getHealth() {
-  const res = await fetch(`${API_BASE}/api/health`, { cache: 'no-store' });
-  return res.json();
-}
-
-async function getChapters() {
-  const res = await fetch(`${API_BASE}/api/chapters`, { cache: 'no-store' });
-  const data = await res.json();
-  return data.chapters ?? data;
-}
-
-export default async function TestPage() {
-  let healthStatus: { status: string; token_acquired?: boolean; test_chapter?: string; message?: string } | null = null;
-  let chapters: Array<{ name_simple: string; name_arabic: string }> = [];
-  let error: string | null = null;
-
-  try {
-    healthStatus = await getHealth();
-  } catch (e) {
-    error = e instanceof Error ? e.message : 'Failed to connect to API';
-  }
-
-  if (healthStatus?.status === 'ok') {
-    try {
-      chapters = await getChapters();
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to fetch chapters';
-    }
-  }
-
-  const isConnected = healthStatus?.status === 'ok';
-  const totalChapters = chapters.length;
+export default function TestPage() {
+  const toast = useToast();
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6">Quran Foundation API Test</h1>
-      
-      <div className="mb-6">
-        {isConnected ? (
-          <span className="inline-block px-4 py-2 bg-green-500 text-white rounded">
-            API Connected
-          </span>
-        ) : (
-          <span className="inline-block px-4 py-2 bg-red-500 text-white rounded">
-            API Failed
-          </span>
-        )}
+    <main className="min-h-screen p-8" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
+      <h1 className="text-3xl font-bold mb-8">Toast System Test</h1>
+
+      <div className="space-y-6">
+        <section className="card">
+          <h2 className="text-lg font-medium mb-4">Toast Variants</h2>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => toast.success('This is a success toast')}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{ background: 'var(--color-success)', color: 'white' }}
+            >
+              Success Toast
+            </button>
+            <button
+              onClick={() => toast.error('This is an error toast')}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{ background: 'var(--color-error)', color: 'white' }}
+            >
+              Error Toast
+            </button>
+            <button
+              onClick={() => toast.info('This is an info toast')}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{ background: 'var(--color-text-muted)', color: 'white' }}
+            >
+              Info Toast
+            </button>
+          </div>
+        </section>
+
+        <section className="card">
+          <h2 className="text-lg font-medium mb-4">Stacked Toasts</h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+            Click multiple times to see stacked behavior
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => {
+                toast.success('First success');
+                setTimeout(() => toast.info('Second info'), 300);
+                setTimeout(() => toast.success('Third success'), 600);
+              }}
+              className="px-4 py-2 rounded-lg font-medium"
+              style={{ background: 'var(--color-primary)', color: 'white' }}
+            >
+              Trigger Multiple
+            </button>
+          </div>
+        </section>
+
+        <section className="card">
+          <h2 className="text-lg font-medium mb-4">Auto Dismiss Test</h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+            Toasts disappear after 4 seconds. Watch the timer.
+          </p>
+          <button
+            onClick={() => toast.success('Timer starts now')}
+            className="px-4 py-2 rounded-lg font-medium"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+          >
+            Trigger and Time It
+          </button>
+        </section>
+
+        <section className="card">
+          <h2 className="text-lg font-medium mb-4">Real Actions</h2>
+          <div className="space-y-3">
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              These test toasts triggered by actual app actions:
+            </p>
+            <ul className="list-disc list-inside text-sm space-y-2" style={{ color: 'var(--color-text-secondary)' }}>
+              <li>Navigate to /quran/1 and hover a verse to copy it</li>
+              <li>Go to /journey and save a reflection</li>
+              <li>Visit /settings and save preferences</li>
+            </ul>
+          </div>
+        </section>
       </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          Error: {error}
-        </div>
-      )}
-
-      {healthStatus?.message && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          Message: {healthStatus.message}
-        </div>
-      )}
-
-      {isConnected && (
-        <>
-          <p className="text-xl mb-4">{totalChapters} chapters found</p>
-          
-          <h2 className="text-xl font-semibold mb-4">First 10 Surahs</h2>
-          <ul className="space-y-2">
-            {chapters.slice(0, 10).map((chapter, index) => (
-              <li key={chapter.name_simple} className="p-2 bg-white rounded shadow">
-                <span className="font-medium">{index + 1}. {chapter.name_simple}</span>
-                <span className="mr-4 text-lg" dir="rtl">{chapter.name_arabic}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </main>
   );
 }

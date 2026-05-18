@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReflectionInputProps {
   lessonId: string;
@@ -12,32 +13,38 @@ export function ReflectionInput({ lessonId, dayNumber, initialValue = '' }: Refl
   const [text, setText] = useState(initialValue);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   const handleSave = async () => {
     if (!text.trim()) return;
-    
+
     setSaving(true);
     try {
-      await fetch('/api/journey/reflection', {
+      const res = await fetch('/api/journey/reflection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId, dayNumber, reflectionText: text }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (res.ok) {
+        setSaved(true);
+        toast.success('Reflection saved');
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        toast.error('Could not save reflection');
+      }
     } catch (e) {
-      // Silent fail
+      toast.error('Could not save reflection');
     }
     setSaving(false);
   };
 
   return (
     <div>
-      <textarea
+<textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Write your reflection here..."
-        className="w-full min-h-[140px] border border-[var(--color-border)] rounded-xl p-4 resize-none focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 text-[var(--color-text)] transition-all"
+        className="w-full min-h-[140px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 resize-none focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] transition-all"
       />
       <div className="flex justify-end mt-3">
         <button

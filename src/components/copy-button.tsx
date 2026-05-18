@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CopyButtonProps {
   text: string;
@@ -9,11 +10,13 @@ interface CopyButtonProps {
 
 export function CopyButton({ text, translation }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   const handleCopy = async () => {
     const content = translation ? `${text}\n\n${translation}` : text;
     await navigator.clipboard.writeText(content);
     setCopied(true);
+    toast.success('Verse copied');
     setTimeout(() => setCopied(false), 2000);
   };
 

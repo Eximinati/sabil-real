@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Translation {
   id: number;
@@ -26,7 +27,8 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  
+  const toast = useToast();
+
   const [translationId, setTranslationId] = useState(initialTranslationId.toString());
   const [tafsirId, setTafsirId] = useState(initialTafsirId.toString());
 
@@ -54,10 +56,13 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
       });
       if (res.ok) {
         setSaved(true);
+        toast.success('Preferences updated');
         setTimeout(() => setSaved(false), 2000);
+      } else {
+        toast.error('Something went wrong');
       }
     } catch (e) {
-      // Silent fail
+      toast.error('Something went wrong');
     }
     setSaving(false);
   };
