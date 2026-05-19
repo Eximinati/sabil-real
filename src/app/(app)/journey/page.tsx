@@ -62,7 +62,7 @@ function getCurrentLesson(currentDay: number, lessons: Lesson[], progress: UserP
   return lesson;
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function JourneyPage() {
   const supabase = await supabaseServer();
