@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getPublishedLessons, getUserProgress, UserProgress } from '@/lib/journey';
+import { JourneyTodayCard } from '@/components/journey-today-card';
+import { JourneyTimeline } from '@/components/journey-timeline';
 
 interface Lesson {
   id: string;
@@ -25,6 +27,41 @@ function isLessonUnlocked(lesson: Lesson, progress: UserProgress[], lessons: Les
   return prevProgress?.status === 'completed';
 }
 
+function calculateStreak(progress: UserProgress[], lessons: Lesson[]): number {
+  const completedDays = progress
+    .filter(p => p.status === 'completed')
+    .map(p => p.day_number)
+    .sort((a, b) => b - a);
+  
+  if (completedDays.length === 0) return 0;
+  
+  let streak = 0;
+  let expectedDay = completedDays[0];
+  
+  for (const day of completedDays) {
+    if (day === expectedDay) {
+      streak++;
+      expectedDay--;
+    } else if (day < expectedDay) {
+      break;
+    }
+  }
+  
+  return streak;
+}
+
+function getCurrentLesson(currentDay: number, lessons: Lesson[], progress: UserProgress[]): Lesson | null {
+  const lesson = lessons.find(l => l.day_number === currentDay);
+  if (!lesson) return lessons[0] || null;
+  
+  const lessonProgress = getProgressForLesson(progress, lesson.id);
+  if (lessonProgress?.status === 'completed') {
+    return getCurrentLesson(currentDay + 1, lessons, progress);
+  }
+  
+  return lesson;
+}
+
 export const dynamic = 'force-dynamic';
 
 export default async function JourneyPage() {
@@ -40,29 +77,32 @@ export default async function JourneyPage() {
 
   const completedCount = progress.filter(p => p.status === 'completed').length;
   const totalLessons = lessons.length;
+  const currentDay = completedCount + 1;
+  const streak = calculateStreak(progress, lessons);
+const avgMinutes = totalLessons > 0 
+    ? Math.round(lessons.reduce((sum, l) => sum + l.estimated_minutes, 0) / totalLessons)
+    : 15;
+  const currentLesson = getCurrentLesson(currentDay, lessons, progress);
+  const currentLessonProgress = currentLesson ? getProgressForLesson(progress, currentLesson.id) : null;
+  const isCompletedToday = currentLessonProgress?.status === 'completed';
 
   return (
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
-      <div className="text-center mb-10">
-        <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">رحلتي</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">My Journey</p>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1 max-w-lg mx-auto">
-          Your guided path to understanding Islam, one day at a time.
-        </p>
-      </div>
+      <JourneyTodayCard
+        currentDay={currentDay}
+        totalDays={totalLessons}
+        completedDays={completedCount}
+        streak={streak}
+        currentLesson={currentLesson || undefined}
+        nextLessonHref={currentLesson ? `/journey/${currentLesson.day_number}` : undefined}
+        isCompletedToday={isCompletedToday}
+      />
 
-      <div className="max-w-[480px] mx-auto mb-12">
-        <p className="text-center text-[var(--color-text-muted)] text-sm mb-2">
-          Day {completedCount + 1} of {totalLessons}
-        </p>
-        <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-300"
-            style={{ width: `${totalLessons > 0 ? (completedCount / totalLessons) * 100 : 0}%` }}
-          />
-        </div>
-        <p className="text-center text-[var(--color-text-muted)] text-sm mt-2">{completedCount} days completed</p>
-      </div>
+      <JourneyTimeline 
+        lessons={lessons} 
+        progress={progress} 
+        currentDay={currentDay} 
+      />
 
       <div className="max-w-[680px] mx-auto space-y-4">
         {lessons.map((lesson) => {

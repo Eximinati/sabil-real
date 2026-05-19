@@ -1,21 +1,20 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getLessonByDay, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
-import { ReflectionInput } from '@/components/reflection-input';
-import { LessonCompleteButton } from '@/components/lesson-complete-button';
+import { JourneyLessonClient } from '@/components/journey-lesson-client';
 import { getApiUrl } from '@/lib/api-url';
 import { EmptyState } from '@/components/ui/empty-state';
 
 interface PageProps {
   params: Promise<{ day: string }>;
+  searchParams: Promise<{ translation?: string }>;
 }
 
 export const dynamic = 'force-dynamic';
 
-export default async function LessonPage({ params }: PageProps) {
+export default async function LessonPage({ params, searchParams }: PageProps) {
   const { day } = await params;
+  const { translation: urlTranslation } = await searchParams;
   const dayNumber = parseInt(day, 10);
 
   const supabase = await supabaseServer();
@@ -43,8 +42,10 @@ export default async function LessonPage({ params }: PageProps) {
   const progress = await getUserProgress(user.id);
   const lessonProgress = progress.find(p => p.lesson_id === lesson.id);
   const status = lessonProgress?.status || 'not_started';
+  const isCompleted = status === 'completed';
 
   const preferences = await getUserPreferences(user.id);
+  const translationId = urlTranslation ? parseInt(urlTranslation, 10) : preferences.translation_id;
   const initialReflection = await getUserReflection(user.id, lesson.id);
 
   let chapters: any[] = [];
@@ -56,20 +57,44 @@ export default async function LessonPage({ params }: PageProps) {
     chapters = [];
   }
 
-  const verses: Array<{ verse: any | null; chapterName: string }> = [];
+  const verses: Array<{ verse: any | null; chapterName: string; verseKey: string; audioUrl?: string }> = [];
+  
+  const chapterIds = [...new Set(lesson.verse_keys.map(vk => vk.split(':')[0]))];
+  const audioFilesMap: Record<string, Array<{ verse_key: string; url: string }>> = {};
+  
+  for (const chapterId of chapterIds) {
+    try {
+      const audioRes = await fetch(getApiUrl(`/audio/5/${chapterId}`), { cache: 'no-store' });
+      const audioData = await audioRes.json();
+      if (audioData.audio_files) {
+        audioFilesMap[chapterId] = audioData.audio_files;
+      }
+    } catch (e) {
+      audioFilesMap[chapterId] = [];
+    }
+  }
   
   for (const verseKey of lesson.verse_keys) {
-    const [chapterId] = verseKey.split(':');
+    const [chapterId, verseNum] = verseKey.split(':');
     try {
       const verseRes = await fetch(
-        getApiUrl(`/verses/by_key/${verseKey}?translation=${preferences.translation_id}`),
+        getApiUrl(`/verses/by_key/${verseKey}?translation=${translationId}`),
         { cache: 'no-store' }
       );
       const verseData = await verseRes.json();
       const chapter = chapters.find(c => c.id === parseInt(chapterId));
-      verses.push({ verse: verseData?.verse || null, chapterName: chapter?.name_simple || `Chapter ${chapterId}` });
+      
+      const audioFile = audioFilesMap[chapterId]?.find((af: any) => af.verse_key === verseKey);
+      const audioUrl = audioFile?.url;
+      
+      verses.push({ 
+        verse: verseData?.verse || null, 
+        chapterName: chapter?.name_simple || `Chapter ${chapterId}`,
+        verseKey: verseKey,
+        audioUrl: audioUrl
+      });
     } catch (e) {
-      verses.push({ verse: null, chapterName: `Chapter ${chapterId}` });
+      verses.push({ verse: null, chapterName: `Chapter ${chapterId}`, verseKey: verseKey });
     }
   }
 
@@ -87,160 +112,14 @@ export default async function LessonPage({ params }: PageProps) {
   }
 
   return (
-    <div className="px-4 md:px-6 pt-8 md:pt-12 pb-12 max-w-[740px] mx-auto">
-      <div className="sticky top-0 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)] -mx-4 md:-mx-6 px-4 md:px-6 py-4 z-10 -mt-4 md:-mt-12 pt-8 md:pt-16">
-        <Link href="/journey" className="text-[var(--color-primary)] hover:underline text-sm">
-          ← Back to Journey
-        </Link>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mt-4">
-          <span className="px-3 py-1 bg-[var(--color-accent)] text-white rounded-full text-sm">
-            Day {lesson.day_number}
-          </span>
-          <span className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            ~{lesson.estimated_minutes} min
-          </span>
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <span className="inline-block px-2.5 py-1 bg-[var(--color-bg)] text-[var(--color-primary)] rounded text-xs mb-3">
-          {lesson.topic}
-        </span>
-        <h1 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)] mt-2">{lesson.title}</h1>
-        {lesson.subtitle && (
-          <p className="text-[var(--color-text-muted)] mt-1">{lesson.subtitle}</p>
-        )}
-        <div className="h-px bg-[var(--color-accent)]/30 mt-6" />
-      </div>
-
-      {lesson.description && (
-        <div className="mb-8">
-          <h2 className="section-heading">Overview</h2>
-          <p className="text-[16px] leading-[1.8] text-[var(--color-text)]">{lesson.description}</p>
-        </div>
-      )}
-
-      {verses.length > 0 && (
-        <div className="mb-8">
-          <h2 className="section-heading">Quranic Verses</h2>
-          {verses.map(({ verse, chapterName }, idx) => (
-            <div key={idx} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[var(--color-accent)]">
-                  {chapterName} · Verse {lesson.verse_keys[idx].split(':')[1]}
-                </span>
-              </div>
-              {verse ? (
-                <>
-                  <p
-                    className="font-arabic text-[22px] md:text-[28px] text-right text-[var(--color-text)] leading-[2.4]"
-                    dir="rtl"
-                  >
-                    {verse.text_uthmani}
-                  </p>
-                  <div className="border-t border-[var(--color-border)] pt-4 mt-4">
-                    <p className="text-xs text-[var(--color-text-muted)] mb-1">
-                      {verse.translations?.[0]?.resource_name || 'Translation'}
-                    </p>
-                    <p className="text-[14px] md:text-[15px] leading-[1.8] text-[var(--color-text-secondary)]">
-                      {verse.translations?.[0]?.text || 'No translation available'}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <p className="text-[var(--color-text-muted)]">Verse not available</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {lesson.lesson_text && (
-        <div className="mb-8">
-          <h2 className="section-heading">Lesson</h2>
-          <div className="prose max-w-none">
-            <ReactMarkdown
-              components={{
-                p: ({ children }) => <p className="text-[16px] leading-[1.9] text-[var(--color-text)] mb-5">{children}</p>,
-                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                em: ({ children }) => <em className="italic text-[var(--color-text-secondary)]">{children}</em>,
-              }}
-            >
-              {lesson.lesson_text}
-            </ReactMarkdown>
-          </div>
-        </div>
-      )}
-
-      {(lesson.hadith_text || hadith) && (
-        <div className="mb-8">
-          <h2 className="section-heading">Related Hadith</h2>
-          <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 relative">
-            <span className="font-arabic text-[60px] text-[var(--color-accent)] absolute top-2 left-4 opacity-30" dir="rtl">"</span>
-            {hadith ? (
-              <>
-                <div className="flex items-center gap-2 mb-3 mt-2">
-                  <span className="text-sm text-[var(--color-primary)]">{hadith.name}</span>
-                  <span className="px-2 py-0.5 bg-[var(--color-accent)] text-white rounded text-xs">
-                    #{hadith.number}
-                  </span>
-                </div>
-                {hadith.arabic && (
-                  <>
-                    <p className="font-arabic text-[22px] md:text-[26px] text-right text-[var(--color-text)] leading-[2]" dir="rtl">
-                      {hadith.arabic}
-                    </p>
-                    <div className="h-px bg-[var(--color-border)] my-4" />
-                  </>
-                )}
-                <p className="text-[15px] italic leading-relaxed text-[var(--color-text)]">
-                  {hadith.english}
-                </p>
-              </>
-            ) : lesson.hadith_text ? (
-              <>
-                <p className="font-arabic text-[40px] text-[var(--color-accent)] leading-none mb-2" dir="rtl">"</p>
-                <p className="text-[15px] italic leading-relaxed text-[var(--color-text)]">
-                  {lesson.hadith_text}
-                </p>
-                {lesson.hadith_source && (
-                  <p className="text-xs text-[var(--color-text-muted)] mt-3 text-right">— {lesson.hadith_source}</p>
-                )}
-              </>
-            ) : null}
-          </div>
-        </div>
-      )}
-
-      {lesson.reflection_prompt && (
-        <div className="mb-8">
-          <h2 className="section-heading">Reflection</h2>
-          <div className="bg-[var(--color-bg)] rounded-xl p-5 border border-[var(--color-primary)]/20">
-            <p className="text-[16px] text-[var(--color-text)]">{lesson.reflection_prompt}</p>
-          </div>
-          <div className="mt-4">
-            <ReflectionInput
-              lessonId={lesson.id}
-              dayNumber={lesson.day_number}
-              initialValue={initialReflection || ''}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="mt-8">
-        <LessonCompleteButton
-          lessonId={lesson.id}
-          dayNumber={lesson.day_number}
-          isCompleted={status === 'completed'}
-        />
-      </div>
-    </div>
+    <JourneyLessonClient
+      lesson={lesson}
+      verses={verses}
+      hadith={hadith}
+      initialReflection={initialReflection || ''}
+      isCompleted={isCompleted}
+      status={status}
+      translationId={translationId}
+    />
   );
 }
