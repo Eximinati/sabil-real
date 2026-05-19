@@ -19,8 +19,8 @@
   --color-error: #DC2626;
   --color-success: #16A34A;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-arabic: 'Amiri', 'Scheherazade New', serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-arabic: var(--font-amiri), 'Scheherazade New', serif;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -75,6 +75,44 @@
 
 .focus-mode .desktop-sidebar {
   display: none;
+}
+
+@layer utilities {
+  .transform-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  .animation-smooth {
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .touch-action-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .content-visibility-auto {
+    content-visibility: auto;
+  }
+  
+  .contain-layout {
+    contain: layout;
+  }
+  
+  .contain-paint {
+    contain: paint;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 html {

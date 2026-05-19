@@ -1,9 +1,10 @@
 import { TafsirSelector } from '@/components/tafsir-selector';
 import { SurahSelector } from '@/components/surah-selector';
-import { getApiUrl } from '@/lib/api-url';
+import { getCachedChapters, getCachedTafsirs, getCachedTafsirContent } from '@/lib/api-utils';
 import { sanitizeHtml } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function TafsirPage({
   searchParams,
@@ -12,16 +13,10 @@ export default async function TafsirPage({
 }) {
   const { tafsir, surah } = await searchParams;
 
-  const [tafsirsRes, chaptersRes] = await Promise.all([
-    fetch(getApiUrl('/tafsirs'), { cache: 'no-store' }),
-    fetch(getApiUrl('/chapters'), { cache: 'no-store' }),
+  const [tafsirs, chapters] = await Promise.all([
+    getCachedTafsirs(),
+    getCachedChapters(),
   ]);
-
-  const tafsirsData = await tafsirsRes.json();
-  const chaptersData = await chaptersRes.json();
-
-  const tafsirs = (Array.isArray(tafsirsData) ? tafsirsData : []) as any[];
-  const chapters = (Array.isArray(chaptersData) ? chaptersData : []) as any[];
 
   let tafsirVerses: any[] = [];
   let selectedTafsir: any;
@@ -34,13 +29,10 @@ export default async function TafsirPage({
       invalidSurah = true;
     } else {
       try {
-        const res = await fetch(getApiUrl(`/tafsirs/${tafsir}/${surah}`), {
-          cache: 'no-store'
-        });
-        const data = await res.json();
+        const data = await getCachedTafsirContent(parseInt(tafsir, 10), surahNum) as { tafsirs?: any[] };
         
         if (data && data.tafsirs) {
-          tafsirVerses = data.tafsirs as any[];
+          tafsirVerses = data.tafsirs;
         }
         
         selectedTafsir = tafsirs.find((t) => t.id === parseInt(tafsir, 10));

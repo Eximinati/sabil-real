@@ -1,9 +1,23 @@
 import type { Metadata } from 'next';
+import { Inter, Amiri } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { AudioPlayerProvider } from '@/components/audio-player-provider';
 import { FocusModeProvider } from '@/components/focus-mode-provider';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const amiri = Amiri({
+  weight: ['400', '700'],
+  subsets: ['arabic', 'latin'],
+  display: 'swap',
+  variable: '--font-amiri',
+});
 
 export const metadata: Metadata = {
   title: 'Sabil — Your Quran Companion',
@@ -46,14 +60,11 @@ export default function RootLayout({
   `;
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${amiri.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Amiri:ital,wght@0,400;0,700&display=swap" rel="stylesheet" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <ThemeProvider>
           <ToastProvider>
             <AudioPlayerProvider>

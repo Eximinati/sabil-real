@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getVerses } from '@/lib/qf-api';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ chapterId: string }> }
@@ -19,7 +22,11 @@ export async function GET(
       per_page: perPage,
     });
     
-    return NextResponse.json(verses);
+    return NextResponse.json(verses, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, s-maxage=300',
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(

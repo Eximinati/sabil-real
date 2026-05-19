@@ -9,6 +9,7 @@ interface PageProps {
 }
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { id } = await params;
@@ -52,9 +53,9 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
 
   try {
     const [chapterRes, versesRes, translationsRes] = await Promise.all([
-      fetch(getApiUrl('/chapters'), { cache: 'no-store' }),
-      fetch(getApiUrl(`/verses/${chapterId}?translation=${translationId}`), { cache: 'no-store' }),
-      fetch(getApiUrl('/translations'), { cache: 'no-store' }),
+      fetch(getApiUrl('/chapters'), { next: { revalidate: 3600 } }),
+      fetch(getApiUrl(`/verses/${chapterId}?translation=${translationId}`), { next: { revalidate: 300 } }),
+      fetch(getApiUrl('/translations'), { next: { revalidate: 3600 } }),
     ]);
 
     const chapterData = await chapterRes.json();

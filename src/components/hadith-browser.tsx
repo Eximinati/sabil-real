@@ -1,23 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyState } from './ui/empty-state';
-import { useToast } from '@/hooks/use-toast';
+import { getCachedHadithCollections, getCachedHadith } from '@/lib/api-utils';
 
-export function HadithBrowser({
-  initialCollection,
-  initialNumber,
-}: {
+interface HadithCollection {
+  id: string;
+  name: string;
+  arabic: string;
+}
+
+interface HadithData {
+  name: string;
+  number: string;
+  section?: string;
+  english?: string;
+}
+
+interface HadithBrowserProps {
   initialCollection?: string;
   initialNumber?: string;
-}) {
+}
+
+const HadithBrowserInner = memo(function HadithBrowserInner({
+  initialCollection,
+  initialNumber,
+}: HadithBrowserProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const toast = useToast();
-  const [collections, setCollections] = useState<any[]>([]);
+  const [collections, setCollections] = useState<HadithCollection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hadith, setHadith] = useState<any>(null);
+  const [hadith, setHadith] = useState<HadithData | null>(null);
   const [hadithLoading, setHadithLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,65 +40,101 @@ export function HadithBrowser({
   const number = searchParams.get('number') || initialNumber || defaultNumber.toString();
 
   useEffect(() => {
-    fetch('/api/hadith/collections')
-      .then((res) => res.json())
-      .then((data) => {
-        setCollections(data.collections || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        toast.error('Could not load collections');
-        setLoading(false);
-      });
-  }, [toast]);
+    let mounted = true;
+    
+    async function loadCollections() {
+      try {
+        const data = await getCachedHadithCollections();
+        if (mounted) {
+          setCollections(data);
+        }
+      } catch {
+        if (mounted) {
+          setError('Could not load collections');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadCollections();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
-    if (collection && number) {
+    if (!collection || !number) return;
+    
+    let mounted = true;
+    
+    async function loadHadith() {
       setHadithLoading(true);
       setError(null);
       setHadith(null);
-      fetch(`/api/hadith/${collection}/${number}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
+      
+      try {
+        const data = await getCachedHadith(collection, number) as { error?: string; hadith?: HadithData };
+        if (mounted) {
+          if (data?.error) {
             setError(data.error);
-            setHadith(null);
-          } else {
+          } else if (data?.hadith) {
             setHadith(data.hadith);
           }
-        })
-        .catch(() => {
+        }
+      } catch {
+        if (mounted) {
           setError('Could not load this hadith');
-          setHadith(null);
-        })
-        .finally(() => setHadithLoading(false));
+        }
+      } finally {
+        if (mounted) {
+          setHadithLoading(false);
+        }
+      }
     }
+
+    loadHadith();
+
+    return () => {
+      mounted = false;
+    };
   }, [collection, number]);
 
-  const handleCollectionSelect = (collectionId: string) => {
+  const handleCollectionSelect = useCallback((collectionId: string) => {
     const defaultNum = collectionId === 'muslim' ? '93' : '1';
     const params = new URLSearchParams();
     params.set('collection', collectionId);
     params.set('number', defaultNum);
     router.push(`/hadith?${params.toString()}`);
-  };
+  }, [router]);
 
-  const handleRead = () => {
+  const handleRead = useCallback(() => {
     if (!number || parseInt(number, 10) < 1) return;
     const params = new URLSearchParams();
     params.set('collection', collection);
     params.set('number', number);
     router.push(`/hadith?${params.toString()}`);
-  };
+  }, [collection, number, router]);
 
-  const navigateHadith = (delta: number) => {
+  const navigateHadith = useCallback((delta: number) => {
     const currentNum = parseInt(number, 10) || 1;
     const newNum = Math.max(1, currentNum + delta);
     const params = new URLSearchParams();
     params.set('collection', collection);
     params.set('number', newNum.toString());
     router.push(`/hadith?${params.toString()}`);
-  };
+  }, [collection, number, router]);
+
+  const handleInputChange = useCallback((value: string) => {
+    router.push(`/hadith?collection=${collection}&number=${value}`);
+  }, [collection, router]);
+
+  const goBack = useCallback(() => {
+    router.push('/hadith');
+  }, [router]);
 
   if (loading) {
     return (
@@ -138,7 +188,7 @@ export function HadithBrowser({
       ) : (
         <div className="max-w-[680px] mx-auto">
           <button
-            onClick={() => router.push('/hadith')}
+            onClick={goBack}
             className="text-[var(--color-primary)] hover:underline mb-6 block"
             aria-label="Back to collections"
           >
@@ -151,7 +201,7 @@ export function HadithBrowser({
               id="hadith-number"
               type="number"
               value={number}
-              onChange={(e) => router.push(`/hadith?collection=${collection}&number=${e.target.value}`)}
+              onChange={(e) => handleInputChange(e.target.value)}
               min={1}
               className="border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 w-24 transition-all"
               aria-label="Hadith number"
@@ -238,4 +288,8 @@ export function HadithBrowser({
       )}
     </div>
   );
+});
+
+export function HadithBrowser(props: HadithBrowserProps) {
+  return <HadithBrowserInner {...props} />;
 }

@@ -1,9 +1,11 @@
 import { SearchBar } from '@/components/search-bar';
 import { EmptyState } from '@/components/ui/empty-state';
+import { getCachedChapters } from '@/lib/api-utils';
 import { getApiUrl } from '@/lib/api-url';
 import { sanitizeHtml } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function getChapterName(verseKey: string, chapters: any[]): string {
   const chapterId = parseInt(verseKey.split(':')[0], 10);
@@ -25,9 +27,7 @@ export default async function SearchPage({
   let totalPages = 0;
 
   try {
-    const chaptersRes = await fetch(getApiUrl('/chapters'), { cache: 'no-store' });
-    const chaptersData = await chaptersRes.json();
-    chapters = chaptersData.chapters ?? chaptersData;
+    chapters = await getCachedChapters();
   } catch (e) {
     chapters = [];
   }

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getVerses } from '@/lib/qf-api';
 import { getApiUrl } from '@/lib/api-url';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -47,10 +50,21 @@ export async function GET(request: Request) {
 
     const chapterResults = await Promise.all(versePromises);
 
+    const allChapterIds = [...new Set(chapterResults.map(r => r.chapterId))];
+    
     let audioFiles: any[] = [];
     try {
-      const audioData = await fetch(getApiUrl(`/audio/${reciterId}/${chapterResults[0]?.chapterId}`)).then(r => r.json());
-      audioFiles = audioData.audio_files || [];
+      const audioPromises = allChapterIds.map(async (chapterId) => {
+        const audioRes = await fetch(getApiUrl(`/audio/${reciterId}/${chapterId}`));
+        if (audioRes.ok) {
+          const audioData = await audioRes.json();
+          return audioData.audio_files || [];
+        }
+        return [];
+      });
+      
+      const audioResults = await Promise.all(audioPromises);
+      audioFiles = audioResults.flat();
     } catch (e) {
       console.error('Audio fetch error:', e);
     }

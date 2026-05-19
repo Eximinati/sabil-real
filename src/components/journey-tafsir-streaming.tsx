@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface TafsirData {
   text: string;
@@ -19,11 +19,20 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasTriedLoading, setHasTriedLoading] = useState(false);
+  const fetchedRef = useRef(false);
+
+  const verseKeyRef = useRef(verseKeys.join(','));
+  const tafsirIdRef = useRef(tafsirId);
 
   useEffect(() => {
-    if (!isExpanded || hasTriedLoading) return;
+    verseKeyRef.current = verseKeys.join(',');
+    tafsirIdRef.current = tafsirId;
+  }, [verseKeys, tafsirId]);
 
-    const verseNumbers = verseKeys.map(vk => vk.split(':')[1]).filter(Boolean);
+  const loadTafsirs = useCallback(async () => {
+    if (fetchedRef.current || hasTriedLoading) return;
+    
+    const verseNumbers = verseKeyRef.current.split(':').filter((_, i) => i % 2 === 1).filter(Boolean);
     const chapterId = verseKeys[0]?.split(':')[0];
     
     if (!chapterId || verseNumbers.length === 0) {
@@ -31,42 +40,56 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
       return;
     }
 
-    async function fetchTafsirs() {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          verses: verseNumbers.join(',')
-        });
-        
-        const res = await fetch(`/api/tafsirs/${tafsirId}/${chapterId}?${params}`);
-        
-        if (!res.ok) throw new Error('Failed to fetch tafsir');
-        
-        const data = await res.json();
-        const fetchedTafsirs = data.tafsirs || data || [];
-        
-        const filtered = Array.isArray(fetchedTafsirs) 
-          ? fetchedTafsirs.filter((t: TafsirData) => verseNumbers.includes(String(t.verse_number)))
-          : [];
-        
-        setTafsirs(filtered);
-        setHasTriedLoading(true);
-      } catch (err) {
-        setError('Failed to load tafsir');
-        setHasTriedLoading(true);
-      } finally {
-        setLoading(false);
-      }
+    fetchedRef.current = true;
+    setLoading(true);
+    
+    try {
+      const res = await fetch(`/api/tafsirs/${tafsirIdRef.current}/${chapterId}`);
+      
+      if (!res.ok) throw new Error('Failed to fetch tafsir');
+      
+      const data = await res.json();
+      const fetchedTafsirs = data.tafsirs || data || [];
+      
+      const filtered = Array.isArray(fetchedTafsirs) 
+        ? fetchedTafsirs.filter((t: TafsirData) => verseNumbers.includes(String(t.verse_number)))
+        : [];
+      
+      setTafsirs(filtered);
+      setHasTriedLoading(true);
+    } catch (err) {
+      setError('Failed to load tafsir');
+      setHasTriedLoading(true);
+    } finally {
+      setLoading(false);
     }
+  }, [verseKeys, hasTriedLoading]);
 
-    fetchTafsirs();
-  }, [isExpanded, tafsirId, verseKeys, hasTriedLoading]);
+  useEffect(() => {
+    if (isExpanded && !hasTriedLoading) {
+      loadTafsirs();
+    }
+  }, [isExpanded, hasTriedLoading, loadTafsirs]);
+
+  const handleToggle = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  const toggleExpanded = useCallback(() => {
+    if (!isExpanded && !hasTriedLoading) {
+      fetchedRef.current = false;
+      setHasTriedLoading(false);
+      setTafsirs([]);
+      setError(null);
+    }
+    setIsExpanded(prev => !prev);
+  }, [isExpanded, hasTriedLoading]);
 
   if (!isExpanded) {
     return (
       <div className="mb-8">
         <button
-          onClick={() => setIsExpanded(true)}
+          onClick={toggleExpanded}
           className="flex items-center justify-between w-full p-4 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl hover:border-[var(--color-primary)] transition-colors"
         >
           <div className="flex items-center gap-3">

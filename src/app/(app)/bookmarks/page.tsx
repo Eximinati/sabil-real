@@ -12,31 +12,26 @@ interface Bookmark {
   created_at: string;
 }
 
-async function getBookmarks(): Promise<Bookmark[]> {
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const { data, error } = await supabase
-    .from('bookmarks')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching bookmarks:', error);
-    return [];
-  }
-
-  return data || [];
+interface ChapterData {
+  id: number;
+  name_simple: string;
+  name_arabic: string;
 }
 
-async function getChapters(): Promise<any[]> {
+interface EnrichedBookmark {
+  id: string;
+  surah_id: number;
+  verse_number: number;
+  created_at: string;
+  chapterName: string;
+  chapterNameArabic: string;
+  verseText: string;
+  translationText: string;
+}
+
+async function getChapters(): Promise<ChapterData[]> {
   try {
-    const res = await fetch(getApiUrl('/chapters'), { cache: 'no-store' });
+    const res = await fetch(getApiUrl('/chapters'), { next: { revalidate: 3600 } });
     const data = await res.json();
     return data.chapters ?? data;
   } catch {
@@ -44,34 +39,76 @@ async function getChapters(): Promise<any[]> {
   }
 }
 
-async function getVerses(surahId: number, verseNumber: number): Promise<any | null> {
-  try {
-    const res = await fetch(getApiUrl(`/verses/${surahId}?translation=203`), { cache: 'no-store' });
-    const data = await res.json();
-    const verses = data.verses ?? [];
-    return verses.find((v: any) => parseInt(v.verse_key.split(':')[1], 10) === verseNumber) || null;
-  } catch {
-    return null;
+async function getVersesBatch(surahIds: number[]): Promise<Map<string, any>> {
+  const versesMap = new Map<string, any>();
+  
+  const uniqueSurahIds = [...new Set(surahIds)];
+  
+  const results = await Promise.all(
+    uniqueSurahIds.map(async (surahId) => {
+      try {
+        const res = await fetch(getApiUrl(`/verses/${surahId}?translation=203`), { 
+          next: { revalidate: 300 } 
+        });
+        const data = await res.json();
+        return { surahId, verses: data.verses ?? [] };
+      } catch {
+        return { surahId, verses: [] };
+      }
+    })
+  );
+  
+  for (const result of results) {
+    for (const verse of result.verses) {
+      const verseNum = parseInt(verse.verse_key.split(':')[1], 10);
+      versesMap.set(`${result.surahId}:${verseNum}`, verse);
+    }
   }
+  
+  return versesMap;
+}
+
+async function getBookmarks(): Promise<EnrichedBookmark[]> {
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  const { data: bookmarks, error } = await supabase
+    .from('bookmarks')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !bookmarks || bookmarks.length === 0) {
+    return [];
+  }
+
+  const surahIds = bookmarks.map(b => b.surah_id);
+  const chapters = await getChapters();
+  const versesMap = await getVersesBatch(surahIds);
+
+  const enrichedBookmarks: EnrichedBookmark[] = bookmarks.map((bookmark) => {
+    const chapter = chapters.find((c: ChapterData) => c.id === bookmark.surah_id);
+    const verseKey = `${bookmark.surah_id}:${bookmark.verse_number}`;
+    const verse = versesMap.get(verseKey);
+
+    return {
+      ...bookmark,
+      chapterName: chapter?.name_simple || `Surah ${bookmark.surah_id}`,
+      chapterNameArabic: chapter?.name_arabic || '',
+      verseText: verse?.text_uthmani || '',
+      translationText: verse?.translations?.[0]?.text || '',
+    };
+  });
+
+  return enrichedBookmarks;
 }
 
 export default async function BookmarksPage() {
-  const bookmarks = await getBookmarks();
-  const chapters = await getChapters();
-
-  const enrichedBookmarks = await Promise.all(
-    bookmarks.map(async (bookmark) => {
-      const chapter = chapters.find((c: any) => c.id === bookmark.surah_id);
-      const verse = await getVerses(bookmark.surah_id, bookmark.verse_number);
-      return {
-        ...bookmark,
-        chapterName: chapter?.name_simple || `Surah ${bookmark.surah_id}`,
-        chapterNameArabic: chapter?.name_arabic || '',
-        verseText: verse?.text_uthmani || '',
-        translationText: verse?.translations?.[0]?.text || '',
-      };
-    })
-  );
+  const enrichedBookmarks = await getBookmarks();
 
   return <BookmarksClient bookmarks={enrichedBookmarks} />;
 }

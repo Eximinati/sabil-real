@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-static';
+export const revalidate = 3600;
+
 export async function GET() {
   return NextResponse.json({
     collections: [
@@ -11,5 +14,9 @@ export async function GET() {
       { id: 'ibnmajah', name: 'Sunan Ibn Majah', arabic: 'سنن ابن ماجه' },
       { id: 'malik', name: 'Muwatta Malik', arabic: 'موطأ مالك' },
     ]
+  }, {
+    headers: {
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+    },
   });
 }

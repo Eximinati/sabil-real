@@ -2,21 +2,7 @@ import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
 import { PreferencesForm } from '@/components/preferences-form';
-
-const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
-
-interface Translation {
-  id: number;
-  name: string;
-  author_name: string;
-  language_name: string;
-}
-
-interface Tafsir {
-  id: number;
-  name: string;
-  author_name: string;
-}
+import { getCachedTranslations, getCachedTafsirs } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,19 +16,13 @@ export default async function SettingsPage() {
 
   const preferences = await getUserPreferences(user.id);
 
-  const [translationsRes, tafsirsRes] = await Promise.all([
-    fetch(`${API_BASE}/api/translations`, { cache: 'no-store' }),
-    fetch(`${API_BASE}/api/tafsirs`, { cache: 'no-store' }),
+  const [translations, tafsirs] = await Promise.all([
+    getCachedTranslations(),
+    getCachedTafsirs(),
   ]);
 
-  const translationsData = await translationsRes.json();
-  const tafsirsData = await tafsirsRes.json();
-
-  const translations = translationsData.translations || translationsData;
-  const tafsirs = tafsirsData.tafsirs || tafsirsData;
-
-  const currentTranslation = translations.find((t: Translation) => t.id === preferences.translation_id);
-  const currentTafsir = tafsirs.find((t: Tafsir) => t.id === preferences.tafsir_id);
+  const currentTranslation = translations.find(t => t.id === preferences.translation_id);
+  const currentTafsir = tafsirs.find(t => t.id === preferences.tafsir_id);
 
   const createdDate = user.created_at 
     ? new Date(user.created_at).toLocaleDateString('en-US', { 
