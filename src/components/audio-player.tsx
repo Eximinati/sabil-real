@@ -1,9 +1,10 @@
 'use client';
 
-import { useAudioPlayerContext } from './audio-player-provider';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { useAudioPlayerContext, useAudioPlayerControls } from './audio-player-provider';
 import { reciters, SPEEDS } from '@/data/reciters';
 import { useFocusMode } from './focus-mode-provider';
-import { useState } from 'react';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -11,21 +12,33 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function AudioPlayer() {
-  const {
-    state,
-    toggle,
-    seek,
-    nextVerse,
-    previousVerse,
-    setPlaybackSpeed,
-    resetPlayer,
-    replaySurah,
-    audioFiles,
-  } = useAudioPlayerContext();
+function AudioPlayerContent() {
+  const { state, toggle, seek, nextVerse, previousVerse, setPlaybackSpeed, resetPlayer, replaySurah, audioFiles } = useAudioPlayerContext();
+  const { controlsRef } = useAudioPlayerControls();
   const { isFocusMode } = useFocusMode();
   const [minimized, setMinimized] = useState(false);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [localControls, setLocalControls] = useState({ currentTime: 0, duration: 0, isLoading: false });
+
+  useEffect(() => {
+    let prevTime = -1;
+    const interval = setInterval(() => {
+      const ref = controlsRef.current;
+      if (ref.currentTime !== prevTime) {
+        prevTime = ref.currentTime;
+        setLocalControls({
+          currentTime: ref.currentTime,
+          duration: ref.duration,
+          isLoading: ref.isLoading
+        });
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [controlsRef]);
+
+  const currentTime = localControls.currentTime;
+  const duration = localControls.duration;
+  const isLoading = localControls.isLoading;
 
   const currentReciter = state.reciterId
     ? reciters.find(r => r.id === state.reciterId)
@@ -35,7 +48,7 @@ export function AudioPlayer() {
     return null;
   }
 
-  const progress = state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0;
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const hasNext = audioFiles && state.currentVerseIndex < audioFiles.length - 1;
   const hasPrev = audioFiles && state.currentVerseIndex > 0;
 
@@ -48,8 +61,8 @@ export function AudioPlayer() {
   }`;
 
   const containerClasses = `bg-[var(--color-surface)]/95 backdrop-blur-md safe-area-bottom ${
-    isFocusMode 
-      ? 'mx-2 md:mx-4 mb-2 rounded-2xl border-x border-t border-[var(--color-border)]' 
+    isFocusMode
+      ? 'mx-2 md:mx-4 mb-2 rounded-2xl border-x border-t border-[var(--color-border)]'
       : 'border-t border-[var(--color-border)] rounded-t-2xl md:rounded-t-3xl'
   }`;
 
@@ -100,7 +113,7 @@ export function AudioPlayer() {
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={previousVerse}
-                  disabled={!hasPrev || state.isLoading}
+                  disabled={!hasPrev || isLoading}
                   className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-[var(--color-border)]/50 disabled:opacity-30 transition-colors"
                   aria-label="Previous verse"
                 >
@@ -110,7 +123,7 @@ export function AudioPlayer() {
                 </button>
                 <button
                   onClick={nextVerse}
-                  disabled={!hasNext || state.isLoading}
+                  disabled={!hasNext || isLoading}
                   className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-[var(--color-border)]/50 disabled:opacity-30 transition-colors"
                   aria-label="Next verse"
                 >
@@ -123,11 +136,11 @@ export function AudioPlayer() {
 
             <button
               onClick={toggle}
-              disabled={state.isLoading}
+              disabled={isLoading}
               className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
               aria-label={state.isPlaying ? 'Pause' : 'Play'}
             >
-              {state.isLoading ? (
+              {isLoading ? (
                 <svg className="w-5 h-5 md:w-6 md:h-6 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -169,10 +182,10 @@ export function AudioPlayer() {
                     <input
                       type="range"
                       min="0"
-                      max={state.duration || 100}
-                      value={state.currentTime}
+                      max={duration || 100}
+                      value={currentTime}
                       onChange={(e) => seek(parseFloat(e.target.value))}
-                      disabled={state.isLoading}
+                      disabled={isLoading}
                       aria-label="Seek through audio"
                       className="w-full h-1.5 md:h-2 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 md:[&::-webkit-slider-thumb]:w-4 md:[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[var(--color-primary)] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
                       style={{
@@ -183,10 +196,10 @@ export function AudioPlayer() {
 
                   <div className="flex justify-between mt-1 md:mt-2">
                     <span className="text-xs md:text-sm text-[var(--color-text-muted)]">
-                      {formatTime(state.currentTime)}
+                      {formatTime(currentTime)}
                     </span>
                     <span className="text-xs md:text-sm text-[var(--color-text-muted)]">
-                      {formatTime(state.duration)}
+                      {formatTime(duration)}
                     </span>
                   </div>
                 </>
@@ -252,4 +265,25 @@ export function AudioPlayer() {
       </div>
     </div>
   );
+}
+
+export function AudioPlayer() {
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const host = document.createElement('div');
+    host.id = 'audio-player-portal';
+    document.body.appendChild(host);
+    setPortalRoot(host);
+
+    return () => {
+      document.body.removeChild(host);
+    };
+  }, []);
+
+  if (!portalRoot) {
+    return null;
+  }
+
+  return ReactDOM.createPortal(<AudioPlayerContent />, portalRoot);
 }

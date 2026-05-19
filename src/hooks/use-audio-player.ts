@@ -1,20 +1,23 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 export interface AudioState {
   isPlaying: boolean;
   currentVerseKey: string | null;
   currentChapter: number | null;
   reciterId: number | null;
-  duration: number;
-  currentTime: number;
-  isLoading: boolean;
-  error: string | null;
   playbackSpeed: number;
   isCompleted: boolean;
   totalVerses: number;
   currentVerseIndex: number;
+  error: string | null;
+}
+
+export interface AudioControls {
+  currentTime: number;
+  duration: number;
+  isLoading: boolean;
 }
 
 export interface AudioFile {
@@ -25,6 +28,8 @@ export interface AudioFile {
 
 export interface UseAudioPlayerReturn {
   state: AudioState;
+  controls: AudioControls;
+  controlsRef: React.MutableRefObject<AudioControls>;
   playVerse: (verseKey: string, chapter: number, reciter: number, audioUrl: string, verseIndex?: number) => void;
   playSurah: (chapter: number, reciter: number, audioFiles: AudioFile[]) => void;
   play: () => void;
@@ -73,15 +78,18 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const audioFilesRef = useRef<AudioFile[] | null>(null);
   const currentChapterRef = useRef<number | null>(null);
   const currentReciterRef = useRef<number | null>(null);
-  
+
+  const controlsRef = useRef<AudioControls>({
+    currentTime: 0,
+    duration: 0,
+    isLoading: false,
+  });
+
   const [state, setState] = useState<AudioState>({
     isPlaying: false,
     currentVerseKey: null,
     currentChapter: null,
     reciterId: null,
-    duration: 0,
-    currentTime: 0,
-    isLoading: false,
     error: null,
     playbackSpeed: 1,
     isCompleted: false,
@@ -113,15 +121,20 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       const nextIndex = currentIndex + 1;
 
       if (nextIndex >= files.length) {
-        return { ...prev, isPlaying: false, isCompleted: true, currentTime: 0 };
+        controlsRef.current.currentTime = 0;
+        return { ...prev, isPlaying: false, isCompleted: true };
       }
 
       const nextAudio = files[nextIndex];
       const resolvedUrl = resolveAudioUrl(nextAudio.url);
-      
+
       if (!resolvedUrl) {
         return { ...prev, isPlaying: false, error: 'Invalid audio URL' };
       }
+
+      controlsRef.current.currentTime = 0;
+      controlsRef.current.duration = 0;
+      controlsRef.current.isLoading = true;
 
       setCurrentUrl(resolvedUrl);
       if (audioRef.current) {
@@ -134,9 +147,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         ...prev,
         currentVerseKey: nextAudio.verse_key,
         currentVerseIndex: nextIndex,
-        currentTime: 0,
-        duration: 0,
-        isLoading: true,
       };
     });
   }, []);
@@ -145,22 +155,24 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio();
       audioRef.current.playbackRate = state.playbackSpeed;
-      
+
       audioRef.current.addEventListener('timeupdate', () => {
         if (audioRef.current) {
-          setState(prev => ({ ...prev, currentTime: audioRef.current!.currentTime }));
+          controlsRef.current.currentTime = audioRef.current.currentTime;
         }
       });
       audioRef.current.addEventListener('loadedmetadata', () => {
         if (audioRef.current) {
-          setState(prev => ({ ...prev, duration: audioRef.current!.duration, isLoading: false }));
+          controlsRef.current.duration = audioRef.current.duration;
+          controlsRef.current.isLoading = false;
         }
       });
       audioRef.current.addEventListener('ended', () => {
         playNextVerse();
       });
       audioRef.current.addEventListener('error', () => {
-        setState(prev => ({ ...prev, isPlaying: false, isLoading: false, error: 'Audio failed to load' }));
+        controlsRef.current.isLoading = false;
+        setState(prev => ({ ...prev, isPlaying: false, error: 'Audio failed to load' }));
       });
     }
     return () => {
@@ -186,30 +198,33 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       return;
     }
 
-    setState(prev => ({ ...prev, isLoading: true, error: null, isPlaying: true, isCompleted: false }));
+    controlsRef.current.isLoading = true;
+    setState(prev => ({ ...prev, error: null, isPlaying: true, isCompleted: false }));
     setCurrentUrl(resolvedUrl);
     audioFilesRef.current = null;
     setAudioFiles(null);
     currentReciterRef.current = reciter;
     currentChapterRef.current = chapter;
-    
+
     audioRef.current.src = resolvedUrl;
     audioRef.current.load();
+
+    controlsRef.current.currentTime = 0;
+    controlsRef.current.duration = 0;
 
     setState(prev => ({
       ...prev,
       currentVerseKey: verseKey,
       currentChapter: chapter,
       reciterId: reciter,
-      currentTime: 0,
-      duration: 0,
       currentVerseIndex: verseIndex ?? 0,
     }));
 
     audioRef.current.play().then(() => {
-      setState(prev => ({ ...prev, isLoading: false }));
+      controlsRef.current.isLoading = false;
     }).catch(() => {
-      setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
+      controlsRef.current.isLoading = false;
+      setState(prev => ({ ...prev, isPlaying: false }));
     });
   }, []);
 
@@ -223,20 +238,21 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
     const firstAudio = files[0];
     const resolvedUrl = resolveAudioUrl(firstAudio.url);
-    
+
     if (!resolvedUrl) {
       setState(prev => ({ ...prev, error: 'Invalid audio URL' }));
       return;
     }
+
+    controlsRef.current.isLoading = true;
+    controlsRef.current.currentTime = 0;
+    controlsRef.current.duration = 0;
 
     setState({
       isPlaying: true,
       currentVerseKey: firstAudio.verse_key,
       currentChapter: chapter,
       reciterId: reciter,
-      duration: 0,
-      currentTime: 0,
-      isLoading: true,
       error: null,
       playbackSpeed: state.playbackSpeed,
       isCompleted: false,
@@ -248,9 +264,10 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     audioRef.current!.src = resolvedUrl;
     audioRef.current!.load();
     audioRef.current!.play().then(() => {
-      setState(prev => ({ ...prev, isLoading: false }));
+      controlsRef.current.isLoading = false;
     }).catch(() => {
-      setState(prev => ({ ...prev, isPlaying: false, isLoading: false }));
+      controlsRef.current.isLoading = false;
+      setState(prev => ({ ...prev, isPlaying: false }));
     });
   }, [state.playbackSpeed]);
 
@@ -279,7 +296,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const seek = useCallback((time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
-      setState(prev => ({ ...prev, currentTime: time }));
+      controlsRef.current.currentTime = time;
     }
   }, []);
 
@@ -290,24 +307,29 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const nextVerse = useCallback(() => {
     const files = audioFilesRef.current;
     if (!files || files.length === 0) return;
-    
+
     setState(prev => {
       const nextIndex = prev.currentVerseIndex + 1;
       if (nextIndex >= files.length) return prev;
 
       const nextAudio = files[nextIndex];
       const resolvedUrl = resolveAudioUrl(nextAudio.url);
-      
+
       if (!resolvedUrl) return { ...prev, error: 'Invalid audio URL' };
+
+      controlsRef.current.currentTime = 0;
+      controlsRef.current.duration = 0;
+      controlsRef.current.isLoading = true;
 
       setCurrentUrl(resolvedUrl);
       if (audioRef.current) {
         audioRef.current.src = resolvedUrl;
         audioRef.current.load();
         audioRef.current.play().then(() => {
-          setState(s => ({ ...s, isLoading: false }));
+          controlsRef.current.isLoading = false;
         }).catch(() => {
-          setState(s => ({ ...s, isLoading: false, isPlaying: false }));
+          controlsRef.current.isLoading = false;
+          setState(s => ({ ...s, isPlaying: false }));
         });
       }
 
@@ -315,9 +337,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         ...prev,
         currentVerseKey: nextAudio.verse_key,
         currentVerseIndex: nextIndex,
-        currentTime: 0,
-        duration: 0,
-        isLoading: true,
         isCompleted: false,
       };
     });
@@ -326,24 +345,29 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const previousVerse = useCallback(() => {
     const files = audioFilesRef.current;
     if (!files || files.length === 0) return;
-    
+
     setState(prev => {
       const prevIndex = prev.currentVerseIndex - 1;
       if (prevIndex < 0) return prev;
 
       const prevAudio = files[prevIndex];
       const resolvedUrl = resolveAudioUrl(prevAudio.url);
-      
+
       if (!resolvedUrl) return { ...prev, error: 'Invalid audio URL' };
+
+      controlsRef.current.currentTime = 0;
+      controlsRef.current.duration = 0;
+      controlsRef.current.isLoading = true;
 
       setCurrentUrl(resolvedUrl);
       if (audioRef.current) {
         audioRef.current.src = resolvedUrl;
         audioRef.current.load();
         audioRef.current.play().then(() => {
-          setState(s => ({ ...s, isLoading: false }));
+          controlsRef.current.isLoading = false;
         }).catch(() => {
-          setState(s => ({ ...s, isLoading: false, isPlaying: false }));
+          controlsRef.current.isLoading = false;
+          setState(s => ({ ...s, isPlaying: false }));
         });
       }
 
@@ -351,9 +375,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         ...prev,
         currentVerseKey: prevAudio.verse_key,
         currentVerseIndex: prevIndex,
-        currentTime: 0,
-        duration: 0,
-        isLoading: true,
         isCompleted: false,
       };
     });
@@ -377,15 +398,13 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     audioFilesRef.current = null;
     setAudioFiles(null);
     setCurrentUrl(null);
+    controlsRef.current = { currentTime: 0, duration: 0, isLoading: false };
     setState(prev => ({
       ...prev,
       isPlaying: false,
       currentVerseKey: null,
       currentChapter: null,
       reciterId: null,
-      duration: 0,
-      currentTime: 0,
-      isLoading: false,
       error: null,
       isCompleted: false,
       totalVerses: 0,
@@ -412,8 +431,16 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     }
   }, [state.isPlaying, currentUrl]);
 
+  const controls: AudioControls = {
+    currentTime: controlsRef.current.currentTime,
+    duration: controlsRef.current.duration,
+    isLoading: controlsRef.current.isLoading,
+  };
+
   return {
     state,
+    controls,
+    controlsRef,
     playVerse,
     playSurah,
     play,

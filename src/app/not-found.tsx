@@ -17,10 +17,10 @@ export default function NotFound() {
         </p>
         
         <a
-          href="/quran"
+          href="/journey"
           className="inline-block px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity font-medium text-sm"
         >
-          Go to Quran
+          Go to Journey
         </a>
         
         <p className="text-xs text-[var(--color-text-subtle)] mt-6" dir="rtl">
