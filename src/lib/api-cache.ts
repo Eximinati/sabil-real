@@ -12,17 +12,36 @@ const CACHE_CONFIG = {
   hadith: { revalidate: 300 }, // 5 minutes
 };
 
+const inMemoryCache = {
+  chapters: { data: null as any[] | null, timestamp: 0 },
+  translations: { data: null as any[] | null, timestamp: 0 },
+  tafsirs: { data: null as any[] | null, timestamp: 0 },
+};
+
+const CACHE_TTL = 3600000; // 1 hour in ms
+
 function getCacheConfig(key: keyof typeof CACHE_CONFIG) {
   return CACHE_CONFIG[key];
 }
 
+function isCacheValid(cache: { data: any; timestamp: number }): boolean {
+  return cache.data !== null && Date.now() - cache.timestamp < CACHE_TTL;
+}
+
 export async function fetchChapters() {
+  if (isCacheValid(inMemoryCache.chapters)) {
+    return inMemoryCache.chapters.data!;
+  }
+  
   const res = await fetch(getApiUrl('/chapters'), {
     next: { revalidate: CACHE_CONFIG.chapters.revalidate }
   });
   if (!res.ok) throw new Error('Failed to fetch chapters');
   const data = await res.json();
-  return Array.isArray(data) ? data : (data.chapters || []);
+  const chapters = Array.isArray(data) ? data : (data.chapters || []);
+  
+  inMemoryCache.chapters = { data: chapters, timestamp: Date.now() };
+  return chapters;
 }
 
 export async function fetchChapterById(chapterId: number) {
@@ -31,21 +50,35 @@ export async function fetchChapterById(chapterId: number) {
 }
 
 export async function fetchTranslations() {
+  if (isCacheValid(inMemoryCache.translations)) {
+    return inMemoryCache.translations.data!;
+  }
+  
   const res = await fetch(getApiUrl('/translations'), {
     next: { revalidate: CACHE_CONFIG.translations.revalidate }
   });
   if (!res.ok) throw new Error('Failed to fetch translations');
   const data = await res.json();
-  return Array.isArray(data) ? data : (data.translations || []);
+  const translations = Array.isArray(data) ? data : (data.translations || []);
+  
+  inMemoryCache.translations = { data: translations, timestamp: Date.now() };
+  return translations;
 }
 
 export async function fetchTafsirs() {
+  if (isCacheValid(inMemoryCache.tafsirs)) {
+    return inMemoryCache.tafsirs.data!;
+  }
+  
   const res = await fetch(getApiUrl('/tafsirs'), {
     next: { revalidate: CACHE_CONFIG.tafsirs.revalidate }
   });
   if (!res.ok) throw new Error('Failed to fetch tafsirs');
   const data = await res.json();
-  return Array.isArray(data) ? data : (data.tafsirs || []);
+  const tafsirs = Array.isArray(data) ? data : (data.tafsirs || []);
+  
+  inMemoryCache.tafsirs = { data: tafsirs, timestamp: Date.now() };
+  return tafsirs;
 }
 
 export async function fetchTafsirForChapter(tafsirId: number, chapterId: number) {

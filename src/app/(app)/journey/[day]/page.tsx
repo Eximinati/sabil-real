@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getLessonByDay, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
-import { JourneyLessonClient } from '@/components/journey-lesson-client';
-import { fetchVersesWithAudio, fetchChapters, fetchHadith } from '@/lib/api-cache';
+import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
 
 interface PageProps {
@@ -49,32 +48,16 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const status = lessonProgress?.status || 'not_started';
   const isCompleted = status === 'completed';
   const translationId = urlTranslation ? parseInt(urlTranslation, 10) : preferences.translation_id;
-
-  const verses = await fetchVersesWithAudio(
-    lesson.verse_keys,
-    translationId,
-    5
-  );
-
-  let hadith: any = null;
-  if (lesson.hadith_collection && lesson.hadith_number) {
-    try {
-      const hadithData = await fetchHadith(lesson.hadith_collection, lesson.hadith_number);
-      hadith = hadithData?.hadith || null;
-    } catch (e) {
-      hadith = null;
-    }
-  }
+  const tafsirId = preferences.tafsir_id;
 
   return (
-    <JourneyLessonClient
+    <StreamingLessonShell
       lesson={lesson}
-      verses={verses}
-      hadith={hadith}
       initialReflection={initialReflection || ''}
       isCompleted={isCompleted}
       status={status}
       translationId={translationId}
+      tafsirId={tafsirId}
     />
   );
 }
