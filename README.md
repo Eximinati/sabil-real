@@ -52,37 +52,33 @@ It is a **guided Islamic transformation platform** designed for:
 ### Landing Page
 
 <p align="center">
-  <img src="./screenshots/landing.png" alt="Landing Page" width="100%" />
+  <img width="1863" height="5113" alt="image" src="https://github.com/user-attachments/assets/7755068c-f3f9-48d9-9253-c569c12df8b7" />
 </p>
+
 
 ### Guided Journey Dashboard
 
 <p align="center">
-  <img src="./screenshots/dashboard.png" alt="Dashboard" width="100%" />
+  <img width="1878" height="1002" alt="image" src="https://github.com/user-attachments/assets/d7ffe958-ea7b-4971-b037-633f3ab78dd8" />
 </p>
 
 ### Immersive Lesson Experience
 
 <p align="center">
-  <img src="./screenshots/lesson.png" alt="Lesson View" width="100%" />
+<img width="1878" height="1002" alt="image" src="https://github.com/user-attachments/assets/1200230b-7b42-40a3-89a3-0b7512517a66" />
 </p>
 
 ### Quran with Tafsir Integration
 
 <p align="center">
-  <img src="./screenshots/quran.png" alt="Quran Reader" width="100%" />
+<img width="1878" height="1002" alt="image" src="https://github.com/user-attachments/assets/502c5596-b6c8-41bb-bc25-791b85f4f74a" />
 </p>
 
 ### Reflection System
 
 <p align="center">
-  <img src="./screenshots/reflection.png" alt="Reflection" width="100%" />
-</p>
+<img width="1878" height="1002" alt="image" src="https://github.com/user-attachments/assets/fff57452-3f12-4c3e-843a-0f4ad5954148" />
 
-### Mobile Experience
-
-<p align="center">
-  <img src="./screenshots/mobile.png" alt="Mobile" width="100%" />
 </p>
 
 ---
