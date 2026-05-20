@@ -1,20 +1,6 @@
 import { metadataStore } from './metadata-store';
 
-function getServerBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  // In production without VERCEL_URL, use relative URLs
-  if (process.env.NODE_ENV === 'production') {
-    return '';
-  }
-  return 'http://localhost:3000';
-}
-
-const API_BASE = getServerBaseUrl();
+const API_BASE = '';
 
 export interface Chapter {
   id: number;
@@ -44,66 +30,108 @@ export interface HadithCollection {
   arabic: string;
 }
 
+async function safeFetch<T>(
+  url: string,
+  fallback: T
+): Promise<T> {
+  try {
+    const data = await metadataStore.fetch<T>(url, {
+      cache: true,
+      expiresIn: 3600000,
+    });
+
+    return data ?? fallback;
+  } catch (error) {
+    console.error(`Metadata fetch failed: ${url}`, error);
+    return fallback;
+  }
+}
+
 export async function getCachedChapters(): Promise<Chapter[]> {
-  const data = await metadataStore.fetch<{ chapters?: Chapter[] }>(
+  const data = await safeFetch<{ chapters?: Chapter[] }>(
     `${API_BASE}/api/chapters`,
-    { cache: true, expiresIn: 3600000 }
+    {}
   );
+
   return data?.chapters ?? [];
 }
 
 export async function getCachedTranslations(): Promise<Translation[]> {
-  const data = await metadataStore.fetch<{ translations?: Translation[] }>(
+  const data = await safeFetch<{ translations?: Translation[] }>(
     `${API_BASE}/api/translations`,
-    { cache: true, expiresIn: 3600000 }
+    {}
   );
+
   return data?.translations ?? [];
 }
 
 export async function getCachedTafsirs(): Promise<Tafsir[]> {
-  const data = await metadataStore.fetch<{ tafsirs?: Tafsir[] }>(
+  const data = await safeFetch<{ tafsirs?: Tafsir[] }>(
     `${API_BASE}/api/tafsirs`,
-    { cache: true, expiresIn: 3600000 }
+    {}
   );
+
   return data?.tafsirs ?? [];
 }
 
 export async function getCachedHadithCollections(): Promise<HadithCollection[]> {
-  const data = await metadataStore.fetch<{ collections?: HadithCollection[] }>(
+  const data = await safeFetch<{ collections?: HadithCollection[] }>(
     `${API_BASE}/api/hadith/collections`,
-    { cache: true, expiresIn: 3600000 }
+    {}
   );
+
   return data?.collections ?? [];
 }
 
-export async function getCachedChapter(chapterId: number): Promise<Chapter | null> {
+export async function getCachedChapter(
+  chapterId: number
+): Promise<Chapter | null> {
   const chapters = await getCachedChapters();
-  return chapters.find(c => c.id === chapterId) ?? null;
+  return chapters.find((c) => c.id === chapterId) ?? null;
 }
 
-export async function getCachedTranslation(translationId: number): Promise<Translation | null> {
+export async function getCachedTranslation(
+  translationId: number
+): Promise<Translation | null> {
   const translations = await getCachedTranslations();
-  return translations.find(t => t.id === translationId) ?? null;
+  return translations.find((t) => t.id === translationId) ?? null;
 }
 
-export async function getCachedTafsir(tafsirId: number): Promise<Tafsir | null> {
+export async function getCachedTafsir(
+  tafsirId: number
+): Promise<Tafsir | null> {
   const tafsirs = await getCachedTafsirs();
-  return tafsirs.find(t => t.id === tafsirId) ?? null;
+  return tafsirs.find((t) => t.id === tafsirId) ?? null;
 }
 
-export async function getCachedVerses(chapterId: number, translationId: number = 203) {
-  const url = `${API_BASE}/api/verses/${chapterId}?translation=${translationId}`;
-  return metadataStore.fetch(url, { cache: true, expiresIn: 300000 });
+export async function getCachedVerses(
+  chapterId: number,
+  translationId: number = 203
+) {
+  return safeFetch(
+    `${API_BASE}/api/verses/${chapterId}?translation=${translationId}`,
+    null
+  );
 }
 
-export async function getCachedTafsirContent(tafsirId: number, chapterId: number) {
-  const url = `${API_BASE}/api/tafsirs/${tafsirId}/${chapterId}`;
-  return metadataStore.fetch(url, { cache: true, expiresIn: 300000 });
+export async function getCachedTafsirContent(
+  tafsirId: number,
+  chapterId: number
+) {
+  return safeFetch(
+    `${API_BASE}/api/tafsirs/${tafsirId}/${chapterId}`,
+    null
+  );
 }
 
-export async function getCachedHadith(collection: string, number: string) {
-  const url = `${API_BASE}/api/hadith/${collection}/${number}`;
-  return metadataStore.fetch(url, { cache: true, expiresIn: 300000 });
+export async function getCachedHadith(
+  collection: string,
+  number: string
+) {
+  return safeFetch(
+    `${API_BASE}/api/hadith/${collection}/${number}`,
+    null
+  );
 }
 
 export function invalidateAllMetadata() {
