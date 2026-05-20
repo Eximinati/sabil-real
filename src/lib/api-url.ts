@@ -1,9 +1,14 @@
-const API_BASE = typeof window !== 'undefined'
-  ? window.location.origin
-  : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-
 export function getApiUrl(path: string): string {
-  return `${API_BASE}/api${path}`;
+  // Use relative paths for client-side API calls (works on all environments)
+  return `/api${path}`;
+}
+
+export function getAbsoluteUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // Server-side: use NEXT_PUBLIC_BASE_URL or fallback
+  return process.env.NEXT_PUBLIC_BASE_URL || 'https://sabil.app';
 }
 
 export const API_URLS = {
@@ -21,4 +26,4 @@ export const API_URLS = {
   userPreferences: () => getApiUrl('/user/preferences'),
 };
 
-export default API_BASE;
+export default getAbsoluteUrl;

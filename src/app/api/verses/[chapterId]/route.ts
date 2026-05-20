@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getVerses } from '@/lib/qf-api';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 300;
+export const runtime = 'nodejs';
 
 export async function GET(
   request: Request,
@@ -24,13 +24,14 @@ export async function GET(
     
     return NextResponse.json(verses, {
       headers: {
-        'Cache-Control': 'public, max-age=300, s-maxage=300',
+        'Cache-Control': 'no-store',
       },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Verses API error:', message);
     return NextResponse.json(
-      { error: message },
+      { error: message, verses: [], pagination: null },
       { status: 500 }
     );
   }

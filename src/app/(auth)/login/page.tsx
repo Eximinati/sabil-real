@@ -26,13 +26,32 @@ export default function LoginPage() {
       password,
     });
 
-    setLoading(false);
-
     if (error) {
       setError(error.message);
+      setLoading(false);
     } else {
-      router.push('/journey');
+      // Check onboarding status after successful login
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      
+      if (user) {
+        const { data: prefs } = await supabaseBrowser
+          .from('user_preferences')
+          .select('onboarding_completed')
+          .eq('user_id', user.id)
+          .single();
+        
+        // Redirect based on onboarding status
+        if (!prefs?.onboarding_completed) {
+          router.push('/onboarding');
+        } else {
+          router.push('/journey');
+        }
+      } else {
+        router.push('/journey');
+      }
+      
       router.refresh();
+      setLoading(false);
     }
   };
 

@@ -7,8 +7,9 @@ function getServerBaseUrl(): string {
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
+  // In production without VERCEL_URL, use relative URLs
   if (process.env.NODE_ENV === 'production') {
-    return 'http://localhost:3000';
+    return '';
   }
   return 'http://localhost:3000';
 }

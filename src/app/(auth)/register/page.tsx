@@ -34,14 +34,14 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const { error } = await supabaseBrowser.auth.signUp({
+    const { data, error } = await supabaseBrowser.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
         },
-        emailRedirectTo: undefined,
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
 
@@ -49,9 +49,11 @@ export default function RegisterPage() {
 
     if (error) {
       setError(error.message);
-    } else {
-      router.push('/journey');
-      router.refresh();
+    } else if (data.user) {
+      // For email signup, show confirmation message
+      // User will confirm via email link and then be redirected
+      setError('');
+      alert('Check your email to confirm your account, then sign in.');
     }
   };
 
