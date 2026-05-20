@@ -64,13 +64,15 @@ export function JourneyTodayCard({
   };
 
   return (
-    <div className="bg-gradient-to-br from-[var(--color-surface)] via-[var(--color-surface)] to-[var(--color-accent)]/5 border border-[var(--color-border)] rounded-2xl p-6 mb-8">
+    <div className="relative bg-gradient-to-br from-[var(--color-surface)] via-[var(--color-surface)] to-[var(--color-primary-light)] border border-[var(--color-border)] rounded-2xl p-6 mb-8 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-accent-light),transparent_50%)] opacity-60 pointer-events-none" />
+      <div className="relative">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-sm text-[var(--color-text-muted)]">{timeGreeting}</span>
             {streak > 0 && (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-accent)]/10 rounded-full">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-accent)]/15 rounded-full border border-[var(--color-accent)]/20">
                 <span className="text-sm">🔥</span>
                 <span className="text-sm font-medium text-[var(--color-accent)]">{streak} day{streak > 1 ? 's' : ''}</span>
               </span>
@@ -79,7 +81,7 @@ export function JourneyTodayCard({
 
           {currentLesson && !isCompletedToday ? (
             <div>
-              <p className="text-sm text-[var(--color-text-muted)] mb-1">Today&apos;s Lesson</p>
+              <p className="text-sm text-[var(--color-text-muted)] mb-1">Today&apos;s Transformation</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)]">
                 {currentLesson.title}
               </h2>
@@ -87,7 +89,7 @@ export function JourneyTodayCard({
                 <p className="text-[var(--color-text-secondary)] mt-1">{currentLesson.subtitle}</p>
               )}
               <div className="flex items-center gap-4 mt-3">
-                <span className="inline-block px-2.5 py-1 bg-[var(--color-bg)] text-[var(--color-primary)] rounded text-xs">
+                <span className="inline-block px-2.5 py-1 bg-[var(--color-accent)]/10 text-[var(--color-accent)] rounded text-xs font-medium border border-[var(--color-accent)]/20">
                   {currentLesson.topic}
                 </span>
                 <span className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
@@ -100,23 +102,23 @@ export function JourneyTodayCard({
             </div>
           ) : isCompletedToday ? (
             <div>
-              <p className="text-sm text-[var(--color-text-muted)] mb-1">Today&apos;s Lesson</p>
+              <p className="text-sm text-[var(--color-text-muted)] mb-1">Today&apos;s Transformation</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)]">
-                Completed ✓
+                <span className="text-[var(--color-accent)]">Completed</span> ✓
               </h2>
               <p className="text-[var(--color-text-secondary)] mt-2">
-                Your daily reflection has been recorded. Come back tomorrow for more.
+                Your daily reflection has been recorded. Tomorrow brings new light.
               </p>
             </div>
           ) : (
             <div>
               <h2 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)]">
-                {completedDays === 0 ? "Begin Your Journey" : "Continue Learning"}
+                {completedDays === 0 ? "Begin Your Transformation" : "Continue Your Journey"}
               </h2>
               <p className="text-[var(--color-text-secondary)] mt-2">
                 {completedDays === 0 
-                  ? "Take a moment to reflect on your faith, one day at a time."
-                  : `${completedDays} lesson${completedDays > 1 ? 's' : ''} completed. Keep going!`}
+                  ? "One day at a time, one step closer to Allah."
+                  : `${completedDays} day${completedDays > 1 ? 's' : ''} of transformation. Keep going!`}
               </p>
             </div>
           )}
@@ -125,9 +127,9 @@ export function JourneyTodayCard({
         {currentLesson && !isCompletedToday && nextLessonHref && (
           <a
             href={nextLessonHref}
-            className="shrink-0 bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-all shadow-lg shadow-[var(--color-primary)]/20 flex items-center gap-2"
+            className="shrink-0 bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-all shadow-lg shadow-[var(--color-primary)]/25 flex items-center gap-2"
           >
-            Continue
+            Begin
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -161,6 +163,7 @@ export function JourneyTodayCard({
           currentReciterId={selectedReciter}
           onReciterChange={handleReciterChange}
         />
+      </div>
       </div>
     </div>
   );

@@ -6,18 +6,23 @@
   --color-bg: #F9F6F1;
   --color-surface: #FFFFFF;
   --color-border: #E8E0D5;
-  --color-border-focus: #2D6A4F;
-  --color-primary: #2D6A4F;
-  --color-primary-hover: #1B4332;
-  --color-primary-light: #F0F9F4;
+  --color-border-focus: #B7922A;
+  /* Gold as PRIMARY for premium emotional identity */
+  --color-primary: #B7922A;
+  --color-primary-hover: #9A7A23;
+  --color-primary-light: #FFF8ED;
+  /* Accent = secondary (for subtle highlights) */
   --color-accent: #B7922A;
   --color-accent-light: #FFF8ED;
+  /* Success green = secondary (for progress/completion) */
+  --color-success: #2D6A4F;
+  --color-success-light: #F0F9F4;
+
   --color-text: #1A1A1A;
   --color-text-secondary: #4B5563;
   --color-text-muted: #6B7280;
   --color-text-subtle: #9CA3AF;
   --color-error: #DC2626;
-  --color-success: #16A34A;
 
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-arabic: var(--font-amiri), 'Scheherazade New', serif;
@@ -41,32 +46,38 @@
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-glow: 0 0 20px rgba(183, 146, 42, 0.15);
 
   --sidebar-width: 240px;
-  --sidebar-bg: linear-gradient(to bottom, #2D6A4F, #1B4332);
+  --sidebar-bg: linear-gradient(to bottom, #1A1510, #0F0D0A);
 }
 
 .dark {
-  --color-bg: #0F1110;
-  --color-surface: #171918;
-  --color-border: #2A2D2B;
-  --color-border-focus: #4C9A73;
-  --color-primary: #4C9A73;
-  --color-primary-hover: #66B88A;
-  --color-primary-light: #1A2E25;
-  --color-accent: #D4B04C;
-  --color-accent-light: #2A2518;
+  --color-bg: #050505;
+  --color-surface: #0D0D0D;
+  --color-border: rgba(212, 175, 55, 0.12);
+  --color-border-focus: #D4AF37;
+  /* Gold as PRIMARY for premium dark experience */
+  --color-primary: #D4AF37;
+  --color-primary-hover: #E5C158;
+  --color-primary-light: rgba(212, 175, 55, 0.1);
+  --color-accent: #D4AF37;
+  --color-accent-light: rgba(212, 175, 55, 0.08);
+  /* Success green = secondary */
+  --color-success: #4C9A73;
+  --color-success-light: rgba(76, 154, 115, 0.1);
+
   --color-text: #F3F4F6;
   --color-text-secondary: #D1D5DB;
   --color-text-muted: #A1A1AA;
   --color-text-subtle: #6B7280;
   --color-error: #F87171;
-  --color-success: #4ADE80;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 30px rgba(212, 175, 55, 0.15);
 
-  --sidebar-bg: linear-gradient(to bottom, #1A2A21, #111611);
+  --sidebar-bg: linear-gradient(to bottom, #0D0D0D, #050505);
 }
 
 .focus-mode {
