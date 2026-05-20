@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { getPublishedLessons, getUserProgress, UserProgress } from '@/lib/journey';
 import { JourneyTodayCard } from '@/components/journey-today-card';
 import { JourneyTimelineVirtualized } from '@/components/journey-timeline-virtualized';
+import { DailyIntentionCard } from '@/components/daily-intention-card';
 
 interface Lesson {
   id: string;
@@ -85,15 +86,20 @@ export default async function JourneyPage() {
         isCompletedToday={isCompletedToday}
       />
 
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-[var(--color-text)] mb-4">Your Journey</h2>
-        <JourneyTimelineVirtualized 
-          lessons={lessons} 
-          progress={progress} 
-          currentDay={currentDay}
-          itemsPerPage={10}
-        />
+      <DailyIntentionCard nextLessonDay={currentLesson?.day_number} />
+
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[var(--color-text)]">Your Path</h2>
+        {completedCount === 0 && (
+          <p className="text-[var(--color-text-muted)] text-sm mt-1">You are at the beginning of your transformation journey.</p>
+        )}
       </div>
+      <JourneyTimelineVirtualized 
+        lessons={lessons} 
+        progress={progress} 
+        currentDay={currentDay}
+        itemsPerPage={10}
+      />
     </div>
   );
 }

@@ -66,15 +66,17 @@ export function JourneyTodayCard({
   return (
     <div className="relative bg-gradient-to-br from-[var(--color-surface)] via-[var(--color-surface)] to-[var(--color-primary-light)] border border-[var(--color-border)] rounded-2xl p-6 mb-8 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-accent-light),transparent_50%)] opacity-60 pointer-events-none" />
-      <div className="relative">
+      <div className="relative z-10">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-sm text-[var(--color-text-muted)]">{timeGreeting}</span>
+            <span className="text-[var(--color-text-muted)]">•</span>
+            <span className="text-xs text-[var(--color-text-muted)] font-medium">Day {currentDay} of {totalDays}</span>
             {streak > 0 && (
               <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-accent)]/15 rounded-full border border-[var(--color-accent)]/20">
                 <span className="text-sm">🔥</span>
-                <span className="text-sm font-medium text-[var(--color-accent)]">{streak} day{streak > 1 ? 's' : ''}</span>
+                <span className="text-sm font-medium text-[var(--color-accent)]">{streak}</span>
               </span>
             )}
           </div>
@@ -129,7 +131,7 @@ export function JourneyTodayCard({
             href={nextLessonHref}
             className="shrink-0 bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-all shadow-lg shadow-[var(--color-primary)]/25 flex items-center gap-2"
           >
-            Begin
+            Begin Today&apos;s Lesson
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -148,9 +150,6 @@ export function JourneyTodayCard({
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mt-2 text-center">
-          Day {completedDays + (isCompletedToday ? 0 : 1)} of {totalDays}
-        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[var(--color-border)]">

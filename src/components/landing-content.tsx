@@ -159,7 +159,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           <div className="flex items-center gap-3 md:gap-4">
             <Link href="/login" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm">Sign In</Link>
             <Link href="/register" className="bg-[var(--color-accent)] text-white px-5 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
-              Begin Journey
+              Start Your Transformation
             </Link>
           </div>
         </div>
@@ -200,7 +200,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 href="/login"
                 className="border border-[var(--color-border)] text-[var(--color-text)] px-8 py-4 rounded-xl hover:border-[var(--color-accent)] transition-colors"
               >
-                Continue Learning
+                Continue Your Journey
               </Link>
             </div>
 
@@ -223,6 +223,60 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 </svg>
                 <span>Beginner friendly</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MORE THAN READING SECTION */}
+      <section className="py-20 md:py-28 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.06),transparent_50%)]" />
+        <div className="max-w-[900px] mx-auto relative">
+          <div className="text-center mb-12">
+            <span className="text-[var(--color-accent)] text-sm font-medium tracking-wider uppercase">The Vision</span>
+            <h2 className="text-[28px] md:text-[40px] font-bold text-[var(--color-text)] mt-3">
+              More Than Reading
+            </h2>
+            <p className="text-[var(--color-text-muted)] text-lg mt-4 max-w-[550px] mx-auto">
+              Sabil was built to solve the disconnect between consuming Islamic content and truly living it.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-7 text-center hover:border-[var(--color-accent)]/40 transition-all group">
+              <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[var(--color-accent)]/10 flex items-center justify-center">
+                <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Structured Guidance</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Daily lessons designed to build understanding step-by-step.
+              </p>
+            </div>
+
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-7 text-center hover:border-[var(--color-accent)]/40 transition-all group">
+              <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[var(--color-accent)]/10 flex items-center justify-center">
+                <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Reflection & Practice</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Knowledge becomes transformation through reflection and action.
+              </p>
+            </div>
+
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-7 text-center hover:border-[var(--color-accent)]/40 transition-all group">
+              <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[var(--color-accent)]/10 flex items-center justify-center">
+                <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Spiritual Growth</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Track your progress through a guided 365-day Islamic journey.
+              </p>
             </div>
           </div>
         </div>
@@ -257,6 +311,55 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS SECTION */}
+      <section className="py-20 md:py-28 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(212,175,55,0.05),transparent_50%)]" />
+        <div className="max-w-[800px] mx-auto relative">
+          <div className="text-center mb-14">
+            <span className="text-[var(--color-accent)] text-sm font-medium tracking-wider uppercase">The Process</span>
+            <h2 className="text-[28px] md:text-[40px] font-bold text-[var(--color-text)] mt-3">
+              How It Works
+            </h2>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-8 md:gap-4">
+            <div className="flex-1 text-center relative">
+              <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-[var(--color-accent)]">1</span>
+              </div>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Learn</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">Daily guided lessons through the Quran and Islamic sciences.</p>
+              <div className="hidden md:block absolute -right-6 top-10">
+                <svg className="w-8 h-8 text-[var(--color-accent)]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex-1 text-center relative">
+              <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-[var(--color-accent)]">2</span>
+              </div>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Reflect</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">Questions and practical integration for your daily life.</p>
+              <div className="hidden md:block absolute -right-6 top-10">
+                <svg className="w-8 h-8 text-[var(--color-accent)]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex-1 text-center">
+              <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-[var(--color-accent)]">3</span>
+              </div>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Transform</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">Build lasting spiritual habits that change your life.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -300,7 +403,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               href="/register"
               className="bg-[var(--color-accent)] text-white font-medium px-10 py-4 rounded-xl inline-block hover:opacity-90 transition-opacity text-lg"
             >
-              Start Day 1 — Free
+              Begin Your Transformation — Free
             </Link>
             <p className="text-[var(--color-text-muted)] text-sm mt-3">
               No credit card required. Begin your transformation today.

@@ -155,7 +155,7 @@ export function VirtualizedTimeline({
                             href={`/journey/${lesson.day_number}`}
                             className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
                           >
-                            Begin →
+                            Begin Today →
                           </a>
                         )}
                       </>

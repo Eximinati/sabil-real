@@ -62,7 +62,7 @@ function DesktopSidebar({ email }: { email: string }) {
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Transformation</span>
+          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Primary Experience</span>
         </div>
         <NavItem href="/journey" isPrimary>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,8 +76,8 @@ function DesktopSidebar({ email }: { email: string }) {
           </svg>
           Reflections
         </NavItem>
-        <div className="px-3 py-2 mt-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Knowledge</span>
+        <div className="px-3 py-2 mt-4">
+          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Knowledge Library</span>
         </div>
         <NavItem href="/quran">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
