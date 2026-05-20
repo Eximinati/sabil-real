@@ -52,8 +52,9 @@ It is a **guided Islamic transformation platform** designed for:
 ### Landing Page
 
 <p align="center">
-  <img src="./screenshots/landing.png" alt="Landing Page" width="100%" />
+  <img width="1863" height="5113" alt="image" src="https://github.com/user-attachments/assets/7755068c-f3f9-48d9-9253-c569c12df8b7" />
 </p>
+
 
 ### Guided Journey Dashboard
 
