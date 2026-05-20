@@ -53,7 +53,7 @@ export default function RegisterPage() {
       // For email signup, show confirmation message
       // User will confirm via email link and then be redirected
       setError('');
-      alert('Check your email to confirm your account, then sign in.');
+      // alert('Check your email to confirm your account, then sign in.');
     }
   };
 
