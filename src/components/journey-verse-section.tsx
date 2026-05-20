@@ -22,6 +22,7 @@ interface JourneyVerseSectionProps {
   onPlayAudio: (verseKey: string, audioUrl: string, index: number) => void;
   currentPlayingVerse?: string | null;
   isPlaying?: boolean;
+  loadingAudio?: boolean;
 }
 
 export function JourneyVerseSection({
@@ -30,10 +31,10 @@ export function JourneyVerseSection({
   onPlayAudio,
   currentPlayingVerse,
   isPlaying,
+  loadingAudio,
 }: JourneyVerseSectionProps) {
   return (
     <div className="mb-8">
-      <h2 className="section-heading">Quranic Verses</h2>
       {verses.map(({ verse, chapterName, verseKey, audioUrl }, idx) => (
         <JourneyVerseCard
           key={idx}

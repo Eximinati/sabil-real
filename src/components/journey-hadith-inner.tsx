@@ -35,25 +35,37 @@ interface HadithContentInnerProps {
 export function HadithContentInner({ lesson }: HadithContentInnerProps) {
   const [hadith, setHadith] = useState<HadithData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
+    setFetchKey(k => k + 1);
+  }, [lesson.hadith_collection, lesson.hadith_number]);
+
+  useEffect(() => {
+    if (fetchKey === 0) return;
     if (!lesson.hadith_collection || !lesson.hadith_number) return;
     
     setLoading(true);
+    let cancelled = false;
+    
     async function fetchHadith() {
       try {
         const res = await fetch(getApiUrl(`/hadith?collection=${lesson.hadith_collection}&number=${lesson.hadith_number}`));
         if (!res.ok) throw new Error('Failed to fetch hadith');
         const data = await res.json();
-        setHadith(data.hadith || null);
+        if (!cancelled) {
+          setHadith(data.hadith || null);
+        }
       } catch (err) {
-        setHadith(null);
+        if (!cancelled) setHadith(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
+    
     fetchHadith();
-  }, [lesson.hadith_collection, lesson.hadith_number]);
+    return () => { cancelled = true; };
+  }, [fetchKey]);
 
   if (!lesson.hadith_text && !lesson.hadith_collection) return null;
 

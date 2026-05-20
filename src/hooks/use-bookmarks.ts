@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,13 +11,23 @@ interface Bookmark {
   created_at: string;
 }
 
-export function useBookmarks() {
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [loading, setLoading] = useState(true);
+interface UseBookmarksOptions {
+  initialBookmarks?: Bookmark[];
+  chapterId?: number;
+}
+
+export function useBookmarks(options?: UseBookmarksOptions) {
+  const { initialBookmarks, chapterId } = options || {};
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks ?? []);
+  const [loading, setLoading] = useState(!initialBookmarks);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const hasFetchedRef = useRef(false);
   const toast = useToast();
 
   const fetchBookmarks = useCallback(async () => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    
     try {
       const res = await fetch('/api/bookmarks');
       const data = await res.json();
@@ -32,8 +42,14 @@ export function useBookmarks() {
   }, []);
 
   useEffect(() => {
+    if (initialBookmarks && initialBookmarks.length > 0) {
+      hasFetchedRef.current = true;
+      setBookmarks(initialBookmarks);
+      setLoading(false);
+      return;
+    }
     fetchBookmarks();
-  }, [fetchBookmarks]);
+  }, [initialBookmarks, fetchBookmarks]);
 
   const checkBookmark = useCallback((surahId: number, verseNumber: number) => {
     const exists = bookmarks.some(

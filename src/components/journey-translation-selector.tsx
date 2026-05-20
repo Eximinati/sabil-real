@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 interface Translation {
   id: number;
@@ -45,6 +46,10 @@ export function JourneyTranslationSelector({
   const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     fetch('/api/translations')
       .then(res => res.json())
@@ -84,21 +89,30 @@ export function JourneyTranslationSelector({
   }, [isOpen]);
 
   const handleSelect = useCallback((translation: Translation) => {
+    if (translation.id === currentTranslationId) {
+      setIsOpen(false);
+      return;
+    }
+
     setCurrentTranslation(translation);
     setIsOpen(false);
     
     const updatedRecent = [translation.id, ...recentTranslations.filter(id => id !== translation.id)].slice(0, 5);
     setRecentTranslations(updatedRecent);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRecent));
+    localStorage.setItem('sabil-translation-id', translation.id.toString());
     
     if (onTranslationChange) {
       onTranslationChange(translation.id);
     } else {
-      const currentPath = window.location.pathname;
-      const newUrl = `${currentPath}?translation=${translation.id}`;
-      window.location.href = newUrl;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('translation', translation.id.toString());
+      
+      router.replace(`${pathname}?${params.toString()}`, {
+        scroll: false,
+      });
     }
-  }, [onTranslationChange, recentTranslations]);
+  }, [onTranslationChange, recentTranslations, currentTranslationId, pathname, searchParams, router]);
 
   const filteredTranslations = useMemo(() => {
     let filtered = translations;

@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
 import { useReadingProgress } from '@/hooks/use-reading-progress';
 import { useReadingHistory } from '@/hooks/use-reading-history';
+import { useBookmarks } from '@/hooks/use-bookmarks';
 import { CopyButton } from './copy-button';
 import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
@@ -73,6 +74,7 @@ export function VerseReaderClient({
   const toast = useToast();
   const { updateProgress, getPositionForSurah } = useReadingProgress(chapterId);
   const { addToHistory } = useReadingHistory();
+  const { bookmarks } = useBookmarks();
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [cachedAudio, setCachedAudio] = useState<Record<number, AudioFile[]>>({});
   const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(new Set());
@@ -87,22 +89,12 @@ export function VerseReaderClient({
   const isPlaying = (verseKey: string) => isActive(verseKey) && state.isPlaying;
 
   useEffect(() => {
-    fetch('/api/bookmarks')
-      .then(res => res.json())
-      .then(data => {
-        if (data.bookmarks) {
-          const bookmarked = new Set<string>(
-            data.bookmarks
-              .filter((b: any) => b.surah_id === chapterId)
-              .map((b: any) => `verse-${b.verse_number}`)
-          );
-          setBookmarkedVerses(bookmarked);
-        }
-      })
-      .catch(() => {
-        toast.error('Unable to load bookmarks');
-      });
-  }, [chapterId]);
+    const chapterBookmarks = bookmarks.filter(b => b.surah_id === chapterId);
+    const bookmarked = new Set<string>(
+      chapterBookmarks.map(b => `verse-${b.verse_number}`)
+    );
+    setBookmarkedVerses(bookmarked);
+  }, [bookmarks, chapterId]);
 
   useEffect(() => {
     addToHistory({

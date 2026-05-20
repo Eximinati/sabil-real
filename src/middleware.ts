@@ -40,6 +40,13 @@ export async function middleware(request: NextRequest) {
     const protectedPaths = ['/journey', '/quran', '/search', '/tafsir', '/hadith', '/settings'];
     const isProtected = protectedPaths.some(path => pathname.startsWith(path));
     
+    const adminPaths = ['/admin'];
+    const isAdminPath = adminPaths.some(path => pathname.startsWith(path));
+    
+    if (isAdminPath && !user) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    
     if (!isPublicPath && isProtected) {
       return NextResponse.redirect(new URL('/login', request.url));
     }

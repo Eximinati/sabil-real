@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { AudioPlayerProvider } from '@/components/audio-player-provider';
 import { FocusModeProvider } from '@/components/focus-mode-provider';
+import { FloatingNotice } from '@/components/floating-notice';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -70,6 +71,7 @@ export default function RootLayout({
             <AudioPlayerProvider>
               <FocusModeProvider>
                 {children}
+                <FloatingNotice />
               </FocusModeProvider>
             </AudioPlayerProvider>
           </ToastProvider>

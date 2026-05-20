@@ -26,12 +26,18 @@ interface ReflectionContentInnerProps {
 
 export function ReflectionContentInner({ lesson, initialReflection }: ReflectionContentInnerProps) {
   const [ReflectionInput, setReflectionInput] = useState<any>(null);
+  const [mountKey, setMountKey] = useState(0);
 
   useEffect(() => {
+    setMountKey(k => k + 1);
+  }, [lesson.id]);
+
+  useEffect(() => {
+    if (mountKey === 0) return;
     import('./reflection-input').then((mod) => {
       setReflectionInput(() => mod.ReflectionInput);
     });
-  }, []);
+  }, [mountKey]);
 
   if (!lesson.reflection_prompt) return null;
 

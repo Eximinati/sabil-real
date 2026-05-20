@@ -30,6 +30,63 @@ interface FetchedData {
   quran65: string;
 }
 
+const FEATURES = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
+        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "Guided Learning Journey",
+    description: "Structured daily lessons combining Quran study, Seerah, and Islamic knowledge — no overwhelm, just consistent growth."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
+        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "Reflection & Spiritual Growth",
+    description: "Daily reflection prompts, journaling, and heart-work that transform knowledge into lasting habit."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
+        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "Heart-Centered Application",
+    description: "Move beyond dry knowledge to spiritual transformation. Each lesson includes practical steps for daily life."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
+        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "Beginner Friendly",
+    description: "Start from zero. No prior knowledge required. We build your Islamic foundation one clear day at a time."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
+        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "365-Day Curriculum",
+    description: "A full year of structured Islamic education covering Quran, Seerah, Fiqh, Aqidah, and spiritual development."
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
+        <path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5h.008v.008H12v-.008z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "Learn at Your Pace",
+    description: "Pause, revisit, and review anytime. Your progress is saved, and lessons are available forever."
+  },
+];
+
 export function LandingContent({ staticChapters, staticBismillah, staticQuran65, previewDays }: LandingContentProps) {
   const [data, setData] = useState<FetchedData>({
     chapters: staticChapters,
@@ -37,11 +94,8 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
     quran65: staticQuran65,
   });
   const [loading, setLoading] = useState(true);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setHydrated(true);
-    
     async function checkAuthAndFetch() {
       const { data: { user } } = await supabaseBrowser.auth.getUser();
       
@@ -91,25 +145,33 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
 
   return (
     <>
-      <section className="min-h-screen flex flex-col">
-        <div className="flex justify-between items-center px-8 py-6 max-w-[1200px] mx-auto w-full">
+      {/* HERO SECTION */}
+      <section className="min-h-screen flex flex-col relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[var(--color-accent)]/5 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 flex justify-between items-center px-6 md:px-10 py-6 max-w-[1200px] mx-auto w-full">
           <div className="flex items-center gap-2">
             <span className="text-[var(--color-text)] font-semibold text-xl">Sabil</span>
             <span className="font-arabic text-[var(--color-accent)] text-sm" dir="rtl">سبيل</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <Link href="/login" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm">Sign In</Link>
-            <Link href="/register" className="bg-[var(--color-accent)] text-white px-5 py-2 rounded-lg font-medium hover:bg-[var(--color-primary-hover)]">
-              Begin
+            <Link href="/register" className="bg-[var(--color-accent)] text-white px-5 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
+              Begin Journey
             </Link>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <div className="max-w-[600px] text-center">
-            <p className="text-xs tracking-[0.2em] text-[var(--color-accent)] uppercase mb-6">SABIL — GUIDED ISLAM JOURNEY</p>
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20">
+          <div className="max-w-[680px] text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)]/10 rounded-full mb-6">
+              <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
+              <span className="text-xs text-[var(--color-accent)] font-medium">A Guided Islamic Transformation Platform</span>
+            </div>
             
-            <p className="font-arabic text-[28px] text-center text-[var(--color-accent)] mb-2" dir="rtl">
+            <p className="font-arabic text-[24px] md:text-[28px] text-center text-[var(--color-accent)] mb-3" dir="rtl">
               {bismillah}
             </p>
             <p className="text-xs text-[var(--color-text-muted)] italic mb-8">
@@ -118,168 +180,172 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
 
             <div className="w-16 h-px bg-[var(--color-accent)]/40 mx-auto my-8" />
 
-            <h1 className="text-[52px] font-bold leading-tight">
-              <span className="text-[var(--color-text)] block">One step a day.</span>
-              <span className="text-[var(--color-accent)] italic block">No overwhelm.</span>
+            <h1 className="text-[36px] md:text-[52px] font-bold leading-tight">
+              <span className="text-[var(--color-text)]">Transform your</span>
+              <span className="block text-[var(--color-accent)]">relationship with Islam</span>
             </h1>
 
-            <p className="text-[16px] text-[var(--color-text-muted)] leading-relaxed text-center mt-6 max-w-[480px] mx-auto">
-              A structured, gentle journey through the Qur&apos;an, Seerah, and reflection — without feeds, debates, or distractions.
+            <p className="text-[16px] md:text-[18px] text-[var(--color-text-muted)] leading-relaxed text-center mt-6 max-w-[520px] mx-auto">
+              Not just reading — <strong>understanding</strong>. A guided 365-day journey through Quran, spiritual growth, reflection, and lasting habit formation.
             </p>
 
-            <div className="flex justify-center gap-3 mt-8">
+            <div className="flex flex-col sm:flex-row justify-center gap-3 mt-10">
               <Link 
                 href="/register"
-                className="bg-[var(--color-accent)] text-white font-medium px-8 py-3 rounded-lg hover:bg-[var(--color-primary-hover)]"
+                className="bg-[var(--color-accent)] text-white font-medium px-8 py-4 rounded-xl hover:opacity-90 transition-all text-lg"
               >
-                Start your journey
+                Start Your Transformation
               </Link>
               <Link 
                 href="/login"
-                className="border border-[var(--color-border)] text-[var(--color-text-muted)] px-8 py-3 rounded-lg hover:border-[var(--color-primary)]"
+                className="border border-[var(--color-border)] text-[var(--color-text)] px-8 py-4 rounded-xl hover:border-[var(--color-accent)] transition-colors"
               >
-                I already have an account
+                Continue Learning
               </Link>
             </div>
 
-            <div className="max-w-[480px] mx-auto mt-12 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5">
-              <p className="text-[10px] tracking-[0.15em] text-[var(--color-accent)] uppercase mb-4">BEGIN WITH THE FOUNDATION</p>
-              {chapters.map((chapter, idx) => (
-                <div key={chapter.id}>
-                  <div className="flex items-center gap-4 py-3 hover:bg-[var(--color-bg)] rounded-lg px-2 -mx-2 cursor-pointer">
-                    <span className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-accent)]/20 text-[var(--color-accent)] text-sm font-medium">
-                      {chapter.id}
-                    </span>
-                    <div className="flex-1 text-left">
-                      <p className="text-[var(--color-text)] text-sm font-medium">{chapter.name_simple}</p>
-                      <p className="text-[var(--color-text-muted)] text-xs">{chapter.verses_count} verses</p>
-                    </div>
-                    <span className="font-arabic text-[var(--color-accent)] text-lg" dir="rtl">{chapter.name_arabic}</span>
-                  </div>
-                  {idx < chapters.length - 1 && <div className="border-t border-[var(--color-border)]/50" />}
+            <div className="flex items-center justify-center gap-8 mt-12 text-sm text-[var(--color-text-muted)]">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>20 min/day</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>365 days</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span>Beginner friendly</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT IS SABIL SECTION */}
+      <section className="py-20 md:py-28 px-4 bg-[var(--color-surface)]">
+        <div className="max-w-[1000px] mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] mb-4">
+              What is Sabil?
+            </h2>
+            <p className="text-[var(--color-text-muted)] text-lg max-w-[600px] mx-auto">
+              Sabil is a guided Islamic transformation platform — designed to help you build deep, lasting understanding of your faith through daily structured learning.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {FEATURES.map((feature, idx) => (
+              <div 
+                key={idx} 
+                className="group bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-6 hover:border-[var(--color-accent)]/50 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all"
+              >
+                <div className="w-12 h-12 mb-4 text-[var(--color-accent)]">
+                  {feature.icon}
                 </div>
-              ))}
-              <div className="border-t border-[var(--color-border)] mt-4 pt-4">
-                <Link href="/register" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">
-                  Create account to access all 114 surahs and your guided journey →
-                </Link>
+                <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2 group-hover:text-[var(--color-accent)] transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-[var(--color-surface)]">
-        <div className="max-w-[900px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-8">
-              <div className="w-10 h-10 mb-4">
-                <svg viewBox="0 0 24 24" fill="none" className="text-[var(--color-accent)]">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8 7h8M8 11h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Foundations first</h3>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                A 30-day path through Qur&apos;an, Seerah, and gentle reflection.
-              </p>
-            </div>
-
-            <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-8">
-              <div className="w-10 h-10 mb-4">
-                <svg viewBox="0 0 24 24" fill="none" className="text-[var(--color-accent)]">
-                  <path d="M12 19l7-7 3 3-7 7-3-3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2 2l7.586 7.586" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="11" cy="11" r="2" stroke="currentColor" strokeWidth="1.5"/>
-                </svg>
-              </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Reflection over scrolling</h3>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                Write what you learned. Mark what confused you. Return to it later.
-              </p>
-            </div>
-
-            <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-8">
-              <div className="w-10 h-10 mb-4">
-                <svg viewBox="0 0 24 24" fill="none" className="text-[var(--color-accent)]">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">No debates, no rage</h3>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                A focused study space — calm, intellectually honest, free of sectarian noise.
-              </p>
-            </div>
+      {/* JOURNEY PREVIEW SECTION */}
+      <section className="py-20 md:py-28 px-4 bg-[var(--color-bg)]">
+        <div className="max-w-[700px] mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] mb-4">
+              Your First Week
+            </h2>
+            <p className="text-[var(--color-text-muted)] text-lg">
+              Each day is a complete mini-course. Thoughtfully structured. Spiritually meaningful.
+            </p>
           </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4 bg-[var(--color-bg)]">
-        <div className="max-w-[680px] mx-auto">
-          <h2 className="text-[32px] font-bold text-[var(--color-text)] text-center mb-4">What your first week looks like</h2>
-          <p className="text-[var(--color-text-muted)] text-center mb-12">Each day is a complete lesson. No rushing.</p>
 
           <div className="space-y-3">
             {previewDays.map((day, idx) => (
-              <div key={day.day} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 flex items-center gap-4 relative overflow-hidden">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-accent)] text-white font-medium text-sm">
+              <div 
+                key={day.day} 
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 flex items-center gap-4 hover:border-[var(--color-accent)]/30 transition-colors"
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent)]/70 text-white font-medium">
                   {day.day}
                 </div>
                 <div className="flex-1">
-                  <p className="text-[var(--color-text)] font-medium">{day.title}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-[var(--color-accent)]/20 text-[var(--color-accent)] text-xs rounded">
+                  <p className="text-[var(--color-text)] font-medium text-base">{day.title}</p>
+                  <span className="inline-block mt-1 px-2.5 py-0.5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-xs rounded-full font-medium">
                     {day.topic}
                   </span>
                 </div>
-                <span className="text-[var(--color-text-muted)] text-xs">~20 min</span>
-                
-                {idx > 0 && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[var(--color-bg)]/90 flex items-center justify-end pr-4">
-                    <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                )}
+                <div className="text-right">
+                  <span className="text-[var(--color-text-muted)] text-sm">~20 min</span>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-10">
             <Link 
               href="/register"
-              className="bg-[var(--color-accent)] text-white font-medium px-8 py-3 rounded-lg inline-block hover:bg-[var(--color-primary-hover)]"
+              className="bg-[var(--color-accent)] text-white font-medium px-10 py-4 rounded-xl inline-block hover:opacity-90 transition-opacity text-lg"
             >
-              Begin Day 1 Journey
+              Start Day 1 — Free
             </Link>
+            <p className="text-[var(--color-text-muted)] text-sm mt-3">
+              No credit card required. Begin your transformation today.
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-[var(--color-surface)]">
+      {/* QUOTE SECTION */}
+      <section className="py-20 md:py-28 px-4 bg-[var(--color-surface)]">
         <div className="max-w-[600px] mx-auto text-center">
-          <p className="font-arabic text-[28px] text-[var(--color-accent)]" dir="rtl">{quran65}</p>
-          <p className="text-[var(--color-text-muted)] text-sm italic mt-2">And whoever fears Allah — He will make for him a way out.</p>
-          <p className="text-[var(--color-text-muted)]/60 text-xs">(Quran 65:3)</p>
+          <p className="font-arabic text-[24px] md:text-[32px] text-[var(--color-accent)]" dir="rtl">{quran65}</p>
+          <p className="text-[var(--color-text-muted)] text-base italic mt-4">And whoever fears Allah — He will make for him a way out.</p>
+          <p className="text-[var(--color-text-muted)]/60 text-sm mt-1">(Quran 65:3)</p>
           
-          <p className="mt-8 text-[20px] text-[var(--color-text)] font-medium">
-            Join thousands learning Islam, one day at a time.
-          </p>
+          <div className="mt-10 p-6 bg-[var(--color-bg)] rounded-2xl border border-[var(--color-border)]">
+            <p className="text-[var(--color-text)] text-lg font-medium">
+              Join thousands on a journey of understanding, reflection, and spiritual growth.
+            </p>
+            <p className="text-[var(--color-text-muted)] text-sm mt-2">
+              Not a Quran reader — a life transformer.
+            </p>
+          </div>
           
           <Link 
             href="/register"
-            className="inline-block mt-8 bg-[var(--color-accent)] text-white font-medium px-10 py-4 rounded-lg text-base hover:bg-[var(--color-primary-hover)]"
+            className="inline-block mt-8 bg-[var(--color-accent)] text-white font-medium px-12 py-4 rounded-xl text-lg hover:opacity-90 transition-opacity"
           >
-            Start your journey today
+            Begin Your Journey
           </Link>
         </div>
       </section>
 
-      <footer className="py-6 px-8 bg-[var(--color-bg)] border-t border-[var(--color-border)] flex justify-between items-center">
-        <p className="text-[var(--color-text-muted)] text-xs">Sabil — a structured Islamic learning companion.</p>
-        <p className="text-[var(--color-text-muted)] text-xs">Read. Reflect. Return.</p>
+      {/* FOOTER */}
+      <footer className="py-8 px-6 bg-[var(--color-bg)] border-t border-[var(--color-border)]">
+        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[var(--color-text)] font-semibold">Sabil</span>
+            <span className="font-arabic text-[var(--color-accent)] text-sm" dir="rtl">سبيل</span>
+            <span className="text-[var(--color-text-muted)] text-xs ml-2">| Guided Islamic Transformation</span>
+          </div>
+          <p className="text-[var(--color-text-muted)] text-sm">
+            Learn. Reflect. Transform. — One day at a time.
+          </p>
+        </div>
       </footer>
     </>
   );

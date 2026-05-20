@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
-import { getLessonByDay, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
+import { getLessonByDayWithBlocks, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -23,8 +23,9 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
     redirect('/login');
   }
 
-  const lesson = await getLessonByDay(dayNumber);
-  if (!lesson) {
+  const lessonWithBlocks = await getLessonByDayWithBlocks(dayNumber);
+  
+  if (!lessonWithBlocks) {
     return (
       <div className="px-6 pt-12 pb-12 max-w-[740px] mx-auto">
         <EmptyState
@@ -41,10 +42,10 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const [progress, preferences, initialReflection] = await Promise.all([
     getUserProgress(user.id),
     getUserPreferences(user.id),
-    getUserReflection(user.id, lesson.id)
+    getUserReflection(user.id, lessonWithBlocks.id)
   ]);
 
-  const lessonProgress = progress.find(p => p.lesson_id === lesson.id);
+  const lessonProgress = progress.find(p => p.lesson_id === lessonWithBlocks.id);
   const status = lessonProgress?.status || 'not_started';
   const isCompleted = status === 'completed';
   const translationId = urlTranslation ? parseInt(urlTranslation, 10) : preferences.translation_id;
@@ -52,7 +53,8 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
 
   return (
     <StreamingLessonShell
-      lesson={lesson}
+      lesson={lessonWithBlocks}
+      blocks={lessonWithBlocks.blocks}
       initialReflection={initialReflection || ''}
       isCompleted={isCompleted}
       status={status}

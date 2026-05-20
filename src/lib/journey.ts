@@ -18,6 +18,18 @@ export interface JourneyLesson {
   is_published: boolean;
 }
 
+export interface LessonBlock {
+  id: string;
+  lesson_id: string;
+  order_index: number;
+  block_type: string;
+  content: Record<string, unknown>;
+}
+
+export interface JourneyLessonWithBlocks extends JourneyLesson {
+  blocks: LessonBlock[];
+}
+
 export interface UserProgress {
   lesson_id: string;
   day_number: number;
@@ -53,6 +65,32 @@ export async function getLessonByDay(
     .single();
   if (error) return null;
   return data;
+}
+
+export async function getLessonByDayWithBlocks(
+  dayNumber: number
+): Promise<JourneyLessonWithBlocks | null> {
+  const supabase = await supabaseServer();
+  
+  const { data: lesson, error } = await supabase
+    .from('journey_lessons')
+    .select('*')
+    .eq('day_number', dayNumber)
+    .eq('is_published', true)
+    .single();
+  
+  if (error || !lesson) return null;
+
+  const { data: blocks, error: blocksError } = await supabase
+    .from('journey_lesson_blocks')
+    .select('id, lesson_id, order_index, block_type, content')
+    .eq('lesson_id', lesson.id)
+    .order('order_index', { ascending: true });
+
+  return {
+    ...lesson,
+    blocks: blocks || [],
+  };
 }
 
 export async function getUserProgress(

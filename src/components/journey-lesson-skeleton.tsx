@@ -42,10 +42,7 @@ export function VerseSectionSkeleton() {
   return (
     <div className="mb-8">
       <style>{shimmerStyle}</style>
-      <div className="flex items-center justify-between mb-4">
-        <Skeleton className="w-32 h-6" />
-        <Skeleton className="w-24 h-9 rounded-lg" />
-      </div>
+      <Skeleton className="w-32 h-6 mb-4" />
       <div className="space-y-4">
         {[1, 2].map((i) => (
           <div key={i} className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4">

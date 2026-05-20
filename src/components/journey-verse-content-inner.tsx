@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, startTransition } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { JourneyVerseSection } from './journey-verse-section';
@@ -52,13 +52,13 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
   const [verses, setVerses] = useState<VerseWithData[]>([]);
   const [loadedCount, setLoadedCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isPending, startLoadTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [currentPlayingVerse, setCurrentPlayingVerse] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [reciterId, setReciterId] = useState<number>(5);
+  const [fetchKey, setFetchKey] = useState(0);
   const toast = useToast();
 
   const urlTranslation = router.get('translation');
@@ -72,28 +72,32 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
   }, []);
 
   useEffect(() => {
+    setFetchKey(k => k + 1);
+  }, [verseKeys.join(','), currentTranslation, reciterId]);
+
+  useEffect(() => {
+    if (fetchKey === 0) return;
+    
     const startTime = performance.now();
+    setLoading(true);
     
     async function fetchVerses() {
       try {
         const res = await fetch(getApiUrl(`/verses?verse_keys=${verseKeys.join(',')}&translation=${currentTranslation}&reciter=${reciterId}`));
         if (!res.ok) throw new Error('Failed to fetch verses');
         const data = await res.json();
-        const fetchedVerses = data.verses || [];
-        
-        startLoadTransition(() => {
-          setVerses(fetchedVerses);
-          setLoadedCount(fetchedVerses.length);
-          logPerformance('Verse content loaded', performance.now() - startTime);
-        });
+        setVerses(data.verses || []);
+        setLoadedCount((data.verses || []).length);
+        logPerformance('Verse content loaded', performance.now() - startTime);
       } catch (err) {
         setError('Failed to load verses');
       } finally {
         setLoading(false);
       }
     }
+    
     fetchVerses();
-  }, [verseKeys.join(','), currentTranslation, reciterId, startLoadTransition]);
+  }, [fetchKey]);
 
   const handleReciterChange = (id: number) => {
     setReciterId(id);
@@ -224,15 +228,6 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
             <div className="w-full h-6 bg-[var(--color-border)] rounded mb-2" />
             <div className="w-3/4 h-4 bg-[var(--color-border)] rounded" />
           </div>
-          {isPending && (
-            <div className="flex items-center justify-center py-2 text-sm text-[var(--color-text-muted)]">
-              <svg className="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Loading more verses...
-            </div>
-          )}
         </div>
       </div>
     );
@@ -266,32 +261,14 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="section-heading mb-0">Quranic Verses</h2>
-        <button
-          onClick={handlePlayAll}
-          disabled={loadingAudio}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
-        >
-          {loadingAudio ? (
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          )}
-          Play All
-        </button>
-      </div>
+      <h2 className="section-heading mb-4">Quranic Verses</h2>
       <JourneyVerseSection
         verses={showVerses}
         reciterId={reciterId}
         onPlayAudio={(verseKey, url) => playAudio(verseKey, url)}
         currentPlayingVerse={currentPlayingVerse}
         isPlaying={isPlaying}
+        loadingAudio={loadingAudio}
       />
     </div>
   );

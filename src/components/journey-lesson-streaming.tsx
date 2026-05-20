@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
   LessonHeaderSkeleton, 
   VerseSectionSkeleton, 
@@ -35,8 +36,17 @@ interface LessonData {
   estimated_minutes: number;
 }
 
+interface LessonBlock {
+  id: string;
+  lesson_id: string;
+  order_index: number;
+  block_type: string;
+  content: Record<string, unknown>;
+}
+
 interface StreamingLessonClientProps {
   lesson: LessonData;
+  blocks?: LessonBlock[];
   initialReflection: string;
   isCompleted: boolean;
   status: string;
@@ -75,6 +85,9 @@ function JourneyLessonHeader({
 }) {
   const toast = useToast();
   const { isFocusMode } = useFocusMode();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selectedTranslation, setSelectedTranslation] = useState(
     urlTranslation ? parseInt(urlTranslation, 10) : translationId
   );
@@ -94,10 +107,17 @@ function JourneyLessonHeader({
   }, [urlTranslation]);
 
   const handleTranslationChange = (id: number) => {
+    if (id === selectedTranslation) return;
+    
     setSelectedTranslation(id);
     localStorage.setItem('sabil-translation-id', id.toString());
-    const newUrl = `${window.location.pathname}?translation=${id}`;
-    window.location.href = newUrl;
+    
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('translation', id.toString());
+    
+    router.replace(`${pathname}?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   const handleReciterChange = (id: number) => {
@@ -134,6 +154,7 @@ function JourneyLessonHeader({
 
 export function StreamingLessonShell({ 
   lesson, 
+  blocks,
   initialReflection, 
   isCompleted, 
   status, 
@@ -220,6 +241,10 @@ export function StreamingLessonShell({
         <LessonTextContent lessonText={lesson.lesson_text} />
       )}
 
+      {blocks && blocks.length > 0 && (
+        <BlockContent blocks={blocks} translationId={translationId} />
+      )}
+
       <Suspense fallback={<HadithSectionSkeleton />}>
         <StreamSectionLogger name="HadithContent">
           <HadithContent 
@@ -262,6 +287,206 @@ function LessonTextContent({ lessonText }: { lessonText: string | null }) {
   
   const { LessonTextInner } = require('./journey-lesson-text-inner');
   return <LessonTextInner lessonText={lessonText} />;
+}
+
+interface VerseWithData {
+  verse_key: string;
+  text_uthmani: string;
+  chapter_name?: string;
+  translations?: Array<{ resource_name: string; text: string }>;
+  audio_url?: string;
+}
+
+function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; translationId: number }) {
+  const [verseDataMap, setVerseDataMap] = useState<Record<string, VerseWithData>>({});
+  const [loadingVerses, setLoadingVerses] = useState(false);
+
+  useEffect(() => {
+    const verseBlocks = blocks?.filter(b => b.block_type === 'verse') || [];
+    if (verseBlocks.length === 0) return;
+
+    setLoadingVerses(true);
+    
+    const fetchVerses = async () => {
+      const verseKeys = verseBlocks.map(b => b.content.verse_key as string).filter(Boolean);
+      if (verseKeys.length === 0) return;
+
+      try {
+        const response = await fetch(`/api/verses?verse_keys=${verseKeys.join(',')}&translation=${translationId}`);
+        if (response.ok) {
+          const data = await response.json();
+          const map: Record<string, VerseWithData> = {};
+          (data.verses || []).forEach((v: { verse: VerseWithData; verseKey: string; chapterName?: string; audioUrl?: string }) => {
+            if (v.verse) {
+              map[v.verseKey] = {
+                ...v.verse,
+                chapter_name: v.chapterName,
+                audio_url: v.audioUrl,
+              };
+            }
+          });
+          setVerseDataMap(map);
+        }
+      } catch (error) {
+        console.error('Failed to fetch verses:', error);
+      } finally {
+        setLoadingVerses(false);
+      }
+    };
+
+    fetchVerses();
+  }, [blocks, translationId]);
+
+  if (!blocks || blocks.length === 0) return null;
+  
+  return (
+    <div className="space-y-6">
+      {blocks.map((block, index) => {
+        const content = block.content as Record<string, unknown>;
+        
+        switch (block.block_type) {
+          case 'heading':
+            const level = content.level as number || 2;
+            const HeadingTag = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
+            const headingClass = level === 1 ? 'text-2xl font-bold text-[var(--color-text)] mt-8 mb-4' 
+              : level === 2 ? 'text-xl font-semibold text-[var(--color-text)] mt-6 mb-3' 
+              : 'text-lg font-medium text-[var(--color-text)] mt-5 mb-2';
+            return <HeadingTag key={index} className={headingClass}>{content.text as string}</HeadingTag>;
+            
+          case 'paragraph':
+            const text = content.text as string || '';
+            const withBold = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            const withItalic = withBold.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            return (
+              <p key={index} className="text-[16px] leading-[1.9] text-[var(--color-text)]" 
+                dangerouslySetInnerHTML={{ __html: withItalic }}
+              />
+            );
+            
+          case 'arabic':
+            return (
+              <p key={index} className="font-arabic text-[24px] md:text-[28px] text-right text-[var(--color-text)] leading-[2] my-4" dir="rtl">
+                {content.text as string}
+              </p>
+            );
+            
+          case 'transliteration':
+            const transText = content.text as string | undefined;
+            const transTranslation = content.translation as string | undefined;
+            return (
+              <div key={index} className="my-4 bg-[var(--color-bg)] rounded-lg p-4 border border-[var(--color-border)]">
+                {transText && (
+                  <p className="text-[16px] italic text-[var(--color-text)] leading-relaxed mb-3">
+                    {transText}
+                  </p>
+                )}
+                {transTranslation && (
+                  <>
+                    <div className="h-px bg-[var(--color-border)] my-3" />
+                    <p className="text-[14px] text-[var(--color-text-muted)]">{transTranslation}</p>
+                  </>
+                )}
+              </div>
+            );
+            
+          case 'verse':
+            const verseKey = content.verse_key as string | undefined;
+            const verseData = verseKey ? verseDataMap[verseKey] : null;
+            
+            return (
+              <div key={index} className="my-4 p-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg">
+                {verseKey && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[var(--color-primary)] text-sm">✦</span>
+                    <span className="text-sm font-medium text-[var(--color-primary)]">
+                      {verseData?.chapter_name || 'Quran'} {verseKey}
+                    </span>
+                  </div>
+                )}
+                
+                {verseData?.text_uthmani && (
+                  <p className="font-arabic text-[20px] text-right text-[var(--color-text)] my-3 leading-[2]" dir="rtl">
+                    {verseData.text_uthmani}
+                  </p>
+                )}
+                
+                {verseData?.translations?.length ? (
+                  <p className="text-[14px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+                    {verseData.translations[0].text}
+                  </p>
+                ) : loadingVerses ? (
+                  <p className="text-[12px] text-[var(--color-text-muted)] mt-2">Loading translation...</p>
+                ) : null}
+              </div>
+            );
+            
+          case 'quote':
+            const quoteText = content.text as string | undefined;
+            const quoteSource = content.source as string | undefined;
+            return (
+              <div key={index} className="my-4 relative">
+                <span className="font-arabic text-[48px] text-[var(--color-accent)] absolute top-0 left-0 opacity-30" dir="rtl">"</span>
+                <blockquote className="pl-8 pr-4 py-2">
+                  {quoteText && (
+                    <p className="text-[15px] italic leading-relaxed text-[var(--color-text)]">
+                      {quoteText}
+                    </p>
+                  )}
+                  {quoteSource && (
+                    <p className="text-xs text-[var(--color-text-muted)] mt-2 text-right">
+                      — {quoteSource}
+                    </p>
+                  )}
+                </blockquote>
+              </div>
+            );
+            
+          case 'reflection':
+            const prompts = content.prompts as string[] | undefined;
+            if (!prompts || prompts.length === 0) return null;
+            return (
+              <div key={index} className="my-8 p-6 bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-bg)] rounded-2xl border-2 border-[var(--color-accent)]/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-[var(--color-accent)]">Pause & Reflect</h3>
+                </div>
+                <div className="space-y-3">
+                  {prompts.filter(Boolean).map((prompt, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)]">
+                      <span className="w-6 h-6 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium text-sm flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <p className="text-[15px] text-[var(--color-text)] leading-relaxed">{prompt}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+            
+          case 'list':
+            const listItems = content.items as string[] | undefined;
+            if (!listItems || listItems.length === 0) return null;
+            return (
+              <ul key={index} className="my-4 space-y-2">
+                {listItems.filter(Boolean).map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-[15px] text-[var(--color-text)]">
+                    <span className="text-[var(--color-accent)] mt-1">•</span>
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            );
+            
+          default:
+            return null;
+        }
+      })}
+    </div>
+  );
 }
 
 function HadithContent({ lesson }: { lesson: LessonData }) {
