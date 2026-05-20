@@ -1,29 +1,42 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
-interface ReadingProgress {
+interface ReadingPosition {
   surah_id: number;
   verse_number: number;
   scroll_position: number;
+  updated_at: string;
+}
+
+interface UseReadingProgressResult {
+  progress: ReadingPosition | null;
+  positions: ReadingPosition[];
+  loading: boolean;
+  updateProgress: (verseNumber: number, scrollPosition?: number) => void;
+  getPositionForSurah: (surahId: number) => ReadingPosition | null;
+  getAllPositions: () => ReadingPosition[];
+  clearPosition: (surahId: number) => Promise<void>;
 }
 
 const DEBOUNCE_MS = 2000;
 
-export function useReadingProgress(chapterId: number | null) {
-  const [progress, setProgress] = useState<ReadingProgress | null>(null);
+export function useReadingProgress(chapterId: number | null): UseReadingProgressResult {
+  const [progress, setProgress] = useState<ReadingPosition | null>(null);
+  const [positions, setPositions] = useState<ReadingPosition[]>([]);
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(false);
 
-  const fetchProgress = useCallback(async () => {
+  const fetchPositions = useCallback(async () => {
     try {
-      const res = await fetch('/api/reading-progress');
+      const res = await fetch('/api/reading-progress?limit=10');
       const data = await res.json();
       if (data.progress) {
         setProgress(data.progress);
+      }
+      if (data.positions && Array.isArray(data.positions)) {
+        setPositions(data.positions);
       }
     } catch (error) {
       console.error('Error fetching reading progress:', error);
@@ -34,11 +47,11 @@ export function useReadingProgress(chapterId: number | null) {
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchProgress();
+    fetchPositions();
     return () => {
       mountedRef.current = false;
     };
-  }, [fetchProgress]);
+  }, [fetchPositions]);
 
   const updateProgress = useCallback((verseNumber: number, scrollPosition: number = 0) => {
     if (!chapterId || !mountedRef.current) return;
@@ -49,7 +62,7 @@ export function useReadingProgress(chapterId: number | null) {
 
     timeoutRef.current = setTimeout(async () => {
       try {
-        await fetch('/api/reading-progress', {
+        const res = await fetch('/api/reading-progress', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -58,11 +71,15 @@ export function useReadingProgress(chapterId: number | null) {
             scroll_position: scrollPosition,
           }),
         });
-        setProgress({
-          surah_id: chapterId,
-          verse_number: verseNumber,
-          scroll_position: scrollPosition,
-        });
+        const data = await res.json();
+        
+        if (data.progress) {
+          setProgress(data.progress);
+        }
+        
+        if (data.positions && Array.isArray(data.positions)) {
+          setPositions(data.positions);
+        }
       } catch (error) {
         console.error('Error updating reading progress:', error);
       }
@@ -77,17 +94,37 @@ export function useReadingProgress(chapterId: number | null) {
     };
   }, []);
 
-  const getProgressForChapter = useCallback((targetChapterId: number) => {
-    if (progress && progress.surah_id === targetChapterId) {
-      return progress;
+  const getPositionForSurah = useCallback((targetSurahId: number): ReadingPosition | null => {
+    return positions.find(p => p.surah_id === targetSurahId) || null;
+  }, [positions]);
+
+  const getAllPositions = useCallback((): ReadingPosition[] => {
+    return positions;
+  }, [positions]);
+
+  const clearPosition = useCallback(async (surahId: number) => {
+    if (!mountedRef.current) return;
+    try {
+      await fetch(`/api/reading-progress?surah_id=${surahId}`, {
+        method: 'DELETE',
+      });
+      setPositions(prev => prev.filter(p => p.surah_id !== surahId));
+      if (progress?.surah_id === surahId) {
+        const remaining = positions.filter(p => p.surah_id !== surahId);
+        setProgress(remaining.length > 0 ? remaining[0] : null);
+      }
+    } catch (error) {
+      console.error('Error clearing position:', error);
     }
-    return null;
-  }, [progress]);
+  }, [progress, positions]);
 
   return {
     progress,
+    positions,
     loading,
     updateProgress,
-    getProgressForChapter,
+    getPositionForSurah,
+    getAllPositions,
+    clearPosition,
   };
 }

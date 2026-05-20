@@ -58,6 +58,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       status={status}
       translationId={translationId}
       tafsirId={tafsirId}
+      urlTranslation={urlTranslation}
     />
   );
 }

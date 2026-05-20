@@ -6,6 +6,7 @@ import { useAudioPlayerContext } from './audio-player-provider';
 import { useToast } from '@/hooks/use-toast';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
 import { CopyButton } from './copy-button';
+import { getApiUrl } from '@/lib/api-url';
 
 interface AudioFile {
   verse_key: string;
@@ -58,7 +59,7 @@ export function VerseCardClient({ verse, verseNumber, verseIndex, chapterId, tra
     if (!files) {
       setLoadingAudio(true);
       try {
-        const res = await fetch(`/api/audio/${reciterId}/${chapterId}`);
+        const res = await fetch(getApiUrl(`/audio/${reciterId}/${chapterId}`));
         const data = await res.json();
         
         if (data.error) throw new Error(data.error);

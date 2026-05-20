@@ -1,4 +1,6 @@
-const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
+const API_BASE = typeof window !== 'undefined'
+  ? window.location.origin
+  : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
 export function getApiUrl(path: string): string {
   return `${API_BASE}/api${path}`;

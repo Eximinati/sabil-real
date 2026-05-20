@@ -7,7 +7,7 @@ export const revalidate = 3600;
 export async function GET() {
   try {
     const translations = await getTranslations();
-    return NextResponse.json(translations, {
+    return NextResponse.json({ translations }, {
       headers: {
         'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       },

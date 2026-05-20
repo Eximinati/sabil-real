@@ -1,6 +1,19 @@
 import { metadataStore } from './metadata-store';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+function getServerBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'http://localhost:3000';
+  }
+  return 'http://localhost:3000';
+}
+
+const API_BASE = getServerBaseUrl();
 
 export interface Chapter {
   id: number;

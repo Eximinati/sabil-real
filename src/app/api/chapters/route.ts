@@ -8,7 +8,7 @@ export const fetchCache = 'force-cache';
 export async function GET() {
   try {
     const chapters = await getChapters();
-    return NextResponse.json(chapters, {
+    return NextResponse.json({ chapters }, {
       headers: {
         'Cache-Control': 'public, max-age=86400, s-maxage=86400',
       },

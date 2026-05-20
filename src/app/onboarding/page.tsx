@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+  const toast = useToast();
 
   const handleNext = async () => {
     if (step < 3) {
@@ -22,10 +24,10 @@ export default function OnboardingPage() {
           body: JSON.stringify({ completed: true }),
         });
         router.push('/journey');
-      } catch (e) {
-        // Silent fail
+      } catch {
+        toast.error('Unable to complete setup');
+        setLoading(false);
       }
-      setLoading(false);
     }
   };
 
@@ -38,10 +40,10 @@ export default function OnboardingPage() {
         body: JSON.stringify({ completed: true }),
       });
       router.push('/journey');
-    } catch (e) {
-      // Silent fail
+    } catch {
+      toast.error('Unable to complete setup');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAudioPlayerContext } from './audio-player-provider';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
 import { useToast } from '@/hooks/use-toast';
+import { getApiUrl } from '@/lib/api-url';
 
 interface AudioFile {
   verse_key: string;
@@ -32,7 +33,7 @@ export function SurahControls({ chapterId }: SurahControlsProps) {
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/audio/${reciterId}/${chapterId}`);
+      const res = await fetch(getApiUrl(`/audio/${reciterId}/${chapterId}`));
       const data = await res.json();
       
       if (data.error) throw new Error(data.error);

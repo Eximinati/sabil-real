@@ -13,6 +13,7 @@ import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
 import { ReadingProgress } from './reading-progress';
 import { AudioPlayer } from './audio-player';
+import { getApiUrl } from '@/lib/api-url';
 
 interface AudioFile {
   verse_key: string;
@@ -70,7 +71,7 @@ export function VerseReaderClient({
   const { state, playSurah } = useAudioPlayerContext();
   const { isFocusMode } = useFocusMode();
   const toast = useToast();
-  const { updateProgress, getProgressForChapter } = useReadingProgress(chapterId);
+  const { updateProgress, getPositionForSurah } = useReadingProgress(chapterId);
   const { addToHistory } = useReadingHistory();
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [cachedAudio, setCachedAudio] = useState<Record<number, AudioFile[]>>({});
@@ -98,7 +99,9 @@ export function VerseReaderClient({
           setBookmarkedVerses(bookmarked);
         }
       })
-      .catch(console.error);
+      .catch(() => {
+        toast.error('Unable to load bookmarks');
+      });
   }, [chapterId]);
 
   useEffect(() => {
@@ -113,21 +116,52 @@ export function VerseReaderClient({
 
   useEffect(() => {
     if (!hasRestoredScroll.current && verses.length > 0) {
-      const progress = getProgressForChapter(chapterId);
-      if (progress && progress.scroll_position > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const scrollParam = params.get('scroll');
+      const verseParam = params.get('verse');
+      
+      const targetScroll = scrollParam ? parseInt(scrollParam, 10) : null;
+      const targetVerse = verseParam ? parseInt(verseParam, 10) : 1;
+      
+      if (targetScroll !== null && targetScroll > 0) {
         setTimeout(() => {
-          window.scrollTo({ top: progress.scroll_position, behavior: 'auto' });
+          window.scrollTo({ top: targetScroll, behavior: 'auto' });
+          lastSavedPosition.current = targetScroll;
+          lastSavedVerse.current = targetVerse;
           hasRestoredScroll.current = true;
         }, 100);
       } else {
-        hasRestoredScroll.current = true;
+        const progress = getPositionForSurah(chapterId);
+        if (progress && progress.scroll_position > 0) {
+          setTimeout(() => {
+            window.scrollTo({ top: progress.scroll_position, behavior: 'auto' });
+            lastSavedPosition.current = progress.scroll_position;
+            lastSavedVerse.current = progress.verse_number;
+            hasRestoredScroll.current = true;
+          }, 100);
+        } else {
+          hasRestoredScroll.current = true;
+        }
       }
     }
-  }, [verses, chapterId, getProgressForChapter]);
+  }, [verses, chapterId, getPositionForSurah]);
 
+  const lastSavedPosition = useRef(0);
+  const lastSavedVerse = useRef(1);
+  
   const handleScroll = useCallback(() => {
-    if (chapterId) {
-      updateProgress(1, window.scrollY);
+    if (!chapterId) return;
+    
+    const currentScrollY = window.scrollY;
+    const currentVerse = Math.max(1, Math.floor(currentScrollY / 400) + 1);
+    
+    const scrollDiff = Math.abs(currentScrollY - lastSavedPosition.current);
+    const verseDiff = Math.abs(currentVerse - lastSavedVerse.current);
+    
+    if (scrollDiff >= 100 || verseDiff >= 1) {
+      lastSavedPosition.current = currentScrollY;
+      lastSavedVerse.current = currentVerse;
+      updateProgress(currentVerse, currentScrollY);
     }
   }, [chapterId, updateProgress]);
 
@@ -149,7 +183,7 @@ export function VerseReaderClient({
     if (!files) {
       setLoadingAudio(true);
       try {
-        const res = await fetch(`/api/audio/${reciterId}/${chapterId}`);
+        const res = await fetch(getApiUrl(`/audio/${reciterId}/${chapterId}`));
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         files = data.audio_files || [];
