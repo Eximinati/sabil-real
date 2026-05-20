@@ -1,14 +1,26 @@
-export function getApiUrl(path: string): string {
-  // Use relative paths for client-side API calls (works on all environments)
-  return `/api${path}`;
-}
-
-export function getAbsoluteUrl(): string {
+function getBaseUrl(): string {
   if (typeof window !== 'undefined') {
     return window.location.origin;
   }
-  // Server-side: use NEXT_PUBLIC_BASE_URL or fallback
-  return process.env.NEXT_PUBLIC_BASE_URL || 'https://sabil.app';
+  
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+  
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  return 'http://localhost:3000';
+}
+
+export function getApiUrl(path: string): string {
+  const base = getBaseUrl();
+  return `${base}/api${path}`;
+}
+
+export function getAbsoluteUrl(): string {
+  return getBaseUrl();
 }
 
 export const API_URLS = {

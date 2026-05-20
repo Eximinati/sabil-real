@@ -29,7 +29,7 @@ export default async function TafsirPage({
       invalidSurah = true;
     } else {
       try {
-        const data = await getCachedTafsirContent(parseInt(tafsir, 10), surahNum) as { tafsirs?: any[] };
+        const data = await getCachedTafsirContent(parseInt(tafsir, 10), surahNum) as unknown as { tafsirs?: any[] };
         
         if (data && data.tafsirs) {
           tafsirVerses = data.tafsirs;

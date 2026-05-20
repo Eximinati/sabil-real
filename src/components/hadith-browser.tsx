@@ -77,7 +77,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
       setHadith(null);
       
       try {
-        const data = await getCachedHadith(collection, number) as { error?: string; hadith?: HadithData };
+        const data = await getCachedHadith(collection, number) as unknown as { error?: string; hadith?: HadithData };
         if (mounted) {
           if (data?.error) {
             setError(data.error);

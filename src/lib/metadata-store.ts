@@ -28,37 +28,48 @@ class ServerCache {
     this.cache.set(url, { data, timestamp: Date.now() });
   }
 
+  private getAbsoluteUrl(url: string): string {
+    if (url.startsWith('http')) return url;
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}${url}`;
+    }
+    const base = process.env.NEXT_PUBLIC_BASE_URL || 
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    return `${base}${url}`;
+  }
+
   async fetch<T>(url: string, options?: {
     cache?: boolean;
     expiresIn?: number;
     skipCache?: boolean;
   }): Promise<T> {
-    const { cache = true, expiresIn, skipCache = false } = options || {};
+    const { cache = true, skipCache = false } = options || {};
+    const absoluteUrl = this.getAbsoluteUrl(url);
 
     if (cache && !skipCache) {
       const cached = this.get<T>(url);
       if (cached) return cached;
     }
 
-    if (this.pending.has(url)) {
-      return this.pending.get(url) as Promise<T>;
+    if (this.pending.has(absoluteUrl)) {
+      return this.pending.get(absoluteUrl) as Promise<T>;
     }
 
     const promise = (async () => {
       try {
-        const res = await fetch(url);
+        const res = await fetch(absoluteUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (cache) this.set(url, data);
-        this.pending.delete(url);
+        this.pending.delete(absoluteUrl);
         return data as T;
       } catch (error) {
-        this.pending.delete(url);
+        this.pending.delete(absoluteUrl);
         throw error;
       }
     })();
 
-    this.pending.set(url, promise);
+    this.pending.set(absoluteUrl, promise);
     return promise;
   }
 

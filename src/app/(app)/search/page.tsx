@@ -35,7 +35,7 @@ export default async function SearchPage({
   if (query && query.trim()) {
     try {
       const searchRes = await fetch(
-        `${getApiUrl(`/search?q=${encodeURIComponent(query)}&page=${currentPage}&size=10`)}`,
+        getApiUrl(`/search?q=${encodeURIComponent(query)}&page=${currentPage}&size=10`),
         { cache: 'no-store' }
       );
       const searchData = await searchRes.json();
