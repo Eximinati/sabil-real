@@ -12,7 +12,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: '/journey', label: 'Journey', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7', primary: true },
+  { href: '/journey', label: 'Today', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7', primary: true },
   { href: '/journey/reflections', label: 'Reflections', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
   { href: '/quran', label: 'Quran', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
   { href: '/search', label: 'Search', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
@@ -28,17 +28,20 @@ export function SidebarSkeleton({ email }: { email: string }) {
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>
         <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
+        <p className="mt-4 text-sm leading-relaxed text-white/55">
+          Walk gently toward Allah, one day at a time.
+        </p>
       </div>
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Learning</span>
+          <span className="text-xs text-white/40 font-medium">Guided journey</span>
         </div>
         <div className="flex items-center gap-[10px] px-4 py-[11px] rounded-lg text-white/90">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
-          Journey
+          Today
         </div>
         <div className="flex items-center gap-[10px] px-4 py-[11px] rounded-lg text-white/60">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,7 +50,7 @@ export function SidebarSkeleton({ email }: { email: string }) {
           Reflections
         </div>
         <div className="px-3 py-2 mt-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Reference</span>
+          <span className="text-xs text-white/40 font-medium">Read and explore</span>
         </div>
         <div className="flex items-center gap-[10px] px-4 py-[11px] rounded-lg text-white/60">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,7 +91,7 @@ export function SidebarSkeleton({ email }: { email: string }) {
         </div>
       </nav>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 border-t border-white/10">
         <div className="flex items-center gap-2 text-white/60 text-sm">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -116,11 +119,14 @@ export const Sidebar = memo(function Sidebar({ userEmail: email, isFocusMode = f
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>
         <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
+        <p className="mt-4 text-sm leading-relaxed text-white/55">
+          Walk gently toward Allah, one day at a time.
+        </p>
       </div>
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Learning</span>
+          <span className="text-xs text-white/40 font-medium">Guided journey</span>
         </div>
         
         {navItems.slice(0, 2).map((item) => {
@@ -148,7 +154,7 @@ export const Sidebar = memo(function Sidebar({ userEmail: email, isFocusMode = f
         })}
         
         <div className="px-3 py-2 mt-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Reference</span>
+          <span className="text-xs text-white/40 font-medium">Read and explore</span>
         </div>
         
         {navItems.slice(2).map((item) => {
@@ -172,7 +178,7 @@ export const Sidebar = memo(function Sidebar({ userEmail: email, isFocusMode = f
         })}
       </nav>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 border-t border-white/10">
         <SidebarActions />
         <p className="text-white/60 text-sm truncate" title={email}>{email}</p>
         <SidebarSignOut />

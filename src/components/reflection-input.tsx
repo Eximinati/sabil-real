@@ -40,17 +40,18 @@ export function ReflectionInput({ lessonId, dayNumber, initialValue = '' }: Refl
 
   return (
     <div>
-<textarea
+      <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Write your reflection here..."
-        className="w-full min-h-[140px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 resize-none focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] transition-all"
+        placeholder="Write whatever feels honest before Allah..."
+        className="min-h-[180px] w-full resize-none rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
       />
-      <div className="flex justify-end mt-3">
+      <div className="mt-4 flex items-center justify-between gap-4">
+        <p className="text-sm text-[var(--color-text-muted)]">A private space for sincerity, not performance.</p>
         <button
           onClick={handleSave}
           disabled={saving || !text.trim()}
-          className="bg-[var(--color-primary)] text-white rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
         >
           {saving ? (
             <>
@@ -65,10 +66,10 @@ export function ReflectionInput({ lessonId, dayNumber, initialValue = '' }: Refl
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Saved
+              Saved quietly
             </>
           ) : (
-            'Save Reflection'
+            'Save reflection'
           )}
         </button>
       </div>

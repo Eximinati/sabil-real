@@ -46,13 +46,14 @@ export function JourneyReciterSelector({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 text-[var(--color-text-secondary)] transition-all"
+        className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)]/40"
         aria-label="Change reciter"
       >
         <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
         </svg>
-        <span className="max-w-[100px] truncate">{displayName}</span>
+        <span className="hidden max-w-[110px] truncate sm:inline">{displayName}</span>
+        <span className="sm:hidden">Reciter</span>
       </button>
 
       {isOpen && (
@@ -64,16 +65,21 @@ export function JourneyReciterSelector({
           
           <div 
             ref={modalRef}
-            className="relative w-full max-w-sm mx-4 bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden"
+            className="relative mx-4 w-full max-w-sm overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="reciter-modal-title"
           >
             <div className="p-4 border-b border-[var(--color-border)]">
               <div className="flex items-center justify-between">
-                <h2 id="reciter-modal-title" className="text-lg font-semibold text-[var(--color-text)]">
-                  Select Reciter
-                </h2>
+                <div>
+                  <h2 id="reciter-modal-title" className="text-lg font-semibold text-[var(--color-text)]">
+                    Choose a reciter
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Audio is optional. Keep only the voice that helps you stay present.
+                  </p>
+                </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-full hover:bg-[var(--color-border)]/50 transition-colors"

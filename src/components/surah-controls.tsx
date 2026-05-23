@@ -17,7 +17,7 @@ interface SurahControlsProps {
 }
 
 export function SurahControls({ chapterId }: SurahControlsProps) {
-  const { state, playSurah, audioFiles } = useAudioPlayerContext();
+  const { state, playSurah } = useAudioPlayerContext();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [cachedAudio, setCachedAudio] = useState<Record<number, AudioFile[]>>({});
@@ -71,7 +71,7 @@ export function SurahControls({ chapterId }: SurahControlsProps) {
     <button
       onClick={isCurrentlyPlaying ? handlePauseSurah : handlePlaySurah}
       disabled={loading}
-      className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white text-sm rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)]/80 px-3 py-2 text-sm text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)]/35 hover:text-[var(--color-text)] disabled:opacity-50"
     >
       {loading ? (
         <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -88,7 +88,7 @@ export function SurahControls({ chapterId }: SurahControlsProps) {
           <path d="M8 5v14l11-7z" />
         </svg>
       )}
-      <span>{isCurrentlyPlaying ? 'Pause Surah' : 'Play Surah'}</span>
+      <span className="hidden sm:inline">{isCurrentlyPlaying ? 'Pause' : 'Listen'}</span>
     </button>
   );
 }

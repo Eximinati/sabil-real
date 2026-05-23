@@ -155,8 +155,10 @@ export function JourneyTranslationSelector({
   }, [recentTranslations, translations]);
 
   const buttonText = currentTranslation 
-    ? `${currentTranslation.language_name || 'Translation'}: ${currentTranslation.author_name}`
-    : 'Select Translation';
+    ? variant === 'header'
+      ? 'Translation'
+      : currentTranslation.author_name || 'Translation'
+    : 'Translation';
 
   const displayText = buttonText.length > 35 
     ? buttonText.slice(0, 35) + '...' 
@@ -168,8 +170,8 @@ export function JourneyTranslationSelector({
         onClick={() => setIsOpen(true)}
         className={`flex items-center gap-2 text-sm rounded-full border transition-all ${
           variant === 'header'
-            ? 'px-3 py-1.5 border-[var(--color-border)] bg-[var(--color-bg)] hover:border-[var(--color-primary)]/50 text-[var(--color-text-secondary)]'
-            : 'px-3 py-1.5 border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 text-[var(--color-text-secondary)]'
+            ? 'px-3 py-1.5 border-[var(--color-border)] bg-[var(--color-bg)]/80 hover:border-[var(--color-primary)]/40 text-[var(--color-text-secondary)]'
+            : 'px-3 py-1.5 border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 text-[var(--color-text-secondary)]'
         }`}
         aria-label="Change translation"
       >
@@ -177,7 +179,7 @@ export function JourneyTranslationSelector({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
         </svg>
         <span className="max-w-[150px] truncate hidden sm:inline">{displayText}</span>
-        <span className="sm:hidden">Language</span>
+        <span className="sm:hidden">Translation</span>
       </button>
 
       {isOpen && (
@@ -189,16 +191,21 @@ export function JourneyTranslationSelector({
           
           <div 
             ref={modalRef}
-            className="relative w-full max-w-md bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden max-h-[85vh] flex flex-col"
+            className="relative flex w-full max-w-md max-h-[85vh] flex-col overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="translation-modal-title"
           >
             <div className="p-4 border-b border-[var(--color-border)] shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h2 id="translation-modal-title" className="text-lg font-semibold text-[var(--color-text)]">
-                  Translation
-                </h2>
+                <div>
+                  <h2 id="translation-modal-title" className="text-lg font-semibold text-[var(--color-text)]">
+                    Choose a translation
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Keep the setting quiet in the background so the reading can stay central.
+                  </p>
+                </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-full hover:bg-[var(--color-border)]/50 transition-colors"
@@ -217,7 +224,7 @@ export function JourneyTranslationSelector({
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search..."
+                    placeholder="Search by language or translator"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] text-sm focus:outline-none focus:border-[var(--color-primary)]"
@@ -254,11 +261,11 @@ export function JourneyTranslationSelector({
                 <div className="p-2">
                   {myTranslations.length > 0 && !search && activeCategory === 'all' && (
                     <div className="mb-4">
-                      <div className="px-3 py-2 text-xs font-semibold text-[var(--color-primary)] uppercase tracking-wider flex items-center gap-2">
+                      <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[var(--color-primary)]">
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
-                        Recent
+                        Recent choices
                       </div>
                       {myTranslations.map((t) => (
                         <button
@@ -291,7 +298,7 @@ export function JourneyTranslationSelector({
                   ) : (
                     Object.entries(groupedTranslations).map(([language, langTranslations]) => (
                       <div key={language} className="mb-2">
-                        <div className="px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)]/50">
+                        <div className="sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)]/50 px-3 py-2 text-xs font-medium text-[var(--color-text-muted)]">
                           {language}
                         </div>
                         {langTranslations.map((t) => (

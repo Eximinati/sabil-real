@@ -11,7 +11,7 @@ interface AppShellProps {
 }
 
 const navItems = [
-  { href: '/journey', label: 'Journey', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7', primary: true },
+  { href: '/journey', label: 'Today', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7', primary: true },
   { href: '/journey/reflections', label: 'Reflections', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', primary: true },
   { href: '/quran', label: 'Quran', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', primary: false },
   { href: '/search', label: 'Search', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', primary: false },
@@ -58,17 +58,20 @@ function DesktopSidebar({ email }: { email: string }) {
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>
         <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
+        <p className="mt-4 text-sm leading-relaxed text-white/55">
+          Walk gently toward Allah, one day at a time.
+        </p>
       </div>
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Primary Experience</span>
+          <span className="text-xs text-white/40 font-medium">Guided journey</span>
         </div>
         <NavItem href="/journey" isPrimary>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
-          Journey
+          Today
         </NavItem>
         <NavItem href="/journey/reflections" isPrimary>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +80,7 @@ function DesktopSidebar({ email }: { email: string }) {
           Reflections
         </NavItem>
         <div className="px-3 py-2 mt-4">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Knowledge Library</span>
+          <span className="text-xs text-white/40 font-medium">Read and explore</span>
         </div>
         <NavItem href="/quran">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +121,7 @@ function DesktopSidebar({ email }: { email: string }) {
         </NavItem>
       </nav>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 border-t border-white/10">
         <ThemeToggle />
         <p className="text-white/60 text-sm truncate" title={email}>{email}</p>
         <SignOutButton />
@@ -133,11 +136,14 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <aside className="absolute left-0 top-0 bottom-0 w-[240px] bg-[var(--sidebar-bg)] text-white flex flex-col animate-fade-in">
+      <aside className="absolute left-0 top-0 bottom-0 w-[260px] bg-[var(--sidebar-bg)] text-white flex flex-col animate-fade-in">
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-[20px] font-semibold">Sabil</h1>
             <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
+            <p className="mt-3 max-w-[180px] text-sm leading-relaxed text-white/55">
+              A quiet guided journey, with the Quran at the center.
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors" aria-label="Close menu">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,7 +154,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
 
         <div className="h-px bg-white/10 mx-4 mt-4" />
 
-        <nav className="flex-1 px-2 space-y-1">
+        <nav className="flex-1 px-2 pt-2 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
@@ -172,7 +178,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
           })}
         </nav>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 border-t border-white/10">
           <ThemeToggle />
           <p className="text-white/60 text-sm truncate" title={email}>{email}</p>
           <SignOutButton />
@@ -204,7 +210,7 @@ export function AppShell({ children, userEmail }: AppShellProps) {
 
       <button
         onClick={() => setMobileNavOpen(true)}
-        className={`fixed top-4 left-4 z-50 bg-[var(--color-primary)] text-white p-3 rounded-lg shadow-md md:hidden hover:bg-[var(--color-primary-hover)] transition-all duration-300 ${
+        className={`fixed top-4 left-4 z-50 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/92 p-3 text-[var(--color-text)] shadow-md backdrop-blur-sm md:hidden transition-all duration-300 hover:border-[var(--color-primary)]/40 ${
           isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
         aria-label="Open navigation menu"

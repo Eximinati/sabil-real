@@ -37,8 +37,8 @@ const FEATURES = [
         <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    title: "Guided Learning Journey",
-    description: "Structured daily lessons combining Quran study, Seerah, and Islamic knowledge — no overwhelm, just consistent growth."
+    title: "A guided path",
+    description: "Gentle daily guidance through Quran, Seerah, and core Islamic understanding without overwhelm."
   },
   {
     icon: (
@@ -46,8 +46,8 @@ const FEATURES = [
         <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    title: "Reflection & Spiritual Growth",
-    description: "Daily reflection prompts, journaling, and heart-work that transform knowledge into lasting habit."
+    title: "Reflection for the heart",
+    description: "Reflection prompts and journaling that help what you read settle into your heart."
   },
   {
     icon: (
@@ -55,8 +55,8 @@ const FEATURES = [
         <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    title: "Heart-Centered Application",
-    description: "Move beyond dry knowledge to spiritual transformation. Each lesson includes practical steps for daily life."
+    title: "Lived with sincerity",
+    description: "Move beyond information into sincere practice, with gentle application in daily life."
   },
   {
     icon: (
@@ -64,8 +64,8 @@ const FEATURES = [
         <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    title: "Beginner Friendly",
-    description: "Start from zero. No prior knowledge required. We build your Islamic foundation one clear day at a time."
+    title: "Beginner friendly",
+    description: "Start from where you are. No prior knowledge is assumed, and nothing is made to feel intimidating."
   },
   {
     icon: (
@@ -73,8 +73,8 @@ const FEATURES = [
         <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    title: "365-Day Curriculum",
-    description: "A full year of structured Islamic education covering Quran, Seerah, Fiqh, Aqidah, and spiritual development."
+    title: "One day at a time",
+    description: "A longer journey that unfolds slowly, so each day feels approachable and meaningful."
   },
   {
     icon: (
@@ -82,8 +82,8 @@ const FEATURES = [
         <path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5h.008v.008H12v-.008z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    title: "Learn at Your Pace",
-    description: "Pause, revisit, and review anytime. Your progress is saved, and lessons are available forever."
+    title: "Return whenever you need",
+    description: "Pause, revisit, and continue gently. Your place is remembered without pressure."
   },
 ];
 
@@ -159,7 +159,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           <div className="flex items-center gap-3 md:gap-4">
             <Link href="/login" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm">Sign In</Link>
             <Link href="/register" className="bg-[var(--color-accent)] text-white px-5 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
-              Start Your Transformation
+              Begin gently
             </Link>
           </div>
         </div>
@@ -168,7 +168,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           <div className="max-w-[680px] text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)]/10 rounded-full mb-6">
               <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
-              <span className="text-xs text-[var(--color-accent)] font-medium">A Guided Islamic Transformation Platform</span>
+              <span className="text-xs text-[var(--color-accent)] font-medium">A gentle guided journey through Islam</span>
             </div>
             
             <p className="font-arabic text-[24px] md:text-[28px] text-center text-[var(--color-accent)] mb-3" dir="rtl">
@@ -181,12 +181,12 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
             <div className="w-16 h-px bg-[var(--color-accent)]/40 mx-auto my-8" />
 
             <h1 className="text-[36px] md:text-[52px] font-bold leading-tight">
-              <span className="text-[var(--color-text)]">Transform your</span>
-              <span className="block text-[var(--color-accent)]">relationship with Islam</span>
+              <span className="text-[var(--color-text)]">Walk gently</span>
+              <span className="block text-[var(--color-accent)]">toward Allah</span>
             </h1>
 
             <p className="text-[16px] md:text-[18px] text-[var(--color-text-muted)] leading-relaxed text-center mt-6 max-w-[520px] mx-auto">
-              Not just reading — <strong>understanding</strong>. A guided 365-day journey through Quran, spiritual growth, reflection, and lasting habit formation.
+              A calm space for Quran, Seerah, and reflection. Beginner-friendly, emotionally safe, and designed for one sincere day at a time.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-10">
@@ -194,13 +194,13 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 href="/register"
                 className="bg-[var(--color-accent)] text-white font-medium px-8 py-4 rounded-xl hover:opacity-90 transition-all text-lg"
               >
-                Start Your Transformation
+                Begin gently
               </Link>
               <Link 
                 href="/login"
                 className="border border-[var(--color-border)] text-[var(--color-text)] px-8 py-4 rounded-xl hover:border-[var(--color-accent)] transition-colors"
               >
-                Continue Your Journey
+                Continue your journey
               </Link>
             </div>
 
@@ -233,12 +233,12 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.06),transparent_50%)]" />
         <div className="max-w-[900px] mx-auto relative">
           <div className="text-center mb-12">
-            <span className="text-[var(--color-accent)] text-sm font-medium tracking-wider uppercase">The Vision</span>
+            <span className="text-[var(--color-accent)] text-sm font-medium">Why Sabil exists</span>
             <h2 className="text-[28px] md:text-[40px] font-bold text-[var(--color-text)] mt-3">
-              More Than Reading
+              More than consuming content
             </h2>
             <p className="text-[var(--color-text-muted)] text-lg mt-4 max-w-[550px] mx-auto">
-              Sabil was built to solve the disconnect between consuming Islamic content and truly living it.
+              Sabil was created for people who want Islam to feel welcoming, rooted, and lived rather than overwhelming.
             </p>
           </div>
 
@@ -249,9 +249,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Structured Guidance</h3>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Gentle guidance</h3>
               <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                Daily lessons designed to build understanding step-by-step.
+                Daily lessons that help you approach Islam without feeling lost or rushed.
               </p>
             </div>
 
@@ -261,9 +261,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Reflection & Practice</h3>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Reflection and practice</h3>
               <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                Knowledge becomes transformation through reflection and action.
+                Reading opens into reflection, sincerity, and small lived steps.
               </p>
             </div>
 
@@ -273,9 +273,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Spiritual Growth</h3>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">A steady companion</h3>
               <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                Track your progress through a guided 365-day Islamic journey.
+                The journey stays with you quietly, without reducing faith to metrics.
               </p>
             </div>
           </div>
@@ -290,7 +290,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               What is Sabil?
             </h2>
             <p className="text-[var(--color-text-muted)] text-lg max-w-[600px] mx-auto">
-              Sabil is a guided Islamic transformation platform — designed to help you build deep, lasting understanding of your faith through daily structured learning.
+              Sabil is a guided Islamic journey designed to help you return to Allah through calm daily reading, reflection, and understanding.
             </p>
           </div>
 
@@ -320,9 +320,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(212,175,55,0.05),transparent_50%)]" />
         <div className="max-w-[800px] mx-auto relative">
           <div className="text-center mb-14">
-            <span className="text-[var(--color-accent)] text-sm font-medium tracking-wider uppercase">The Process</span>
+            <span className="text-[var(--color-accent)] text-sm font-medium">How the journey unfolds</span>
             <h2 className="text-[28px] md:text-[40px] font-bold text-[var(--color-text)] mt-3">
-              How It Works
+              A simple rhythm
             </h2>
           </div>
 
@@ -331,8 +331,8 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
                 <span className="text-2xl font-bold text-[var(--color-accent)]">1</span>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Learn</h3>
-              <p className="text-[var(--color-text-muted)] text-sm">Daily guided lessons through the Quran and Islamic sciences.</p>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Read</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">Begin with the Quran and a guided lesson rooted in meaning.</p>
               <div className="hidden md:block absolute -right-6 top-10">
                 <svg className="w-8 h-8 text-[var(--color-accent)]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -345,7 +345,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 <span className="text-2xl font-bold text-[var(--color-accent)]">2</span>
               </div>
               <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Reflect</h3>
-              <p className="text-[var(--color-text-muted)] text-sm">Questions and practical integration for your daily life.</p>
+              <p className="text-[var(--color-text-muted)] text-sm">Pause with sincere questions that bring the reading closer to your life.</p>
               <div className="hidden md:block absolute -right-6 top-10">
                 <svg className="w-8 h-8 text-[var(--color-accent)]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -357,8 +357,8 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
                 <span className="text-2xl font-bold text-[var(--color-accent)]">3</span>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Transform</h3>
-              <p className="text-[var(--color-text-muted)] text-sm">Build lasting spiritual habits that change your life.</p>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Return</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">Come back tomorrow and continue the journey without pressure.</p>
             </div>
           </div>
         </div>
@@ -372,7 +372,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               Your First Week
             </h2>
             <p className="text-[var(--color-text-muted)] text-lg">
-              Each day is a complete mini-course. Thoughtfully structured. Spiritually meaningful.
+              Each day is a gentle guided experience. Thoughtfully structured and spiritually grounding.
             </p>
           </div>
 
@@ -403,10 +403,10 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               href="/register"
               className="bg-[var(--color-accent)] text-white font-medium px-10 py-4 rounded-xl inline-block hover:opacity-90 transition-opacity text-lg"
             >
-              Begin Your Transformation — Free
+              Begin your journey
             </Link>
             <p className="text-[var(--color-text-muted)] text-sm mt-3">
-              No credit card required. Begin your transformation today.
+              No credit card required. You are welcome to begin gently.
             </p>
           </div>
         </div>
@@ -421,10 +421,10 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           
           <div className="mt-10 p-6 bg-[var(--color-bg)] rounded-2xl border border-[var(--color-border)]">
             <p className="text-[var(--color-text)] text-lg font-medium">
-              Join thousands on a journey of understanding, reflection, and spiritual growth.
+              A quiet place for understanding, reflection, and returning to Allah.
             </p>
             <p className="text-[var(--color-text-muted)] text-sm mt-2">
-              Not a Quran reader — a life transformer.
+              Not a productivity app. Not a pressure system. Just a gentle path forward.
             </p>
           </div>
           
@@ -432,7 +432,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
             href="/register"
             className="inline-block mt-8 bg-[var(--color-accent)] text-white font-medium px-12 py-4 rounded-xl text-lg hover:opacity-90 transition-opacity"
           >
-            Begin Your Journey
+            Begin gently
           </Link>
         </div>
       </section>
@@ -443,10 +443,10 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           <div className="flex items-center gap-2">
             <span className="text-[var(--color-text)] font-semibold">Sabil</span>
             <span className="font-arabic text-[var(--color-accent)] text-sm" dir="rtl">سبيل</span>
-            <span className="text-[var(--color-text-muted)] text-xs ml-2">| Guided Islamic Transformation</span>
+            <span className="text-[var(--color-text-muted)] text-xs ml-2">| A gentle guided journey</span>
           </div>
           <p className="text-[var(--color-text-muted)] text-sm">
-            Learn. Reflect. Transform. — One day at a time.
+            Read. Reflect. Return. One day at a time.
           </p>
         </div>
       </footer>

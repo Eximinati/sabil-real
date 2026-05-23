@@ -21,20 +21,20 @@ const amiri = Amiri({
 });
 
 export const metadata: Metadata = {
-  title: 'Sabil — Your Quran Companion',
-  description: 'A guided journey through the Quran. Read, reflect, and grow in understanding one day at a time.',
+  title: 'Sabil — A Gentle Guided Journey',
+  description: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
   keywords: ['Quran', 'Islam', 'Tafsir', 'Hadith', 'Islamic Learning', 'Daily Reading'],
   authors: [{ name: 'Sabil' }],
   openGraph: {
-    title: 'Sabil — Your Quran Companion',
-    description: 'A guided journey through the Quran. Read, reflect, and grow in understanding one day at a time.',
+    title: 'Sabil — A Gentle Guided Journey',
+    description: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary',
-    title: 'Sabil — Your Quran Companion',
-    description: 'A guided journey through the Quran.',
+    title: 'Sabil — A Gentle Guided Journey',
+    description: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
   },
   icons: {
     icon: '/favicon.svg',

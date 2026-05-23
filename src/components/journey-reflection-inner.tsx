@@ -55,10 +55,10 @@ export function ReflectionContentInner({ lesson, initialReflection }: Reflection
   }
 
   return (
-    <div className="mb-8">
-      <h2 className="section-heading">Reflection</h2>
-      <div className="bg-[var(--color-bg)] rounded-xl p-5 border border-[var(--color-primary)]/20">
-        <p className="text-[16px] text-[var(--color-text)]">{lesson.reflection_prompt}</p>
+    <div className="mb-10">
+      <h2 className="section-heading">Reflection for the heart</h2>
+      <div className="rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-bg)] p-5 md:p-6">
+        <p className="text-[16px] leading-[1.9] text-[var(--color-text)]">{lesson.reflection_prompt}</p>
       </div>
       <div className="mt-4">
         <ReflectionInput

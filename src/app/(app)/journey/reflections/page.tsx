@@ -57,10 +57,10 @@ export default async function ReflectionsPage() {
           ← Back to Journey
         </Link>
         <h1 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)] mt-4">
-          My Reflections
+          Your reflections
         </h1>
         <p className="text-[var(--color-text-muted)] mt-2">
-          Your personal thoughts and insights from each day&apos;s journey.
+          A quiet place for what you have written as you move through the journey.
         </p>
       </div>
 
@@ -73,13 +73,13 @@ export default async function ReflectionsPage() {
           </div>
           <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">No reflections yet</h3>
           <p className="text-[var(--color-text-muted)] mb-6">
-            Complete daily lessons to start recording your reflections.
+            As you write during the journey, your reflections will gather here gently.
           </p>
           <Link
             href="/journey"
             className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
           >
-            Start Your Journey
+            Open today&apos;s journey
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>

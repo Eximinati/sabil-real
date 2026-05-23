@@ -30,26 +30,27 @@ export function DailyIntentionCard({ nextLessonDay = 1 }: DailyIntentionCardProp
   return (
     <a 
       href={`/journey/${nextLessonDay}`}
-      className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 mb-6 overflow-hidden relative hover:border-[var(--color-accent)]/40 transition-colors group"
+      className="group relative mb-8 block overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-6 md:p-7 transition-colors hover:border-[var(--color-accent)]/35"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,rgba(212,175,55,0.04),transparent_60%)]" />
       <div className="relative">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[var(--color-accent)]/10 flex items-center justify-center shrink-0 group-hover:bg-[var(--color-accent)]/20 transition-colors">
-            <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 transition-colors group-hover:bg-[var(--color-accent)]/15">
+            <svg className="h-5 w-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="text-[var(--color-text)] font-medium text-sm mb-1 flex items-center gap-2">
-              Today&apos;s Reflection
-              <svg className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </h3>
-            <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+            <p className="text-sm text-[var(--color-text-muted)]">Carry this intention today</p>
+            <p className="mt-3 text-[17px] md:text-[20px] leading-[1.9] text-[var(--color-text)]">
               {question}
             </p>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+              <span className="text-[var(--color-text-muted)]">Let it stay with you as you read.</span>
+              <span className="text-[var(--color-primary)] transition-colors group-hover:text-[var(--color-primary-hover)]">
+                Open day {nextLessonDay}
+              </span>
+            </div>
           </div>
         </div>
       </div>

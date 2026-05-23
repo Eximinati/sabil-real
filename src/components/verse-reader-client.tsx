@@ -12,7 +12,6 @@ import { useBookmarks } from '@/hooks/use-bookmarks';
 import { CopyButton } from './copy-button';
 import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
-import { ReadingProgress } from './reading-progress';
 import { AudioPlayer } from './audio-player';
 import { getApiUrl } from '@/lib/api-url';
 
@@ -234,55 +233,42 @@ handlePlayVerse(verseKey, files);
         isFocusMode ? 'md:ml-0' : 'md:ml-[240px]'
       }`}
     >
-      <ReadingProgress />
-
-      {/* Header */}
       <div
-        className={`sticky top-0 z-20 transition-all duration-300 ${
-          isFocusMode
-            ? 'bg-[var(--color-bg)]/80 backdrop-blur-md rounded-b-2xl border-x border-t border-[var(--color-border)]'
-            : 'bg-[var(--color-bg)]/95 border-b border-[var(--color-border)]'
-        }`}
+        className="z-20 transition-all duration-300 md:sticky md:top-0"
       >
         <div
-          className={`mx-auto py-3 md:py-4 transition-all duration-300 ${
+          className={`mx-auto px-4 pt-4 md:pt-6 transition-all duration-300 ${
             isFocusMode ? 'px-4 md:px-8 max-w-[850px]' : 'px-4 md:px-6 max-w-3xl'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 md:gap-3">
-              <Link
-                href="/quran"
-                className="text-[var(--color-primary)] hover:underline text-sm"
-              >
-                ← Back
-              </Link>
-              <span className="text-[var(--color-text-muted)] hidden md:inline">·</span>
-              <span className="text-[var(--color-text)] font-medium text-sm md:text-base">
-                {chapterName}
-              </span>
-              <span
-                className="font-arabic text-[var(--color-accent)] hidden md:inline"
-                dir="rtl"
-              >
-                {chapterNameArabic}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <FocusModeToggle />
-              <SurahControls chapterId={chapterId} />
-            </div>
-          </div>
+          <div className="rounded-[26px] border border-[var(--color-border)] bg-[var(--color-surface)]/88 px-4 py-4 backdrop-blur-sm md:px-5 md:py-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <Link
+                  href="/quran"
+                  className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
+                >
+                  Back to Quran
+                </Link>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm md:text-base">
+                  <span className="font-medium text-[var(--color-text)]">{chapterName}</span>
+                  <span className="hidden text-[var(--color-text-muted)] md:inline">•</span>
+                  <span className="font-arabic text-[var(--color-accent)]" dir="rtl">
+                    {chapterNameArabic}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)] md:text-sm">
+                  {isMaccan ? 'Revealed in Makkah' : 'Revealed in Madinah'}
+                  <span className="mx-2">•</span>
+                  About {readingTime} of reading
+                </p>
+              </div>
 
-          {/* Reading info */}
-          <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-            <span>{versesCount} verses</span>
-            <span>·</span>
-            <span>{readingTime} read</span>
-            <span>·</span>
-            <span className={isMaccan ? 'text-[var(--color-primary)]' : ''}>
-              {isMaccan ? 'Makkah' : 'Madinah'}
-            </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <SurahControls chapterId={chapterId} />
+                <FocusModeToggle />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -511,7 +497,7 @@ handlePlayVerse(verseKey, files);
 
       {/* Mobile Navigation */}
       {!isFocusMode && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] p-4 md:hidden safe-area-bottom">
+        <div className="fixed bottom-0 left-0 right-0 rounded-t-[24px] border-t border-[var(--color-border)] bg-[var(--color-surface)]/94 p-4 backdrop-blur-sm md:hidden safe-area-bottom">
           <div className="flex justify-between max-w-3xl mx-auto">
             {prevChapter ? (
               <Link

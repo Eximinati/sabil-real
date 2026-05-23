@@ -86,8 +86,8 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
 
   if (!hadith && lesson.hadith_text) {
     return (
-      <div className="mb-8">
-        <h2 className="section-heading">Related Hadith</h2>
+      <div className="mb-10">
+        <h2 className="section-heading">A Prophetic reminder</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 relative">
           <span className="font-arabic text-[60px] text-[var(--color-accent)] absolute top-2 left-4 opacity-30" dir="rtl">"</span>
           <p className="font-arabic text-[40px] text-[var(--color-accent)] leading-none mb-2" dir="rtl">"</p>
@@ -104,8 +104,8 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
 
   if (!hadith) {
     return (
-      <div className="mb-8">
-        <h2 className="section-heading">Related Hadith</h2>
+      <div className="mb-10">
+        <h2 className="section-heading">A Prophetic reminder</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-error)]/30 rounded-xl p-6 text-center">
           <svg className="w-8 h-8 mx-auto text-[var(--color-error)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -118,9 +118,9 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
   }
 
   return (
-    <div className="mb-8">
-      <h2 className="section-heading">Related Hadith</h2>
-      <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 relative">
+    <div className="mb-10">
+      <h2 className="section-heading">A Prophetic reminder</h2>
+      <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-5 md:p-6 relative">
         <span className="font-arabic text-[60px] text-[var(--color-accent)] absolute top-2 left-4 opacity-30" dir="rtl">"</span>
         <div className="flex items-center gap-2 mb-3 mt-2">
           <span className="text-sm text-[var(--color-primary)]">{hadith.name}</span>

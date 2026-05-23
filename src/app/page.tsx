@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { PublicPageLogger } from '@/components/public-page-logger';
 import { LandingContent } from '@/components/landing-content';
 
@@ -7,18 +6,18 @@ export const revalidate = 3600;
 export const dynamic = 'force-static';
 
 export const metadata = {
-  title: 'Sabil — Guided Islamic Transformation Platform',
-  description: 'A 365-day guided journey through Quran, reflection, spiritual growth, and habit formation. Transform your relationship with Islam — one day at a time.',
+  title: 'Sabil — A Gentle Guided Journey',
+  description: 'A gentle guided journey through Quran, Seerah, and reflection for anyone seeking to walk toward Allah one day at a time.',
   openGraph: {
-    title: 'Sabil — Guided Islamic Transformation',
-    description: 'Not just reading — understanding. A guided 365-day journey through Quran, spiritual growth, reflection, and lasting habit formation.',
+    title: 'Sabil — A Gentle Guided Journey',
+    description: 'A calm, beginner-friendly space for Quran, Seerah, and reflection.',
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sabil — Guided Islamic Transformation Platform',
-    description: 'Transform your relationship with Islam through daily guided lessons, reflection, and spiritual growth.',
+    title: 'Sabil — A Gentle Guided Journey',
+    description: 'A calm, beginner-friendly space for Quran, Seerah, and reflection.',
   },
 };
 

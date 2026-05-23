@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 const NOTICE_CONTENT = `This submission represents the foundation of the vision.
@@ -9,7 +10,7 @@ Due to hackathon time constraints, Day 1 curriculum content is using raw authore
 Our next phase focuses on:
 
 • Deeper personalization
-• Spiritual progression systems
+• More reflective guidance
 • Interactive reflections
 • AI-assisted learning paths
 • Curriculum refinement
@@ -18,13 +19,20 @@ We chose to share the vision now rather than delay, so you can see where Sabil i
 
 export function FloatingNotice() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isImmersiveRoute = pathname?.startsWith('/journey') || /^\/quran\/\d+/.test(pathname || '');
+
+  if (isImmersiveRoute) {
+    return null;
+  }
 
   return (
     <>
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] px-4 py-2.5 rounded-full shadow-md hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)] transition-all"
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/92 px-4 py-2.5 text-[var(--color-text-muted)] shadow-md backdrop-blur-sm transition-all hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)]"
         aria-label="About This Build"
         title="About This Build"
       >
@@ -48,8 +56,8 @@ export function FloatingNotice() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-[var(--color-text)] font-semibold">Hackathon Build Notice</h2>
-                <p className="text-[var(--color-text-muted)] text-sm">About this submission</p>
+                <h2 className="text-[var(--color-text)] font-semibold">Build note</h2>
+                <p className="text-[var(--color-text-muted)] text-sm">About the current experience</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}

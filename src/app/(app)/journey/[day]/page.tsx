@@ -57,7 +57,6 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       blocks={lessonWithBlocks.blocks}
       initialReflection={initialReflection || ''}
       isCompleted={isCompleted}
-      status={status}
       translationId={translationId}
       tafsirId={tafsirId}
       urlTranslation={urlTranslation}

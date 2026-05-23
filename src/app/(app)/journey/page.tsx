@@ -18,39 +18,15 @@ function getProgressForLesson(progress: UserProgress[], lessonId: string): UserP
   return progress.find(p => p.lesson_id === lessonId);
 }
 
-function calculateStreak(progress: UserProgress[], lessons: Lesson[]): number {
-  const completedDays = progress
-    .filter(p => p.status === 'completed')
-    .map(p => p.day_number)
-    .sort((a, b) => b - a);
-  
-  if (completedDays.length === 0) return 0;
-  
-  let streak = 0;
-  let expectedDay = completedDays[0];
-  
-  for (const day of completedDays) {
-    if (day === expectedDay) {
-      streak++;
-      expectedDay--;
-    } else if (day < expectedDay) {
-      break;
+function getCurrentLesson(lessons: Lesson[], progress: UserProgress[]): Lesson | null {
+  for (const lesson of lessons) {
+    const lessonProgress = getProgressForLesson(progress, lesson.id);
+    if (lessonProgress?.status !== 'completed') {
+      return lesson;
     }
   }
-  
-  return streak;
-}
 
-function getCurrentLesson(currentDay: number, lessons: Lesson[], progress: UserProgress[]): Lesson | null {
-  const lesson = lessons.find(l => l.day_number === currentDay);
-  if (!lesson) return lessons[0] || null;
-  
-  const lessonProgress = getProgressForLesson(progress, lesson.id);
-  if (lessonProgress?.status === 'completed') {
-    return getCurrentLesson(currentDay + 1, lessons, progress);
-  }
-  
-  return lesson;
+  return lessons[lessons.length - 1] || null;
 }
 
 export const revalidate = 60;
@@ -66,40 +42,44 @@ export default async function JourneyPage() {
   const lessons = await getPublishedLessons();
   const progress = await getUserProgress(user.id);
 
-  const completedCount = progress.filter(p => p.status === 'completed').length;
-  const totalLessons = lessons.length;
-  const currentDay = completedCount + 1;
-  const streak = calculateStreak(progress, lessons);
-  const currentLesson = getCurrentLesson(currentDay, lessons, progress);
-  const currentLessonProgress = currentLesson ? getProgressForLesson(progress, currentLesson.id) : null;
-  const isCompletedToday = currentLessonProgress?.status === 'completed';
+  const currentLesson = getCurrentLesson(lessons, progress);
+  const currentDay = currentLesson?.day_number || 1;
 
   return (
-    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
+    <div className="px-4 md:px-8 lg:px-16 pt-8 md:pt-12 pb-16 max-w-[960px] mx-auto">
       <JourneyTodayCard
         currentDay={currentDay}
-        totalDays={totalLessons}
-        completedDays={completedCount}
-        streak={streak}
         currentLesson={currentLesson || undefined}
         nextLessonHref={currentLesson ? `/journey/${currentLesson.day_number}` : undefined}
-        isCompletedToday={isCompletedToday}
       />
 
       <DailyIntentionCard nextLessonDay={currentLesson?.day_number} />
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[var(--color-text)]">Your Path</h2>
-        {completedCount === 0 && (
-          <p className="text-[var(--color-text-muted)] text-sm mt-1">You are at the beginning of your transformation journey.</p>
-        )}
-      </div>
-      <JourneyTimelineVirtualized 
-        lessons={lessons} 
-        progress={progress} 
-        currentDay={currentDay}
-        itemsPerPage={10}
-      />
+      {lessons.length > 0 && (
+        <details className="group rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-5 md:p-6">
+          <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg md:text-xl font-medium text-[var(--color-text)]">If you want to revisit another day</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+                The rest of the journey is here quietly whenever you need to return, revisit, or read ahead.
+              </p>
+            </div>
+            <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-transform group-open:rotate-180">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </summary>
+
+          <div className="mt-6 max-h-[560px] overflow-auto pr-1">
+            <JourneyTimelineVirtualized 
+              lessons={lessons} 
+              progress={progress} 
+              currentDay={currentDay}
+            />
+          </div>
+        </details>
+      )}
     </div>
   );
 }

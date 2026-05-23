@@ -1,13 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
-  LessonHeaderSkeleton, 
   VerseSectionSkeleton, 
   HadithSectionSkeleton,
-  LessonTextSkeleton,
   ReflectionSectionSkeleton,
   CompleteButtonSkeleton,
   TafsirSectionSkeleton
@@ -49,18 +47,18 @@ interface StreamingLessonClientProps {
   blocks?: LessonBlock[];
   initialReflection: string;
   isCompleted: boolean;
-  status: string;
   translationId: number;
   tafsirId?: number;
   urlTranslation?: string | null;
 }
 
 function StreamSectionLogger({ name, children }: { name: string; children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-  
   useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      setMounted(true);
       if (process.env.NODE_ENV === 'development') {
         console.log(`[Stream] ${name} resolved`);
       }
@@ -73,18 +71,13 @@ function StreamSectionLogger({ name, children }: { name: string; children: React
 }
 
 function JourneyLessonHeader({ 
-  lesson, 
   translationId,
   urlTranslation,
-  isCompleted
 }: { 
-  lesson: LessonData; 
   translationId: number;
   urlTranslation?: string | null;
-  isCompleted?: boolean;
 }) {
   const toast = useToast();
-  const { isFocusMode } = useFocusMode();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -126,26 +119,28 @@ function JourneyLessonHeader({
     toast.success('Reciter updated');
   };
 
-  const FocusModeToggle = useMemo(() => require('./focus-mode-toggle').FocusModeToggle, []);
-
   return (
-    <div className="sticky top-0 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)] -mx-4 md:-mx-6 px-4 md:px-6 py-4 z-10 -mt-4 md:-mt-12 pt-8 md:pt-16 mb-6">
-      <div className="flex items-center justify-between gap-4 max-w-[740px] mx-auto">
-        <div className="flex items-center gap-4">
-          <Link href="/journey" className="text-[var(--color-primary)] hover:underline text-sm">
-            ← Back to Journey
+    <div className="mb-8 md:mb-10">
+      <div className="mx-auto flex max-w-[740px] flex-col gap-4 rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-4 backdrop-blur-sm md:flex-row md:items-center md:justify-between md:px-5">
+        <div className="min-w-0">
+          <Link href="/journey" className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
+            Back to today&apos;s journey
           </Link>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Adjust reading preferences only if you need to. The lesson stays at the center.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <JourneyTranslationSelector 
+
+        <div className="flex flex-wrap items-center gap-2">
+          <JourneyTranslationSelector
             currentTranslationId={selectedTranslation}
+            variant="header"
             onTranslationChange={handleTranslationChange}
           />
           <JourneyReciterSelector
             currentReciterId={selectedReciter}
             onReciterChange={handleReciterChange}
           />
-          <FocusModeToggle />
         </div>
       </div>
     </div>
@@ -157,62 +152,66 @@ export function StreamingLessonShell({
   blocks,
   initialReflection, 
   isCompleted, 
-  status, 
   translationId,
   tafsirId,
   urlTranslation
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
+  const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
 
-  const containerClass = isFocusMode ? 'max-w-[850px] mx-auto' : 'max-w-[740px] mx-auto';
+  const containerClass = isFocusMode ? 'max-w-[860px] mx-auto' : 'max-w-[760px] mx-auto';
 
   return (
-    <div className={`px-4 md:px-6 pt-8 md:pt-12 pb-12 ${containerClass}`}>
+    <div className={`px-4 md:px-6 pt-8 md:pt-12 pb-16 ${containerClass}`}>
       <JourneyLessonHeader 
-        lesson={lesson} 
         translationId={translationId}
         urlTranslation={urlTranslation}
-        isCompleted={isCompleted}
       />
 
-      <div className="mb-6 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl text-center text-sm text-amber-800 dark:text-amber-200">
+      <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
         <span className="font-medium">Development &amp; Submission Notice:</span> This journey content is for demo purposes only. We are still refining it.
       </div>
 
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mt-4">
-          <span className="px-3 py-1 bg-[var(--color-accent)] text-white rounded-full text-sm">
+      <div className="mb-10">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
+          <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-white">
             Day {lesson.day_number}
           </span>
-          <span className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span className="flex items-center gap-1">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            ~{lesson.estimated_minutes} min
+            About {lesson.estimated_minutes} minutes
           </span>
-          {isCompleted && (
-            <span className="px-2 py-1 bg-[var(--color-primary)] text-white rounded text-xs">
-              Completed
-            </span>
-          )}
         </div>
-      </div>
 
-      <div className="mb-8">
-        <span className="inline-block px-2.5 py-1 bg-[var(--color-bg)] text-[var(--color-primary)] rounded text-xs mb-3">
-          {lesson.topic}
-        </span>
-        <h1 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)] mt-2">{lesson.title}</h1>
-        {lesson.subtitle && (
-          <p className="text-[var(--color-text-muted)] mt-1">{lesson.subtitle}</p>
-        )}
-        <div className="h-px bg-[var(--color-accent)]/30 mt-6" />
+        <div className="mt-6 flex items-start justify-between gap-4">
+          <div>
+            <span className="inline-block rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs text-[var(--color-primary)]">
+              {lesson.topic}
+            </span>
+            <h1 className="mt-4 text-[30px] md:text-[42px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--color-text)]">
+              {lesson.title}
+            </h1>
+            {lesson.subtitle && (
+              <p className="mt-3 max-w-2xl text-[16px] md:text-[18px] leading-[1.9] text-[var(--color-text-muted)]">
+                {lesson.subtitle}
+              </p>
+            )}
+          </div>
+
+          <div className="hidden md:block">
+            <FocusModeToggle />
+          </div>
+        </div>
+
+        <div className="mt-8 h-px bg-[var(--color-accent)]/25" />
       </div>
 
       {lesson.description && (
-        <div className="mb-8">
-          <h2 className="section-heading">Overview</h2>
-          <p className="text-[16px] leading-[1.8] text-[var(--color-text)]">{lesson.description}</p>
+        <div className="mb-10">
+          <h2 className="section-heading">Before you begin</h2>
+          <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">{lesson.description}</p>
         </div>
       )}
 
@@ -221,7 +220,6 @@ export function StreamingLessonShell({
           <VerseContent 
             verseKeys={lesson.verse_keys} 
             translationId={translationId}
-            lessonId={lesson.id}
           />
         </StreamSectionLogger>
       </Suspense>
@@ -277,9 +275,9 @@ export function StreamingLessonShell({
   );
 }
 
-function VerseContent({ verseKeys, translationId, lessonId }: { verseKeys: string[]; translationId: number; lessonId: string }) {
+function VerseContent({ verseKeys, translationId }: { verseKeys: string[]; translationId: number }) {
   const { JourneyVerseContentInner } = require('./journey-verse-content-inner');
-  return <JourneyVerseContentInner verseKeys={verseKeys} translationId={translationId} lessonId={lessonId} />;
+  return <JourneyVerseContentInner verseKeys={verseKeys} translationId={translationId} />;
 }
 
 function LessonTextContent({ lessonText }: { lessonText: string | null }) {
@@ -348,9 +346,9 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
           case 'heading':
             const level = content.level as number || 2;
             const HeadingTag = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
-            const headingClass = level === 1 ? 'text-2xl font-bold text-[var(--color-text)] mt-8 mb-4' 
-              : level === 2 ? 'text-xl font-semibold text-[var(--color-text)] mt-6 mb-3' 
-              : 'text-lg font-medium text-[var(--color-text)] mt-5 mb-2';
+            const headingClass = level === 1 ? 'mt-10 mb-4 text-2xl font-semibold leading-tight text-[var(--color-text)]'
+              : level === 2 ? 'mt-8 mb-3 text-xl font-medium leading-tight text-[var(--color-text)]'
+              : 'mt-6 mb-2 text-lg font-medium leading-tight text-[var(--color-text)]';
             return <HeadingTag key={index} className={headingClass}>{content.text as string}</HeadingTag>;
             
           case 'paragraph':
@@ -358,7 +356,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const withBold = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             const withItalic = withBold.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             return (
-              <p key={index} className="text-[16px] leading-[1.9] text-[var(--color-text)]" 
+              <p key={index} className="text-[16px] leading-[1.95] text-[var(--color-text)]"
                 dangerouslySetInnerHTML={{ __html: withItalic }}
               />
             );
@@ -374,7 +372,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const transText = content.text as string | undefined;
             const transTranslation = content.translation as string | undefined;
             return (
-              <div key={index} className="my-4 bg-[var(--color-bg)] rounded-lg p-4 border border-[var(--color-border)]">
+              <div key={index} className="my-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
                 {transText && (
                   <p className="text-[16px] italic text-[var(--color-text)] leading-relaxed mb-3">
                     {transText}
@@ -394,7 +392,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const verseData = verseKey ? verseDataMap[verseKey] : null;
             
             return (
-              <div key={index} className="my-4 p-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg">
+              <div key={index} className="my-5 rounded-2xl border border-[var(--color-primary)]/18 bg-[var(--color-primary)]/5 p-5">
                 {verseKey && (
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[var(--color-primary)] text-sm">✦</span>
@@ -424,7 +422,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const quoteText = content.text as string | undefined;
             const quoteSource = content.source as string | undefined;
             return (
-              <div key={index} className="my-4 relative">
+              <div key={index} className="relative my-6">
                 <span className="font-arabic text-[48px] text-[var(--color-accent)] absolute top-0 left-0 opacity-30" dir="rtl">"</span>
                 <blockquote className="pl-8 pr-4 py-2">
                   {quoteText && (
@@ -445,18 +443,18 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const prompts = content.prompts as string[] | undefined;
             if (!prompts || prompts.length === 0) return null;
             return (
-              <div key={index} className="my-8 p-6 bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-bg)] rounded-2xl border-2 border-[var(--color-accent)]/20">
+              <div key={index} className="my-10 rounded-[28px] border border-[var(--color-accent)]/20 bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-bg)] p-6 md:p-7">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center">
                     <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-[var(--color-accent)]">Pause & Reflect</h3>
+                  <h3 className="text-lg font-medium text-[var(--color-accent)]">Pause and reflect</h3>
                 </div>
                 <div className="space-y-3">
                   {prompts.filter(Boolean).map((prompt, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)]">
+                    <div key={idx} className="flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                       <span className="w-6 h-6 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium text-sm flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
