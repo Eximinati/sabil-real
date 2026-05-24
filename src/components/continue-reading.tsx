@@ -78,10 +78,10 @@ export function ContinueReading() {
   return (
     <div className="mb-8">
       <h3 className="mb-2 text-center text-sm font-medium text-[var(--color-text-muted)]">
-        Return to where you left off
+        Continue gently from where you paused
       </h3>
       <p className="mb-4 text-center text-sm text-[var(--color-text-muted)]">
-        Your last reading places stay here quietly for when you want to return.
+        These places are kept quietly so you can return without pressure.
       </p>
       <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-hide -mx-4 px-4">
         {sortedPositions.map((position) => {

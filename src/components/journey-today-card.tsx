@@ -12,6 +12,8 @@ interface JourneyTodayCardProps {
     estimated_minutes: number;
   };
   nextLessonHref?: string;
+  weekChapter?: string;
+  emotionalNote?: string;
 }
 
 const QUIET_AYAH = {
@@ -24,6 +26,8 @@ export function JourneyTodayCard({
   currentDay,
   currentLesson,
   nextLessonHref,
+  weekChapter,
+  emotionalNote,
 }: JourneyTodayCardProps) {
   const [timeGreeting, setTimeGreeting] = useState('');
 
@@ -56,6 +60,16 @@ export function JourneyTodayCard({
           <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1.5">
             Day {currentDay}
           </span>
+          {weekChapter && (
+            <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1.5">
+              {weekChapter}
+            </span>
+          )}
+          {emotionalNote && (
+            <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1.5 capitalize">
+              {emotionalNote}
+            </span>
+          )}
           {currentLesson && (
             <span className="flex items-center gap-1.5">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

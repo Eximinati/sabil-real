@@ -33,8 +33,26 @@ class ServerCache {
     if (typeof window !== 'undefined') {
       return `${window.location.origin}${url}`;
     }
-    const base = process.env.NEXT_PUBLIC_BASE_URL || 
-                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+    const candidates = (process.env.NEXT_PUBLIC_BASE_URL || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => value.replace(/\/$/, ''));
+
+    let base = '';
+
+    if (process.env.NODE_ENV !== 'production') {
+      base = candidates[0] || 'http://localhost:3000';
+    } else {
+      const httpsCandidate = candidates.find((value) => value.startsWith('https://'));
+      base = httpsCandidate || candidates[0] || '';
+
+      if (!base) {
+        base = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+      }
+    }
+
     return `${base}${url}`;
   }
 

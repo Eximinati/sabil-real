@@ -34,9 +34,9 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
       setBookmarks(prev => prev.filter(
         b => !(b.surah_id === surahId && b.verse_number === verseNumber)
       ));
-      toast.info('Bookmark removed');
+      toast.info('Verse removed from your quiet return list');
     } catch {
-      toast.error('Failed to remove bookmark');
+      toast.error('Could not update bookmarks right now');
     }
   };
 
@@ -66,16 +66,16 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
             </svg>
           </div>
           <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">
-            No bookmarks yet
+            No saved verses yet
           </h3>
           <p className="text-sm text-[var(--color-text-muted)] max-w-sm">
-            Tap the bookmark icon on any verse to save it here for easy access.
+            When a verse touches your heart, save it here so you can return gently later.
           </p>
           <Link
             href="/quran"
             className="mt-6 px-5 py-2 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity text-sm font-medium"
           >
-            Start Reading
+            Open Quran
           </Link>
         </div>
       </div>
@@ -86,9 +86,9 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-10">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">المفضلة</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">My Bookmarks</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">Your quiet return list</p>
         <p className="text-[var(--color-text-muted)] text-sm mt-1">
-          {bookmarks.length} verse{bookmarks.length !== 1 ? 's' : ''} saved
+          {bookmarks.length} verse{bookmarks.length !== 1 ? 's' : ''} waiting for your next return
         </p>
       </div>
 
@@ -138,7 +138,7 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
                         href={`/quran/${bookmark.surah_id}?verse=${bookmark.verse_number}`}
                         className="px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-xs hover:opacity-90 transition-opacity text-center"
                       >
-                        Resume
+                        Return
                       </Link>
                       <button
                         onClick={() => removeBookmark(bookmark.surah_id, bookmark.verse_number)}

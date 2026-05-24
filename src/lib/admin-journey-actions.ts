@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { supabaseServer } from './supabase-server';
 import type { LessonWithBlocks, JourneyLessonMetadata, LessonBlock } from '@/types/admin-journey';
+import { EMOTIONAL_QA_CHECKLIST, validateDayTemplateContract } from './journey-day-template';
 
 export async function saveLesson(
   lessonData: LessonWithBlocks,
@@ -30,6 +31,27 @@ export async function saveLesson(
     }
 
     const { metadata, blocks } = lessonData;
+
+    if (metadata.is_published) {
+      const qa = metadata.emotional_qa || {};
+      const missingQa = EMOTIONAL_QA_CHECKLIST.filter((item) => !qa[item.id]);
+
+      if (missingQa.length > 0) {
+        return {
+          success: false,
+          error: `Complete emotional QA before publishing: ${missingQa[0].label}`,
+        };
+      }
+
+      const templateValidation = validateDayTemplateContract(metadata.day_number, blocks);
+      if (!templateValidation.valid && templateValidation.required) {
+        const firstMissing = templateValidation.missingSections[0];
+        return {
+          success: false,
+          error: `Day template missing section: ${firstMissing.title}`,
+        };
+      }
+    }
 
     const lessonPayload: Record<string, unknown> = {
       day_number: metadata.day_number,
@@ -133,6 +155,7 @@ export async function getLessonForEditing(lessonId: string): Promise<LessonWithB
         description: lesson.description || '',
         estimated_minutes: lesson.estimated_minutes,
         is_published: lesson.is_published,
+        emotional_qa: Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
       },
       blocks: blocks || [],
     };

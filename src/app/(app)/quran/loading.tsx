@@ -1,6 +1,7 @@
 export default function QuranLoading() {
   return (
     <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
+      <p className="mb-4 text-center text-sm text-[var(--color-text-muted)]">Preparing a calm Quran reading space...</p>
       <div className="text-center mb-10">
         <div className="h-9 w-48 bg-[var(--color-border)] animate-pulse rounded mx-auto" />
         <div className="h-5 w-32 bg-[var(--color-border)] animate-pulse rounded mx-auto mt-3" />

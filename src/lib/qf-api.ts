@@ -89,7 +89,13 @@ async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn
   }
 
   if (response.status === 403) {
-    throw new Error('Access denied. Check client credentials.');
+    if (retryOn401) {
+      clearCachedToken();
+      return qfFetch<T>(path, params, false);
+    }
+
+    const targetHost = new URL(QF_API_BASE).host;
+    throw new Error(`Access denied from ${targetHost}. Check QF client credentials and API base pairing.`);
   }
 
   if (response.status === 429) {

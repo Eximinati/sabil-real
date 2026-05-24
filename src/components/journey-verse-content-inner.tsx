@@ -27,6 +27,8 @@ interface VerseWithData {
 interface JourneyVerseContentInnerProps {
   verseKeys: string[];
   translationId: number;
+  title?: string;
+  intro?: string;
 }
 
 function resolveAudioUrl(url: string): string {
@@ -43,7 +45,7 @@ function logPerformance(metric: string, value: number) {
   }
 }
 
-export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVerseContentInnerProps) {
+export function JourneyVerseContentInner({ verseKeys, translationId, title, intro }: JourneyVerseContentInnerProps) {
   const router = useSearchParams();
   const [verses, setVerses] = useState<VerseWithData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,11 +95,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
     fetchVerses();
   }, [fetchKey]);
 
-  const handleReciterChange = (id: number) => {
-    setReciterId(id);
-    localStorage.setItem('sabil-reciter-id', id.toString());
-    toast.success('Reciter updated');
-  };
+  const sectionTitle = title || 'Quran for today';
 
   const getAudioUrl = (verseKey: string): string => {
     const chapter = verseKey.split(':')[0];
@@ -164,7 +162,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
     return (
       <div className="mb-10">
         <div className="mb-4">
-          <h2 className="section-heading mb-0">Quran for today</h2>
+          <h2 className="section-heading mb-0">{sectionTitle}</h2>
         </div>
         <div className="space-y-4">
           <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4 animate-pulse">
@@ -182,7 +180,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
   if (error) {
     return (
       <div className="mb-10">
-        <h2 className="section-heading mb-0">Quran for today</h2>
+        <h2 className="section-heading mb-0">{sectionTitle}</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-error)]/30 rounded-xl p-6 text-center mt-4">
           <svg className="w-10 h-10 mx-auto text-[var(--color-error)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -197,7 +195,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
   if (verses.length === 0) {
     return (
       <div className="mb-10">
-        <h2 className="section-heading mb-0">Quran for today</h2>
+        <h2 className="section-heading mb-0">{sectionTitle}</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-6 text-center mt-4">
           <p className="text-[var(--color-text-muted)]">No verses available for this lesson.</p>
         </div>
@@ -207,7 +205,12 @@ export function JourneyVerseContentInner({ verseKeys, translationId }: JourneyVe
 
   return (
     <div className="mb-10">
-      <h2 className="section-heading mb-4">Quran for today</h2>
+      <h2 className="section-heading mb-4">{sectionTitle}</h2>
+      {intro && (
+        <p className="mb-6 max-w-3xl text-[15px] leading-[1.9] text-[var(--color-text-muted)] md:text-[16px]">
+          {intro}
+        </p>
+      )}
       <JourneyVerseSection
         verses={showVerses}
         reciterId={reciterId}

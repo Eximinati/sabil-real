@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
-import { getLessonByDayWithBlocks, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
+import { getLessonByDay, getLessonByDayWithBlocks, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -50,6 +50,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const isCompleted = status === 'completed';
   const translationId = urlTranslation ? parseInt(urlTranslation, 10) : preferences.translation_id;
   const tafsirId = preferences.tafsir_id;
+  const nextLesson = await getLessonByDay(dayNumber + 1);
 
   return (
     <StreamingLessonShell
@@ -60,6 +61,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       translationId={translationId}
       tafsirId={tafsirId}
       urlTranslation={urlTranslation}
+      hasNextDay={!!nextLesson}
     />
   );
 }

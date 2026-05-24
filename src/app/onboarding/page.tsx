@@ -74,17 +74,17 @@ export default function OnboardingPage() {
                 <p className="font-arabic text-[32px] text-[var(--color-accent)] text-center" dir="rtl">السلام عليكم</p>
                 <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center mt-2">Welcome to Sabil</h1>
                 <p className="text-[var(--color-text-muted)] text-center max-w-sm mx-auto mt-4 leading-relaxed">
-                  Sabil is your guided journey through Islam — one day, one lesson, one reflection at a time.
+                  Sabil is a gentle guided journey through Quran, Seerah, and reflection - one calm day at a time.
                 </p>
                 <p className="text-[var(--color-text-muted)] text-center max-w-sm mx-auto mt-2 leading-relaxed">
-                  There are no feeds, no debates, no distractions. Just you and your learning.
+                  There are no feeds, no debates, and no pressure to perform. You can return gently whenever you need.
                 </p>
               </>
             )}
 
             {step === 2 && (
               <>
-                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">How Sabil Works</h1>
+                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">How your journey unfolds</h1>
                 <div className="mt-6 space-y-4">
                   <div className="flex gap-4">
                     <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-white font-medium flex-shrink-0">
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
                     </div>
                     <div>
                       <p className="text-[var(--color-text)] font-medium">Daily Lessons</p>
-                      <p className="text-[var(--color-text-muted)] text-sm">Each day brings a new topic with Quran verses, explanations, and reflection.</p>
+                      <p className="text-[var(--color-text-muted)] text-sm">Each day offers one guided experience with Quran, Seerah, and reflection.</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -101,7 +101,7 @@ export default function OnboardingPage() {
                     </div>
                     <div>
                       <p className="text-[var(--color-text)] font-medium">Write Your Reflections</p>
-                      <p className="text-[var(--color-text-muted)] text-sm">Capture your thoughts, questions, and insights. Return to them anytime.</p>
+                      <p className="text-[var(--color-text-muted)] text-sm">Capture what your heart is learning in a private, sincere space.</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -110,7 +110,7 @@ export default function OnboardingPage() {
                     </div>
                     <div>
                       <p className="text-[var(--color-text)] font-medium">Go At Your Pace</p>
-                      <p className="text-[var(--color-text-muted)] text-sm">20 minutes a day. No pressure. Unlock the next lesson when you&apos;re ready.</p>
+                      <p className="text-[var(--color-text-muted)] text-sm">Some days will be short, some deeper. No guilt if you miss days - just return gently.</p>
                     </div>
                   </div>
                 </div>
@@ -119,13 +119,13 @@ export default function OnboardingPage() {
 
             {step === 3 && (
               <>
-                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">Choose Your Translation</h1>
+                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">Choose your translation</h1>
                 <p className="text-[var(--color-text-muted)] text-center mt-2">
-                  This will be your default translation throughout the app. You can change it anytime in Settings.
+                  This becomes your default reading companion. You can change it anytime in Settings.
                 </p>
                 <div className="mt-6 p-4 bg-[var(--color-bg)] rounded-xl border border-[var(--color-primary)]/20">
                   <p className="text-[var(--color-primary)] font-medium">Muhammad Taqi-ud-Din al-Hilali & Muhammad Muhsin Khan</p>
-                  <p className="text-[var(--color-text-muted)] text-sm mt-1">Clear, widely-used translation</p>
+                  <p className="text-[var(--color-text-muted)] text-sm mt-1">A clear translation to begin with</p>
                 </div>
                 <p className="text-[var(--color-text-muted)] text-sm text-center mt-4">
                   You can explore other translations in Settings later.

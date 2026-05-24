@@ -16,6 +16,8 @@ import { JourneyReciterSelector } from './journey-reciter-selector';
 import { useToast } from '@/hooks/use-toast';
 import { useFocusMode } from './focus-mode-provider';
 import { AudioPlayer } from './audio-player';
+import { DayOneCanonicalExperience } from './journey-day-one-canonical';
+import { WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 
 interface LessonData {
   id: string;
@@ -50,6 +52,7 @@ interface StreamingLessonClientProps {
   translationId: number;
   tafsirId?: number;
   urlTranslation?: string | null;
+  hasNextDay?: boolean;
 }
 
 function StreamSectionLogger({ name, children }: { name: string; children: React.ReactNode }) {
@@ -121,27 +124,38 @@ function JourneyLessonHeader({
 
   return (
     <div className="mb-8 md:mb-10">
-      <div className="mx-auto flex max-w-[740px] flex-col gap-4 rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-4 backdrop-blur-sm md:flex-row md:items-center md:justify-between md:px-5">
+      <div className="mx-auto max-w-[740px] rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-4 backdrop-blur-sm md:px-5">
         <div className="min-w-0">
           <Link href="/journey" className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
             Back to today&apos;s journey
           </Link>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Adjust reading preferences only if you need to. The lesson stays at the center.
-          </p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Keep the lesson at the center.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <JourneyTranslationSelector
-            currentTranslationId={selectedTranslation}
-            variant="header"
-            onTranslationChange={handleTranslationChange}
-          />
-          <JourneyReciterSelector
-            currentReciterId={selectedReciter}
-            onReciterChange={handleReciterChange}
-          />
-        </div>
+        <details className="group mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/45 p-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-sm text-[var(--color-text-secondary)]">
+            Reading settings
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-transform group-open:rotate-180">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </summary>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
+            Only adjust these if needed. Your preferences stay saved quietly.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <JourneyTranslationSelector
+              currentTranslationId={selectedTranslation}
+              variant="header"
+              onTranslationChange={handleTranslationChange}
+            />
+            <JourneyReciterSelector
+              currentReciterId={selectedReciter}
+              onReciterChange={handleReciterChange}
+            />
+          </div>
+        </details>
       </div>
     </div>
   );
@@ -154,10 +168,14 @@ export function StreamingLessonShell({
   isCompleted, 
   translationId,
   tafsirId,
-  urlTranslation
+  urlTranslation,
+  hasNextDay
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
   const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
+  const isCanonicalDayOne = lesson.day_number === 1;
+  const week = getWeekForDay(lesson.day_number);
+  const currentArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === week);
 
   const containerClass = isFocusMode ? 'max-w-[860px] mx-auto' : 'max-w-[760px] mx-auto';
 
@@ -168,107 +186,121 @@ export function StreamingLessonShell({
         urlTranslation={urlTranslation}
       />
 
-      <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
-        <span className="font-medium">Development &amp; Submission Notice:</span> This journey content is for demo purposes only. We are still refining it.
-      </div>
-
       <div className="mb-10">
-        <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
-          <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-white">
-            Day {lesson.day_number}
-          </span>
-          <span className="flex items-center gap-1">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            About {lesson.estimated_minutes} minutes
-          </span>
-        </div>
-
-        <div className="mt-6 flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <span className="inline-block rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs text-[var(--color-primary)]">
-              {lesson.topic}
-            </span>
-            <h1 className="mt-4 text-[30px] md:text-[42px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--color-text)]">
-              {lesson.title}
-            </h1>
-            {lesson.subtitle && (
-              <p className="mt-3 max-w-2xl text-[16px] md:text-[18px] leading-[1.9] text-[var(--color-text-muted)]">
-                {lesson.subtitle}
+            <p className="text-sm text-[var(--color-text-muted)]">About {lesson.estimated_minutes} minutes</p>
+            {currentArc && (
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Week {currentArc.week}: {currentArc.chapterTitle}
               </p>
             )}
           </div>
-
           <div className="hidden md:block">
             <FocusModeToggle />
           </div>
         </div>
-
-        <div className="mt-8 h-px bg-[var(--color-accent)]/25" />
       </div>
 
-      {lesson.description && (
-        <div className="mb-10">
-          <h2 className="section-heading">Before you begin</h2>
-          <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">{lesson.description}</p>
-        </div>
+      {isCanonicalDayOne ? (
+        <DayOneCanonicalExperience
+          lessonId={lesson.id}
+          dayNumber={lesson.day_number}
+          translationId={translationId}
+          tafsirId={tafsirId}
+          initialReflection={initialReflection}
+          isCompleted={isCompleted}
+          hasNextDay={hasNextDay}
+        />
+      ) : (
+        <>
+          <div className="mb-10">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
+              <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-white">
+                Day {lesson.day_number}
+              </span>
+            </div>
+
+            <div className="mt-6">
+              <span className="inline-block rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs text-[var(--color-primary)]">
+                {lesson.topic}
+              </span>
+              <h1 className="mt-4 text-[30px] md:text-[42px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--color-text)]">
+                {lesson.title}
+              </h1>
+              {lesson.subtitle && (
+                <p className="mt-3 max-w-2xl text-[16px] md:text-[18px] leading-[1.9] text-[var(--color-text-muted)]">
+                  {lesson.subtitle}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-8 h-px bg-[var(--color-accent)]/25" />
+          </div>
+
+          {lesson.description && (
+            <div className="mb-10">
+              <h2 className="section-heading">Before you begin</h2>
+              <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">{lesson.description}</p>
+            </div>
+          )}
+
+          <Suspense fallback={<VerseSectionSkeleton />}>
+            <StreamSectionLogger name="VerseContent">
+              <VerseContent 
+                verseKeys={lesson.verse_keys} 
+                translationId={translationId}
+              />
+            </StreamSectionLogger>
+          </Suspense>
+
+          {tafsirId && lesson.verse_keys.length > 0 && (
+            <Suspense fallback={<TafsirSectionSkeleton />}>
+              <StreamSectionLogger name="TafsirContent">
+                <JourneyTafsirStreaming 
+                  verseKeys={lesson.verse_keys}
+                  tafsirId={tafsirId}
+                />
+              </StreamSectionLogger>
+            </Suspense>
+          )}
+
+          {lesson.lesson_text && (
+            <LessonTextContent lessonText={lesson.lesson_text} />
+          )}
+
+          {blocks && blocks.length > 0 && (
+            <BlockContent blocks={blocks} translationId={translationId} />
+          )}
+
+          <Suspense fallback={<HadithSectionSkeleton />}>
+            <StreamSectionLogger name="HadithContent">
+              <HadithContent 
+                lesson={lesson}
+              />
+            </StreamSectionLogger>
+          </Suspense>
+
+          <Suspense fallback={<ReflectionSectionSkeleton />}>
+            <StreamSectionLogger name="ReflectionContent">
+              <ReflectionContent 
+                lesson={lesson}
+                initialReflection={initialReflection}
+              />
+            </StreamSectionLogger>
+          </Suspense>
+
+          <Suspense fallback={<CompleteButtonSkeleton />}>
+            <StreamSectionLogger name="CompleteButton">
+              <CompleteButton 
+                lessonId={lesson.id}
+                dayNumber={lesson.day_number}
+                isCompleted={isCompleted}
+              />
+            </StreamSectionLogger>
+          </Suspense>
+        </>
       )}
-
-      <Suspense fallback={<VerseSectionSkeleton />}>
-        <StreamSectionLogger name="VerseContent">
-          <VerseContent 
-            verseKeys={lesson.verse_keys} 
-            translationId={translationId}
-          />
-        </StreamSectionLogger>
-      </Suspense>
-
-      {tafsirId && lesson.verse_keys.length > 0 && (
-        <Suspense fallback={<TafsirSectionSkeleton />}>
-          <StreamSectionLogger name="TafsirContent">
-            <JourneyTafsirStreaming 
-              verseKeys={lesson.verse_keys}
-              tafsirId={tafsirId}
-            />
-          </StreamSectionLogger>
-        </Suspense>
-      )}
-
-      {lesson.lesson_text && (
-        <LessonTextContent lessonText={lesson.lesson_text} />
-      )}
-
-      {blocks && blocks.length > 0 && (
-        <BlockContent blocks={blocks} translationId={translationId} />
-      )}
-
-      <Suspense fallback={<HadithSectionSkeleton />}>
-        <StreamSectionLogger name="HadithContent">
-          <HadithContent 
-            lesson={lesson}
-          />
-        </StreamSectionLogger>
-      </Suspense>
-
-      <Suspense fallback={<ReflectionSectionSkeleton />}>
-        <StreamSectionLogger name="ReflectionContent">
-          <ReflectionContent 
-            lesson={lesson}
-            initialReflection={initialReflection}
-          />
-        </StreamSectionLogger>
-      </Suspense>
-
-      <Suspense fallback={<CompleteButtonSkeleton />}>
-        <StreamSectionLogger name="CompleteButton">
-          <CompleteButton 
-            lessonId={lesson.id}
-            dayNumber={lesson.day_number}
-            isCompleted={isCompleted}
-          />
-        </StreamSectionLogger>
-      </Suspense>
 
       <AudioPlayer />
     </div>

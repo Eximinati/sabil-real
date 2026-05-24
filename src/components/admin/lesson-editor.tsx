@@ -13,6 +13,13 @@ import { LessonRenderer } from './lesson-renderer';
 import { saveLesson } from '@/lib/admin-journey-actions';
 import { useToast } from '@/hooks/use-toast';
 import { MarkdownImporter } from './markdown-importer';
+import {
+  createStarterTemplateBlocks,
+  EMOTIONAL_QA_CHECKLIST,
+  getDayTemplateCoverage,
+  SABIL_CONTENT_SYSTEM,
+  validateDayTemplateContract,
+} from '@/lib/journey-day-template';
 
 interface LessonEditorProps {
   initialData?: {
@@ -39,6 +46,7 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
       description: '',
       estimated_minutes: 15,
       is_published: false,
+      emotional_qa: Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
     }
   );
 
@@ -51,6 +59,9 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  const templateCoverage = getDayTemplateCoverage(metadata.day_number, blocks);
+  const emotionalQa = metadata.emotional_qa || {};
 
   useEffect(() => {
     setHasUnsavedChanges(true);
@@ -73,9 +84,24 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
       return;
     }
 
-    setSaving(true);
     const updatedMetadata = { ...metadata, is_published: publish };
-    
+
+    if (publish) {
+      const missingChecklist = EMOTIONAL_QA_CHECKLIST.filter((item) => !updatedMetadata.emotional_qa?.[item.id]);
+      if (missingChecklist.length > 0) {
+        toast.error(`Complete emotional QA: ${missingChecklist[0].label}`);
+        return;
+      }
+
+      const templateValidation = validateDayTemplateContract(updatedMetadata.day_number, blocks);
+      if (!templateValidation.valid && templateValidation.required) {
+        toast.error(`Day template missing: ${templateValidation.missingSections[0].title}`);
+        return;
+      }
+    }
+
+    setSaving(true);
+
     const result = await saveLesson(
       { metadata: updatedMetadata, blocks },
       userId
@@ -119,6 +145,26 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
     
     [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
     setBlocks(newBlocks.map((b, i) => ({ ...b, order_index: i })));
+  };
+
+  const insertTemplate = () => {
+    const starter = createStarterTemplateBlocks(metadata.day_number);
+
+    if (blocks.length === 0) {
+      setBlocks(starter);
+      return;
+    }
+
+    const shouldAppend = window.confirm('Append the day template blocks to your current content?');
+    if (!shouldAppend) return;
+
+    const offset = blocks.length;
+    const appended = starter.map((block) => ({
+      ...block,
+      order_index: block.order_index + offset,
+    }));
+
+    setBlocks([...blocks, ...appended]);
   };
 
   return (
@@ -221,6 +267,51 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
               Published
             </label>
           </div>
+
+          {metadata.day_number >= 2 && metadata.day_number <= 30 && (
+            <div className="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <h3 className="text-sm font-medium text-[var(--color-text)]">Day template contract (Days 2-30)</h3>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
+                Keep narrative flow consistent: arrival, opening reflection, seerah, Quran, tafsir, hadith, reflection, tiny action, closing.
+              </p>
+            </div>
+          )}
+
+          <details className="group mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-[var(--color-text)]">
+              Sabil writing guidance
+              <span className="text-xs text-[var(--color-text-muted)] transition-transform group-open:rotate-180">▼</span>
+            </summary>
+
+            <div className="mt-3 grid gap-3">
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Tone priorities</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {SABIL_CONTENT_SYSTEM.writingPhilosophy.tone.map((line) => (
+                    <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Avoid</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {SABIL_CONTENT_SYSTEM.writingPhilosophy.avoid.slice(0, 5).map((line) => (
+                    <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Emotional pacing</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {SABIL_CONTENT_SYSTEM.emotionalPacingRules.slice(0, 4).map((line) => (
+                    <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </details>
         </div>
 
         {/* Blocks Section */}
@@ -235,6 +326,16 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
               >
                 Import Markdown
               </button>
+
+              {metadata.day_number >= 2 && metadata.day_number <= 30 && (
+                <button
+                  onClick={insertTemplate}
+                  className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text)] text-sm rounded-lg hover:bg-[var(--color-bg)]"
+                >
+                  Insert Day Template
+                </button>
+              )}
+
               <div className="relative group">
                 <button className="px-3 py-1.5 bg-[var(--color-primary)] text-white text-sm rounded-lg hover:bg-[var(--color-primary-hover)]">
                   + Add Block
@@ -275,6 +376,59 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
               ))}
             </div>
           )}
+
+          {metadata.day_number >= 2 && metadata.day_number <= 30 && (
+            <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <p className="text-sm font-medium text-[var(--color-text)]">Template coverage</p>
+              <div className="mt-3 grid gap-2">
+                {templateCoverage.sections.map((section) => {
+                  const isMatched = templateCoverage.matchedSectionIds.has(section.id);
+                  return (
+                    <div
+                      key={section.id}
+                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
+                        isMatched
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-200'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
+                      }`}
+                    >
+                      <span>{section.title}</span>
+                      <span>{isMatched ? 'Included' : 'Missing'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-medium text-[var(--color-text)]">Emotional QA checklist</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Confirm each point before publishing so every day remains emotionally safe and coherent.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {EMOTIONAL_QA_CHECKLIST.map((item) => (
+              <label key={item.id} className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+                <input
+                  type="checkbox"
+                  checked={!!emotionalQa[item.id]}
+                  onChange={(e) => {
+                    setMetadata((prev) => ({
+                      ...prev,
+                      emotional_qa: {
+                        ...(prev.emotional_qa || {}),
+                        [item.id]: e.target.checked,
+                      },
+                    }));
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)]"
+                />
+                <span className="text-sm leading-relaxed text-[var(--color-text)]">{item.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Actions */}

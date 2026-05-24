@@ -44,6 +44,7 @@ export interface JourneyLessonMetadata {
   description: string;
   estimated_minutes: number;
   is_published: boolean;
+  emotional_qa?: Record<string, boolean>;
 }
 
 export interface LessonWithBlocks {

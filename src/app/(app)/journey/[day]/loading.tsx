@@ -1,6 +1,7 @@
 export default function LessonLoading() {
   return (
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12 max-w-[740px] mx-auto">
+      <p className="mb-4 text-sm text-[var(--color-text-muted)]">Settling your lesson space...</p>
       <div className="mb-8">
         <div className="h-8 w-48 bg-[var(--color-border)] animate-pulse rounded mb-2" />
         <div className="h-5 w-64 bg-[var(--color-border)] animate-pulse rounded mb-1" />

@@ -4,6 +4,7 @@ import { getPublishedLessons, getUserProgress, UserProgress } from '@/lib/journe
 import { JourneyTodayCard } from '@/components/journey-today-card';
 import { JourneyTimelineVirtualized } from '@/components/journey-timeline-virtualized';
 import { DailyIntentionCard } from '@/components/daily-intention-card';
+import { DAY_IDENTITY_30, WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 
 interface Lesson {
   id: string;
@@ -12,6 +13,10 @@ interface Lesson {
   subtitle: string | null;
   topic: string;
   estimated_minutes: number;
+}
+
+interface JourneyPageProps {
+  searchParams: Promise<{ notice?: string }>;
 }
 
 function getProgressForLesson(progress: UserProgress[], lessonId: string): UserProgress | undefined {
@@ -31,7 +36,8 @@ function getCurrentLesson(lessons: Lesson[], progress: UserProgress[]): Lesson |
 
 export const revalidate = 60;
 
-export default async function JourneyPage() {
+export default async function JourneyPage({ searchParams }: JourneyPageProps) {
+  const { notice } = await searchParams;
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -44,13 +50,29 @@ export default async function JourneyPage() {
 
   const currentLesson = getCurrentLesson(lessons, progress);
   const currentDay = currentLesson?.day_number || 1;
+  const currentWeek = getWeekForDay(currentDay);
+  const currentArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === currentWeek);
+  const dayIdentity = DAY_IDENTITY_30.find((item) => item.day === currentDay);
 
   return (
     <div className="px-4 md:px-8 lg:px-16 pt-8 md:pt-12 pb-16 max-w-[960px] mx-auto">
+      {notice === 'return-tomorrow' && (
+        <div className="mb-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+          You returned with sincerity. Come back tomorrow and your next day will be here, in sha Allah.
+        </div>
+      )}
+      {notice === 'welcome-back' && (
+        <div className="mb-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+          Welcome back. You are not behind here - continue gently from where your heart is today.
+        </div>
+      )}
+
       <JourneyTodayCard
         currentDay={currentDay}
         currentLesson={currentLesson || undefined}
         nextLessonHref={currentLesson ? `/journey/${currentLesson.day_number}` : undefined}
+        weekChapter={currentArc?.chapterTitle}
+        emotionalNote={dayIdentity?.primaryEmotionalNote}
       />
 
       <DailyIntentionCard nextLessonDay={currentLesson?.day_number} />

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getLatestDayNumber } from '@/lib/admin-journey-actions';
 import { LessonEditor } from '@/components/admin/lesson-editor';
+import { EMOTIONAL_QA_CHECKLIST } from '@/lib/journey-day-template';
 
 export default async function NewLessonPage() {
   const supabase = await supabaseServer();
@@ -43,6 +44,7 @@ export default async function NewLessonPage() {
             description: '',
             estimated_minutes: 15,
             is_published: false,
+            emotional_qa: Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
           },
           blocks: [],
         }}
