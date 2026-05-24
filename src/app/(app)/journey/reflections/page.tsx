@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getPublishedLessons, getUserReflection } from '@/lib/journey';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 interface Reflection {
   lesson_id: string;
@@ -26,6 +27,7 @@ async function getReflections(userId: string): Promise<Reflection[]> {
 export const dynamic = 'force-dynamic';
 
 export default async function ReflectionsPage() {
+  const { dictionary: copy, language } = await getServerDictionary();
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -43,7 +45,7 @@ export default async function ReflectionsPage() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', {
       month: 'short', 
       day: 'numeric',
       year: 'numeric'
@@ -54,13 +56,13 @@ export default async function ReflectionsPage() {
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12 max-w-3xl mx-auto">
       <div className="mb-8">
         <Link href="/journey" className="text-[var(--color-primary)] hover:underline text-sm">
-          ← Back to Journey
+          ← {copy.reflections.backToJourney}
         </Link>
         <h1 className="text-2xl md:text-3xl font-semibold text-[var(--color-text)] mt-4">
-          Your reflections
+          {copy.reflections.title}
         </h1>
         <p className="text-[var(--color-text-muted)] mt-2">
-          A quiet place for what you have written as you move through the journey.
+          {copy.reflections.description}
         </p>
       </div>
 
@@ -71,15 +73,15 @@ export default async function ReflectionsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">No reflections yet</h3>
+          <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">{copy.reflections.emptyTitle}</h3>
           <p className="text-[var(--color-text-muted)] mb-6">
-            As you write during the journey, your reflections will gather here gently.
+            {copy.reflections.emptyDescription}
           </p>
           <Link
             href="/journey"
             className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg text-sm hover:bg-[var(--color-primary-hover)] transition-colors"
           >
-            Open today&apos;s journey
+            {copy.reflections.openTodayJourney}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -113,7 +115,7 @@ export default async function ReflectionsPage() {
                   href={`/journey/${reflection.day_number}`}
                   className="text-sm text-[var(--color-primary)] hover:underline"
                 >
-                  View lesson →
+                  {copy.reflections.viewLesson} →
                 </Link>
               </div>
             </div>

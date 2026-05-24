@@ -1,6 +1,11 @@
-export default function HadithLoading() {
+import { getServerDictionary } from '@/lib/i18n/server';
+
+export default async function HadithLoading() {
+  const { dictionary: copy } = await getServerDictionary();
+
   return (
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
+      <p className="mb-4 text-sm text-[var(--color-text-muted)] text-center">{copy.journey.loading.hadith}</p>
       <div className="text-center mb-10">
         <div className="h-9 w-24 bg-[var(--color-border)] animate-pulse rounded mx-auto" />
         <div className="h-5 w-48 bg-[var(--color-border)] animate-pulse rounded mx-auto mt-3" />

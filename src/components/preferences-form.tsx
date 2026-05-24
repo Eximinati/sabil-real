@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useCopy } from '@/hooks/use-copy';
 
 interface Translation {
   id: number;
@@ -28,6 +29,7 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const toast = useToast();
+  const copy = useCopy();
 
   const [translationId, setTranslationId] = useState(initialTranslationId.toString());
   const [tafsirId, setTafsirId] = useState(initialTafsirId.toString());
@@ -56,25 +58,25 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
       });
       if (res.ok) {
         setSaved(true);
-        toast.success('Preferences updated');
+        toast.success(copy.common.toasts.preferencesUpdated);
         setTimeout(() => setSaved(false), 2000);
       } else {
-        toast.error('Something went wrong');
+        toast.error(copy.common.toasts.somethingWentWrong);
       }
     } catch (e) {
-      toast.error('Something went wrong');
+      toast.error(copy.common.toasts.somethingWentWrong);
     }
     setSaving(false);
   };
 
   if (loading) {
-    return <p className="text-[var(--color-text-muted)]">Loading preferences...</p>;
+    return <p className="text-[var(--color-text-muted)]">{copy.settings.loadingPreferences}</p>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm text-[var(--color-text-muted)] mb-2">Default Translation</label>
+        <label className="block text-sm text-[var(--color-text-muted)] mb-2">{copy.settings.defaultTranslation}</label>
         <select
           value={translationId}
           onChange={(e) => setTranslationId(e.target.value)}
@@ -89,7 +91,7 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
       </div>
 
       <div>
-        <label className="block text-sm text-[var(--color-text-muted)] mb-2">Default Tafsir</label>
+        <label className="block text-sm text-[var(--color-text-muted)] mb-2">{copy.settings.defaultTafsir}</label>
         <select
           value={tafsirId}
           onChange={(e) => setTafsirId(e.target.value)}
@@ -114,17 +116,17 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            Saving...
+            {copy.common.labels.saving}
           </>
         ) : saved ? (
           <>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            Saved
+            {copy.common.labels.saved}
           </>
         ) : (
-          'Save Preferences'
+          copy.common.actions.savePreferences
         )}
       </button>
     </div>

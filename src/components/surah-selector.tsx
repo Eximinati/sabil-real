@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useCopy } from '@/hooks/use-copy';
 
 interface Chapter {
   id: number;
@@ -17,6 +18,7 @@ interface SurahSelectorProps {
 export function SurahSelector({ chapters }: SurahSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const copy = useCopy();
   const currentSurah = searchParams.get('surah');
 
   const handleSelect = (chapterId: string) => {
@@ -27,7 +29,7 @@ export function SurahSelector({ chapters }: SurahSelectorProps) {
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">Select Surah</h3>
+      <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">{copy.tafsir.selectSurah}</h3>
       <div className="max-h-[400px] overflow-y-auto space-y-2">
         {chapters.map((chapter) => (
           <button

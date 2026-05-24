@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import { useCopy } from '@/hooks/use-copy';
 
 interface Lesson {
   id: string;
@@ -29,6 +30,8 @@ export function VirtualizedTimeline({
   progress, 
   currentDay,
 }: VirtualizedTimelineProps) {
+  const copy = useCopy();
+
   const getProgressForLesson = (lessonId: string) => {
     return progress.find(p => p.lesson_id === lessonId);
   };
@@ -39,7 +42,11 @@ export function VirtualizedTimeline({
         const lessonProgress = getProgressForLesson(lesson.id);
         const status = lessonProgress?.status || 'not_started';
         const isToday = lesson.day_number === currentDay;
-        const actionLabel = isToday ? 'Continue' : status === 'completed' || status === 'in_progress' ? 'Return' : 'Open';
+        const actionLabel = isToday
+          ? copy.common.actions.continueLabel
+          : status === 'completed' || status === 'in_progress'
+            ? copy.common.actions.returnLabel
+            : copy.common.actions.open;
 
         return (
           <a
@@ -59,9 +66,9 @@ export function VirtualizedTimeline({
                       ? 'bg-[var(--color-primary)] text-white'
                       : 'bg-[var(--color-bg)] text-[var(--color-text-muted)]'
                   }`}>
-                    Day {lesson.day_number}
+                    {copy.common.labels.day} {lesson.day_number}
                   </span>
-                  {isToday && <span className="text-[var(--color-primary)]">Today</span>}
+                  {isToday && <span className="text-[var(--color-primary)]">{copy.journey.timeline.todayBadge}</span>}
                 </div>
 
                 <h3 className="mt-3 text-lg font-medium text-[var(--color-text)]">{lesson.title}</h3>
@@ -72,7 +79,7 @@ export function VirtualizedTimeline({
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="text-sm text-[var(--color-text-muted)]">~{lesson.estimated_minutes} min</p>
+                <p className="text-sm text-[var(--color-text-muted)]">~{lesson.estimated_minutes} {copy.common.labels.minutesSuffix}</p>
                 <p className="mt-3 text-sm text-[var(--color-primary)]">{actionLabel}</p>
               </div>
             </div>

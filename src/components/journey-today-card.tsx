@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
 
 interface JourneyTodayCardProps {
   currentDay: number;
@@ -18,8 +19,6 @@ interface JourneyTodayCardProps {
 
 const QUIET_AYAH = {
   arabic: 'اَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
-  translation: 'Surely, in the remembrance of Allah do hearts find rest.',
-  reference: 'Quran 13:28',
 };
 
 export function JourneyTodayCard({
@@ -30,13 +29,15 @@ export function JourneyTodayCard({
   emotionalNote,
 }: JourneyTodayCardProps) {
   const [timeGreeting, setTimeGreeting] = useState('');
+  const copy = useCopy();
+  const { interpolate } = useI18nText();
 
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setTimeGreeting('Good morning');
-    else if (hour < 17) setTimeGreeting('Good afternoon');
-    else setTimeGreeting('Good evening');
-  }, []);
+    if (hour < 12) setTimeGreeting(copy.journey.todayCard.greetingMorning);
+    else if (hour < 17) setTimeGreeting(copy.journey.todayCard.greetingAfternoon);
+    else setTimeGreeting(copy.journey.todayCard.greetingEvening);
+  }, [copy.journey.todayCard.greetingAfternoon, copy.journey.todayCard.greetingEvening, copy.journey.todayCard.greetingMorning]);
 
   return (
     <div className="relative mb-6 overflow-hidden rounded-[32px] border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-surface)] via-[var(--color-surface)] to-[var(--color-primary-light)] p-6 md:p-10">
@@ -45,20 +46,20 @@ export function JourneyTodayCard({
         <p className="text-sm text-[var(--color-text-muted)]">{timeGreeting}</p>
 
         <div className="mt-6 max-w-3xl">
-          <p className="font-arabic text-[24px] md:text-[32px] leading-[1.9] text-[var(--color-accent)]" dir="rtl">
-            {QUIET_AYAH.arabic}
-          </p>
-          <p className="mt-3 text-sm italic leading-relaxed text-[var(--color-text-muted)]">
-            {QUIET_AYAH.translation}
-          </p>
-          <p className="mt-2 text-xs tracking-[0.02em] text-[var(--color-text-subtle)]">
-            {QUIET_AYAH.reference}
-          </p>
-        </div>
+            <p className="font-arabic text-[24px] md:text-[32px] leading-[1.9] text-[var(--color-accent)]" dir="rtl">
+              {QUIET_AYAH.arabic}
+            </p>
+            <p className="mt-3 text-sm italic leading-relaxed text-[var(--color-text-muted)]">
+              {copy.journey.todayCard.quietAyahTranslation}
+            </p>
+            <p className="mt-2 text-xs tracking-[0.02em] text-[var(--color-text-subtle)]">
+              {copy.journey.todayCard.quietAyahReference}
+            </p>
+          </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
           <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1.5">
-            Day {currentDay}
+            {copy.common.labels.day} {currentDay}
           </span>
           {weekChapter && (
             <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1.5">
@@ -75,22 +76,24 @@ export function JourneyTodayCard({
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              About {currentLesson.estimated_minutes} quiet minutes
+              {interpolate(copy.journey.todayCard.aboutQuietMinutes, {
+                minutes: currentLesson.estimated_minutes,
+              })}
             </span>
           )}
         </div>
 
         <div className="mt-8 max-w-3xl">
-          <p className="text-sm text-[var(--color-text-muted)]">Today&apos;s guided experience</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{copy.journey.todayCard.todayGuidedExperience}</p>
           <h1 className="mt-3 text-[32px] md:text-[46px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--color-text)]">
-            {currentLesson?.title || 'Begin gently'}
+            {currentLesson?.title || copy.journey.todayCard.beginFallbackTitle}
           </h1>
           <p className="mt-3 max-w-2xl text-[16px] md:text-[18px] leading-[1.9] text-[var(--color-text-secondary)]">
-            {currentLesson?.subtitle || 'Take one calm step toward Allah today. The journey does not need to be rushed.'}
+            {currentLesson?.subtitle || copy.journey.todayCard.beginFallbackSubtitle}
           </p>
           {currentLesson?.topic && (
             <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-muted)]">
-              Today you will sit with {currentLesson.topic.toLowerCase()}.
+              {copy.journey.todayCard.topicIntro} {currentLesson.topic.toLowerCase()}.
             </p>
           )}
         </div>
@@ -101,13 +104,13 @@ export function JourneyTodayCard({
               href={nextLessonHref}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-3 text-sm font-medium text-white transition-all hover:bg-[var(--color-primary-hover)]"
             >
-              Continue gently
+              {copy.common.actions.continueGently}
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
             <p className="max-w-md text-sm leading-relaxed text-[var(--color-text-muted)]">
-              You do not need to finish everything at once. Let today be enough for today.
+              {copy.journey.todayCard.ctaSupportiveLine}
             </p>
           </div>
         )}

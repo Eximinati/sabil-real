@@ -5,6 +5,7 @@ import { useAudioPlayerContext } from './audio-player-provider';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
 import { useToast } from '@/hooks/use-toast';
 import { getApiUrl } from '@/lib/api-url';
+import { useCopy } from '@/hooks/use-copy';
 
 interface AudioFile {
   verse_key: string;
@@ -19,6 +20,7 @@ interface SurahControlsProps {
 export function SurahControls({ chapterId }: SurahControlsProps) {
   const { state, playSurah } = useAudioPlayerContext();
   const toast = useToast();
+  const copy = useCopy();
   const [loading, setLoading] = useState(false);
   const [cachedAudio, setCachedAudio] = useState<Record<number, AudioFile[]>>({});
 
@@ -42,7 +44,7 @@ export function SurahControls({ chapterId }: SurahControlsProps) {
       setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
       return files;
     } catch (error) {
-      toast.error('Failed to load audio');
+      toast.error(copy.quran.audioFailed);
       return [];
     } finally {
       setLoading(false);
@@ -88,7 +90,7 @@ export function SurahControls({ chapterId }: SurahControlsProps) {
           <path d="M8 5v14l11-7z" />
         </svg>
       )}
-      <span className="hidden sm:inline">{isCurrentlyPlaying ? 'Pause' : 'Listen'}</span>
+      <span className="hidden sm:inline">{isCurrentlyPlaying ? copy.quran.pause : copy.quran.listen}</span>
     </button>
   );
 }

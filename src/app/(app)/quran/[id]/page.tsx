@@ -2,6 +2,7 @@ import { VerseReaderClient } from '@/components/verse-reader-client';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
 import { getApiUrl } from '@/lib/api-url';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 300;
 
 export default async function ChapterPage({ params, searchParams }: PageProps) {
+  const { dictionary: copy } = await getServerDictionary();
   const { id } = await params;
   const { translation: urlTranslation } = await searchParams;
   const chapterId = parseInt(id, 10);
@@ -25,10 +27,10 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">Surah not found</h2>
-          <p className="text-[var(--color-text-muted)] text-sm mb-6">The Surah you&apos;re looking for doesn&apos;t exist.</p>
+          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">{copy.quran.surahNotFoundTitle}</h2>
+          <p className="text-[var(--color-text-muted)] text-sm mb-6">{copy.quran.surahNotFoundDescription}</p>
           <a href="/quran" className="px-5 py-2 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity text-sm font-medium">
-            ← Back to Surah list
+            ← {copy.quran.backToSurahList}
           </a>
         </div>
       </div>
@@ -89,10 +91,10 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">Couldn&apos;t load this Surah</h2>
-          <p className="text-[var(--color-text-muted)] text-sm mb-6">Please check your connection and try again.</p>
+          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">{copy.quran.couldNotLoadSurahTitle}</h2>
+          <p className="text-[var(--color-text-muted)] text-sm mb-6">{copy.quran.couldNotLoadSurahDescription}</p>
           <a href="/quran" className="px-5 py-2 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity text-sm font-medium">
-            ← Back to Surah list
+            ← {copy.quran.backToSurahList}
           </a>
         </div>
       </div>

@@ -1,23 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
 
-const REFLECTION_QUESTIONS = [
-  "What currently holds the most control over your heart besides Allah?",
-  "Where in your life do you struggle to trust Allah's plan?",
-  "What is one thing you can surrender to Allah today?",
-  "Which of Allah's names do you need to remember more?",
-  "What旧 habit is preventing you from growing closer to Allah?",
-  "In what way can you serve others more intentionally today?",
-  "Where have you been holding onto control instead of tawakkul?",
-  "What gratitude can you express to Allah right now?",
-  "What is one area where you've forgotten your relationship with Allah?",
-  "How can you be more present in your worship today?",
-];
-
-function getDailyQuestion(): string {
+function getDailyQuestion(questions: string[]): string {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-  return REFLECTION_QUESTIONS[dayOfYear % REFLECTION_QUESTIONS.length];
+  if (questions.length === 0) return '';
+  return questions[dayOfYear % questions.length];
 }
 
 interface DailyIntentionCardProps {
@@ -25,7 +14,9 @@ interface DailyIntentionCardProps {
 }
 
 export function DailyIntentionCard({ nextLessonDay = 1 }: DailyIntentionCardProps) {
-  const [question] = useState(() => getDailyQuestion());
+  const copy = useCopy();
+  const { interpolate } = useI18nText();
+  const [question] = useState(() => getDailyQuestion(copy.journey.dailyIntention.reflectionQuestions));
 
   return (
     <a 
@@ -41,14 +32,14 @@ export function DailyIntentionCard({ nextLessonDay = 1 }: DailyIntentionCardProp
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm text-[var(--color-text-muted)]">Carry this intention today</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{copy.journey.dailyIntention.title}</p>
             <p className="mt-3 text-[17px] md:text-[20px] leading-[1.9] text-[var(--color-text)]">
               {question}
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
-              <span className="text-[var(--color-text-muted)]">Let it stay with you as you read.</span>
+              <span className="text-[var(--color-text-muted)]">{copy.journey.dailyIntention.supportiveLine}</span>
               <span className="text-[var(--color-primary)] transition-colors group-hover:text-[var(--color-primary-hover)]">
-                Open day {nextLessonDay}
+                {interpolate(`${copy.common.labels.openDay} {day}`, { day: nextLessonDay })}
               </span>
             </div>
           </div>

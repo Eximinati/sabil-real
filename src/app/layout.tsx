@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
-import { Inter, Amiri } from 'next/font/google';
+import { Inter, Amiri, Noto_Nastaliq_Urdu } from 'next/font/google';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { AudioPlayerProvider } from '@/components/audio-player-provider';
 import { FocusModeProvider } from '@/components/focus-mode-provider';
 import { FloatingNotice } from '@/components/floating-notice';
+import { LanguageProvider } from '@/lib/i18n/context';
+import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from '@/lib/i18n/config';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,6 +21,13 @@ const amiri = Amiri({
   subsets: ['arabic', 'latin'],
   display: 'swap',
   variable: '--font-amiri',
+});
+
+const notoNastaliqUrdu = Noto_Nastaliq_Urdu({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-urdu',
 });
 
 export const metadata: Metadata = {
@@ -42,11 +52,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const initialLanguage = normalizeLanguage(cookieStore.get(LANGUAGE_COOKIE_NAME)?.value);
+
   const themeScript = `
     (function() {
       try {
@@ -60,22 +73,48 @@ export default function RootLayout({
     })();
   `;
 
+  const languageScript = `
+    (function() {
+      try {
+        var stored = localStorage.getItem('sabil-language');
+        var cookieMatch = document.cookie.match(/(?:^|; )sabil-language=([^;]+)/);
+        var fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+        var nextLanguage = stored || fromCookie || 'en';
+        if (nextLanguage !== 'en' && nextLanguage !== 'ur') {
+          nextLanguage = 'en';
+        }
+        document.documentElement.setAttribute('lang', nextLanguage);
+        document.documentElement.setAttribute('data-language', nextLanguage);
+        if (!stored || stored !== nextLanguage) {
+          localStorage.setItem('sabil-language', nextLanguage);
+        }
+      } catch (e) {}
+    })();
+  `;
+
   return (
-    <html lang="en" className={`${inter.variable} ${amiri.variable}`}>
+    <html
+      lang={initialLanguage}
+      data-language={initialLanguage}
+      className={`${inter.variable} ${amiri.variable} ${notoNastaliqUrdu.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: languageScript }} />
       </head>
       <body>
-        <ThemeProvider>
-          <ToastProvider>
-            <AudioPlayerProvider>
-              <FocusModeProvider>
-                {children}
-                <FloatingNotice />
-              </FocusModeProvider>
-            </AudioPlayerProvider>
-          </ToastProvider>
-        </ThemeProvider>
+        <LanguageProvider initialLanguage={initialLanguage}>
+          <ThemeProvider>
+            <ToastProvider>
+              <AudioPlayerProvider>
+                <FocusModeProvider>
+                  {children}
+                  <FloatingNotice />
+                </FocusModeProvider>
+              </AudioPlayerProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

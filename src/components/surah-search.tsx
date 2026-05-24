@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
 
 interface Chapter {
   id: number;
@@ -16,6 +17,8 @@ interface SurahSearchProps {
 
 export function SurahSearch({ chapters }: SurahSearchProps) {
   const [search, setSearch] = useState('');
+  const copy = useCopy();
+  const { interpolate } = useI18nText();
 
   const filtered = chapters.filter(
     (c) =>
@@ -32,11 +35,11 @@ export function SurahSearch({ chapters }: SurahSearchProps) {
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search surahs..."
+        placeholder={copy.quran.searchPlaceholder}
         className="w-full px-4 py-3 md:py-4 border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
       />
       <p className="text-center text-[var(--color-text-muted)] text-sm mt-3">
-        Showing {showing} of {total} Surahs
+        {interpolate(copy.quran.showingSurahs, { showing, total })}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-6">

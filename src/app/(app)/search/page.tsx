@@ -3,6 +3,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { getCachedChapters } from '@/lib/api-utils';
 import { getApiUrl } from '@/lib/api-url';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { getServerDictionary } from '@/lib/i18n/server';
+import { interpolate } from '@/lib/i18n/format';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,6 +20,7 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
+  const { dictionary: copy } = await getServerDictionary();
   const { q: query, page: pageNum } = await searchParams;
   const currentPage = parseInt(pageNum || '1', 10);
 
@@ -47,16 +50,16 @@ export default async function SearchPage({
         <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
           <div className="text-center mb-8">
             <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">البحث</h1>
-            <p className="text-[var(--color-text-muted)] text-sm mt-2">Search the Quran</p>
+            <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.search.subtitle}</p>
           </div>
           <div className="mb-8">
             <SearchBar initialQuery={query || ''} />
           </div>
           <EmptyState
             icon="search"
-            title="Search failed"
-            description="Please check your connection and try again."
-            actionLabel="Try Again"
+            title={copy.search.failedTitle}
+            description={copy.search.failedDescription}
+            actionLabel={copy.search.tryAgain}
             actionHref={`/search?q=${encodeURIComponent(query)}`}
           />
         </div>
@@ -68,7 +71,7 @@ export default async function SearchPage({
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-8">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">البحث</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">Search the Quran</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.search.subtitle}</p>
       </div>
 
       <div className="mb-8">
@@ -80,13 +83,13 @@ export default async function SearchPage({
           {searchResults.length === 0 ? (
             <EmptyState
               icon="search"
-              title={`No results for "${query}"`}
-              description="Try searching in Arabic or use different keywords."
+              title={interpolate(copy.search.noResultsTitle, { query })}
+              description={copy.search.noResultsDescription}
             />
           ) : (
             <>
               <p className="text-[var(--color-text-muted)] text-sm mb-6">
-                {total} results for &quot;{query}&quot;
+                {interpolate(copy.search.resultsLine, { total, query })}
               </p>
 
               <div className="space-y-4">
@@ -108,7 +111,7 @@ export default async function SearchPage({
                           href={`/quran/${chapterId}`}
                           className="text-xs text-[var(--color-primary)] hover:underline"
                         >
-                          Open Surah →
+                          {copy.search.openSurah} →
                         </a>
                       </div>
 
@@ -158,16 +161,16 @@ export default async function SearchPage({
                       href={`/search?q=${encodeURIComponent(query)}&page=${currentPage - 1}`}
                       className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
                     >
-                      ← Previous
+                      ← {copy.search.previous}
                     </a>
                   ) : (
                     <span className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)]">
-                      ← Previous
+                      ← {copy.search.previous}
                     </span>
                   )}
 
                   <span className="text-sm text-[var(--color-text-muted)]">
-                    Page {currentPage} of {totalPages}
+                    {interpolate(copy.search.pageLine, { current: currentPage, total: totalPages })}
                   </span>
 
                   {currentPage < totalPages ? (
@@ -175,11 +178,11 @@ export default async function SearchPage({
                       href={`/search?q=${encodeURIComponent(query)}&page=${currentPage + 1}`}
                       className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
                     >
-                      Next →
+                      {copy.search.next} →
                     </a>
                   ) : (
                     <span className="border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)]">
-                      Next →
+                      {copy.search.next} →
                     </span>
                   )}
                 </div>

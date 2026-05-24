@@ -1,10 +1,63 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  DEFAULT_LANGUAGE,
+  LANGUAGE_COOKIE_NAME,
+  isSupportedLanguage,
+  normalizeLanguage,
+} from '@/lib/i18n/config';
+
+function resolveRequestLanguage(request: NextRequest) {
+  const queryLanguage = request.nextUrl.searchParams.get('lang');
+  if (isSupportedLanguage(queryLanguage)) {
+    return queryLanguage;
+  }
+
+  const cookieLanguage = request.cookies.get(LANGUAGE_COOKIE_NAME)?.value;
+  if (isSupportedLanguage(cookieLanguage)) {
+    return cookieLanguage;
+  }
+
+  const accept = request.headers.get('accept-language');
+  if (accept) {
+    const candidate = accept
+      .split(',')
+      .map((token) => token.trim().split(';')[0]?.toLowerCase())
+      .map((token) => token.split('-')[0])
+      .find((token) => isSupportedLanguage(token));
+
+    if (candidate) {
+      return candidate;
+    }
+  }
+
+  return DEFAULT_LANGUAGE;
+}
 
 export async function middleware(request: NextRequest) {
+  const requestLanguage = normalizeLanguage(resolveRequestLanguage(request));
+
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  supabaseResponse.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+  });
+
+  if (request.nextUrl.searchParams.has('lang')) {
+    const redirectedUrl = request.nextUrl.clone();
+    redirectedUrl.searchParams.delete('lang');
+    const redirectResponse = NextResponse.redirect(redirectedUrl);
+    redirectResponse.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+    });
+    return redirectResponse;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +73,11 @@ export async function middleware(request: NextRequest) {
           });
           supabaseResponse = NextResponse.next({
             request,
+          });
+          supabaseResponse.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 365,
+            sameSite: 'lax',
           });
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options);

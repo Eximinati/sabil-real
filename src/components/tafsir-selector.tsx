@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useCopy } from '@/hooks/use-copy';
 
 interface Tafsir {
   id: number;
@@ -17,6 +18,7 @@ interface TafsirSelectorProps {
 export function TafsirSelector({ initialTafsirs }: TafsirSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const copy = useCopy();
   const [tafsirs] = useState<Tafsir[]>(initialTafsirs);
   
   const currentTafsir = searchParams.get('tafsir') || (tafsirs[0]?.id.toString() || '');
@@ -29,7 +31,7 @@ export function TafsirSelector({ initialTafsirs }: TafsirSelectorProps) {
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">Select Tafsir</h3>
+      <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">{copy.tafsir.selectTafsir}</h3>
       <div className="space-y-2">
         {tafsirs.map((tafsir) => (
           <button

@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCopy } from '@/hooks/use-copy';
 
 export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
   const router = useRouter();
+  const copy = useCopy();
   const [query, setQuery] = useState(initialQuery);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,16 +43,16 @@ export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search in Arabic or English..."
+          placeholder={copy.search.searchPlaceholder}
           className="w-full border-2 border-[var(--color-border)] rounded-xl px-12 py-3 md:py-4 text-base focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
-          aria-label="Search the Quran"
+          aria-label={copy.search.searchAria}
         />
         {query && (
           <button
             type="button"
             onClick={handleClear}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xl"
-            aria-label="Clear search"
+            aria-label={copy.search.clearSearch}
           >
             ×
           </button>

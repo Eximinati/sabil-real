@@ -3,9 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const copy = useCopy();
+  const { language } = useLanguage();
+  const { interpolate } = useI18nText();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
@@ -21,11 +26,11 @@ export default function OnboardingPage() {
         await fetch('/api/onboarding/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ completed: true }),
+          body: JSON.stringify({ completed: true, languageCode: language }),
         });
         router.push('/journey');
       } catch {
-        toast.error('Unable to complete setup');
+        toast.error(copy.auth.errors.unableCompleteSetup);
         setLoading(false);
       }
     }
@@ -37,11 +42,11 @@ export default function OnboardingPage() {
       await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: true }),
+        body: JSON.stringify({ completed: true, languageCode: language }),
       });
       router.push('/journey');
     } catch {
-      toast.error('Unable to complete setup');
+      toast.error(copy.auth.errors.unableCompleteSetup);
       setLoading(false);
     }
   };
@@ -65,34 +70,36 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <p className="text-xs text-center text-[var(--color-text-muted)] mb-6">Step {step} of 3</p>
+        <p className="text-xs text-center text-[var(--color-text-muted)] mb-6">
+          {interpolate(copy.auth.onboarding.stepLabel, { step })}
+        </p>
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8">
           <div className="transition-opacity duration-200">
             {step === 1 && (
               <>
                 <p className="font-arabic text-[32px] text-[var(--color-accent)] text-center" dir="rtl">السلام عليكم</p>
-                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center mt-2">Welcome to Sabil</h1>
+                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center mt-2">{copy.auth.onboarding.welcomeTitle}</h1>
                 <p className="text-[var(--color-text-muted)] text-center max-w-sm mx-auto mt-4 leading-relaxed">
-                  Sabil is a gentle guided journey through Quran, Seerah, and reflection - one calm day at a time.
+                  {copy.auth.onboarding.welcomeBody1}
                 </p>
                 <p className="text-[var(--color-text-muted)] text-center max-w-sm mx-auto mt-2 leading-relaxed">
-                  There are no feeds, no debates, and no pressure to perform. You can return gently whenever you need.
+                  {copy.auth.onboarding.welcomeBody2}
                 </p>
               </>
             )}
 
             {step === 2 && (
               <>
-                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">How your journey unfolds</h1>
+                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">{copy.auth.onboarding.flowTitle}</h1>
                 <div className="mt-6 space-y-4">
                   <div className="flex gap-4">
                     <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-white font-medium flex-shrink-0">
                       1
                     </div>
                     <div>
-                      <p className="text-[var(--color-text)] font-medium">Daily Lessons</p>
-                      <p className="text-[var(--color-text-muted)] text-sm">Each day offers one guided experience with Quran, Seerah, and reflection.</p>
+                      <p className="text-[var(--color-text)] font-medium">{copy.auth.onboarding.flowOneTitle}</p>
+                      <p className="text-[var(--color-text-muted)] text-sm">{copy.auth.onboarding.flowOneBody}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -100,8 +107,8 @@ export default function OnboardingPage() {
                       2
                     </div>
                     <div>
-                      <p className="text-[var(--color-text)] font-medium">Write Your Reflections</p>
-                      <p className="text-[var(--color-text-muted)] text-sm">Capture what your heart is learning in a private, sincere space.</p>
+                      <p className="text-[var(--color-text)] font-medium">{copy.auth.onboarding.flowTwoTitle}</p>
+                      <p className="text-[var(--color-text-muted)] text-sm">{copy.auth.onboarding.flowTwoBody}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -109,8 +116,8 @@ export default function OnboardingPage() {
                       3
                     </div>
                     <div>
-                      <p className="text-[var(--color-text)] font-medium">Go At Your Pace</p>
-                      <p className="text-[var(--color-text-muted)] text-sm">Some days will be short, some deeper. No guilt if you miss days - just return gently.</p>
+                      <p className="text-[var(--color-text)] font-medium">{copy.auth.onboarding.flowThreeTitle}</p>
+                      <p className="text-[var(--color-text-muted)] text-sm">{copy.auth.onboarding.flowThreeBody}</p>
                     </div>
                   </div>
                 </div>
@@ -119,16 +126,16 @@ export default function OnboardingPage() {
 
             {step === 3 && (
               <>
-                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">Choose your translation</h1>
+                <h1 className="text-[24px] font-semibold text-[var(--color-text)] text-center">{copy.auth.onboarding.chooseTranslationTitle}</h1>
                 <p className="text-[var(--color-text-muted)] text-center mt-2">
-                  This becomes your default reading companion. You can change it anytime in Settings.
+                  {copy.auth.onboarding.chooseTranslationBody}
                 </p>
                 <div className="mt-6 p-4 bg-[var(--color-bg)] rounded-xl border border-[var(--color-primary)]/20">
-                  <p className="text-[var(--color-primary)] font-medium">Muhammad Taqi-ud-Din al-Hilali & Muhammad Muhsin Khan</p>
-                  <p className="text-[var(--color-text-muted)] text-sm mt-1">A clear translation to begin with</p>
+                  <p className="text-[var(--color-primary)] font-medium">{copy.auth.onboarding.suggestedTranslationTitle}</p>
+                  <p className="text-[var(--color-text-muted)] text-sm mt-1">{copy.auth.onboarding.suggestedTranslationDescription}</p>
                 </div>
                 <p className="text-[var(--color-text-muted)] text-sm text-center mt-4">
-                  You can explore other translations in Settings later.
+                  {copy.auth.onboarding.translationBody2}
                 </p>
               </>
             )}
@@ -140,14 +147,18 @@ export default function OnboardingPage() {
               disabled={loading}
               className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors"
             >
-              Skip
+              {copy.auth.onboarding.skip}
             </button>
             <button
               onClick={handleNext}
               disabled={loading}
               className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {loading ? 'Loading...' : step === 3 ? 'Start Journey' : 'Next'}
+              {loading
+                ? copy.auth.onboarding.loading
+                : step === 3
+                  ? copy.auth.onboarding.startJourney
+                  : copy.auth.onboarding.next}
             </button>
           </div>
         </div>

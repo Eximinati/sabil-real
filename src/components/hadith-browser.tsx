@@ -4,6 +4,7 @@ import { useState, useEffect, memo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyState } from './ui/empty-state';
 import { getCachedHadithCollections, getCachedHadith } from '@/lib/api-utils';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
 
 interface HadithCollection {
   id: string;
@@ -29,6 +30,8 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
 }: HadithBrowserProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const copy = useCopy();
+  const { interpolate } = useI18nText();
   const [collections, setCollections] = useState<HadithCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [hadith, setHadith] = useState<HadithData | null>(null);
@@ -50,7 +53,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
         }
       } catch {
         if (mounted) {
-          setError('Could not load collections');
+          setError(copy.hadith.couldNotLoadCollections);
         }
       } finally {
         if (mounted) {
@@ -64,7 +67,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [copy.hadith.couldNotLoadCollections]);
 
   useEffect(() => {
     if (!collection || !number) return;
@@ -87,7 +90,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
         }
       } catch {
         if (mounted) {
-          setError('Could not load this hadith');
+          setError(copy.hadith.couldNotLoadHadith);
         }
       } finally {
         if (mounted) {
@@ -101,7 +104,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
     return () => {
       mounted = false;
     };
-  }, [collection, number]);
+  }, [collection, copy.hadith.couldNotLoadHadith, number]);
 
   const handleCollectionSelect = useCallback((collectionId: string) => {
     const defaultNum = collectionId === 'muslim' ? '93' : '1';
@@ -151,9 +154,9 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-10">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">الحديث</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">Hadith Collections</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.hadith.subtitle}</p>
         <p className="text-[var(--color-text-muted)] text-sm mt-1 max-w-lg mx-auto">
-          Browse authentic hadith collections from the six major books.
+          {copy.hadith.description}
         </p>
       </div>
 
@@ -166,7 +169,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
                   key={c.id}
                   onClick={() => handleCollectionSelect(c.id)}
                   className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 text-left hover:border-[var(--color-primary)] transition-colors card-hover"
-                  aria-label={`Select ${c.name} collection`}
+                  aria-label={interpolate(copy.hadith.selectCollectionAria, { name: c.name })}
                 >
                   <span className="font-arabic text-[22px] text-[var(--color-accent)] block" dir="rtl">
                     {c.arabic}
@@ -178,9 +181,9 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
           ) : (
             <EmptyState
               icon="hadith"
-              title="No collections available"
-              description="Could not load hadith collections. Please refresh and try again."
-              actionLabel="Refresh"
+              title={copy.hadith.noCollectionsTitle}
+              description={copy.hadith.noCollectionsDescription}
+              actionLabel={copy.hadith.refresh}
               onAction={() => window.location.reload()}
             />
           )}
@@ -190,13 +193,13 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
           <button
             onClick={goBack}
             className="text-[var(--color-primary)] hover:underline mb-6 block"
-            aria-label="Back to collections"
+            aria-label={copy.hadith.backToCollections}
           >
-            ← Back to Collections
+            ← {copy.hadith.backToCollections}
           </button>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-8">
-            <label htmlFor="hadith-number" className="text-sm text-[var(--color-text-muted)]">Enter hadith number:</label>
+            <label htmlFor="hadith-number" className="text-sm text-[var(--color-text-muted)]">{copy.hadith.enterNumber}</label>
             <input
               id="hadith-number"
               type="number"
@@ -204,14 +207,14 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
               onChange={(e) => handleInputChange(e.target.value)}
               min={1}
               className="border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 w-24 transition-all"
-              aria-label="Hadith number"
+              aria-label={copy.hadith.numberInputAria}
             />
             <button
               onClick={handleRead}
               disabled={hadithLoading || !number}
               className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
             >
-              Read
+              {copy.hadith.read}
             </button>
           </div>
 
@@ -226,20 +229,20 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
           ) : error ? (
             <EmptyState
               icon="hadith"
-              title="Could not load hadith"
-              description="The hadith you requested could not be found."
+              title={copy.hadith.loadErrorTitle}
+              description={copy.hadith.loadErrorDescription}
             />
           ) : hadith ? (
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 md:p-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <span className="text-[var(--color-primary)] font-medium">{hadith.name}</span>
                 <span className="bg-[var(--color-accent)] text-white text-xs px-3 py-1 rounded-full">
-                  Hadith #{hadith.number}
+                  {interpolate(copy.hadith.hadithBadge, { number: hadith.number })}
                 </span>
               </div>
               
               {hadith.section && (
-                <p className="text-xs text-[var(--color-text-muted)] mb-3">Chapter: {hadith.section}</p>
+                <p className="text-xs text-[var(--color-text-muted)] mb-3">{copy.hadith.chapterLabel}: {hadith.section}</p>
               )}
               
               <div className="border-t border-[var(--color-border)] pt-4">
@@ -250,10 +253,10 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
                 ) : (
                   <div className="text-center py-4">
                     <p className="text-[var(--color-text-muted)] text-sm">
-                      Text not available for this hadith number.
+                      {copy.hadith.textUnavailable}
                     </p>
                     <p className="text-[var(--color-text-muted)] text-xs mt-1">
-                      Try hadith #93 or later for Sahih Muslim.
+                      {copy.hadith.textUnavailableHint}
                     </p>
                   </div>
                 )}
@@ -264,24 +267,24 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
                   onClick={() => navigateHadith(-1)}
                   disabled={parseInt(number, 10) <= 1}
                   className="text-sm text-[var(--color-primary)] hover:underline disabled:opacity-50"
-                  aria-label="Previous hadith"
+                  aria-label={copy.hadith.previousAria}
                 >
-                  ← Previous
+                  ← {copy.hadith.previous}
                 </button>
                 <button
                   onClick={() => navigateHadith(1)}
                   className="text-sm text-[var(--color-primary)] hover:underline"
-                  aria-label="Next hadith"
+                  aria-label={copy.hadith.nextAria}
                 >
-                  Next →
+                  {copy.hadith.next} →
                 </button>
               </div>
             </div>
           ) : (
             <EmptyState
               icon="hadith"
-              title="Select a hadith"
-              description="Enter a hadith number above to view it."
+              title={copy.hadith.selectHadithTitle}
+              description={copy.hadith.selectHadithDescription}
             />
           )}
         </div>

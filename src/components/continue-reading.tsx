@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface ReadingPosition {
   surah_id: number;
@@ -11,7 +13,12 @@ interface ReadingPosition {
   updated_at: string;
 }
 
-function formatRelativeTime(dateString: string): string {
+function formatRelativeTime(
+  dateString: string,
+  copy: ReturnType<typeof useCopy>,
+  interpolate: ReturnType<typeof useI18nText>['interpolate'],
+  locale: string
+): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -19,12 +26,12 @@ function formatRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diffMins < 1) return copy.quran.relativeNow;
+  if (diffMins < 60) return interpolate(copy.quran.relativeMinutesAgo, { count: diffMins });
+  if (diffHours < 24) return interpolate(copy.quran.relativeHoursAgo, { count: diffHours });
+  if (diffDays === 1) return copy.quran.relativeYesterday;
+  if (diffDays < 7) return interpolate(copy.quran.relativeDaysAgo, { count: diffDays });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 export function ContinueReading() {
@@ -32,6 +39,10 @@ export function ContinueReading() {
   const [chapters, setChapters] = useState<Record<number, { name_simple: string; name_arabic: string }>>({});
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const copy = useCopy();
+  const { language } = useLanguage();
+  const { interpolate } = useI18nText();
+  const locale = language === 'ur' ? 'ur-PK' : 'en-US';
 
   useEffect(() => {
     Promise.all([
@@ -50,10 +61,10 @@ export function ContinueReading() {
         setChapters(chaptersMap);
       })
       .catch(() => {
-        toast.error('Unable to load reading history');
+        toast.error(copy.quran.unableLoadHistory);
       })
       .finally(() => setLoading(false));
-  }, [toast]);
+  }, [copy.quran.unableLoadHistory, toast]);
 
   const sortedPositions = useMemo(() => {
     return [...positions].sort((a, b) => {
@@ -78,10 +89,10 @@ export function ContinueReading() {
   return (
     <div className="mb-8">
       <h3 className="mb-2 text-center text-sm font-medium text-[var(--color-text-muted)]">
-        Continue gently from where you paused
+        {copy.quran.continueReadingTitle}
       </h3>
       <p className="mb-4 text-center text-sm text-[var(--color-text-muted)]">
-        These places are kept quietly so you can return without pressure.
+        {copy.quran.continueReadingDescription}
       </p>
       <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-hide -mx-4 px-4">
         {sortedPositions.map((position) => {
@@ -104,11 +115,11 @@ export function ContinueReading() {
               </p>
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="text-[var(--color-text-muted)]">
-                  Verse {position.verse_number}
+                  {copy.quran.verseLabel} {position.verse_number}
                 </span>
               </div>
               <p className="text-[var(--color-text-muted)] text-[10px] mt-1">
-                {position.updated_at ? formatRelativeTime(position.updated_at) : ''}
+                {position.updated_at ? formatRelativeTime(position.updated_at, copy, interpolate, locale) : ''}
               </p>
             </Link>
           );

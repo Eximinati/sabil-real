@@ -14,6 +14,7 @@ import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { useToast } from '@/hooks/use-toast';
+import { useCopy } from '@/hooks/use-copy';
 import { useFocusMode } from './focus-mode-provider';
 import { AudioPlayer } from './audio-player';
 import { DayOneCanonicalExperience } from './journey-day-one-canonical';
@@ -80,6 +81,7 @@ function JourneyLessonHeader({
   translationId: number;
   urlTranslation?: string | null;
 }) {
+  const copy = useCopy();
   const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -119,7 +121,7 @@ function JourneyLessonHeader({
   const handleReciterChange = (id: number) => {
     setSelectedReciter(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
-    toast.success('Reciter updated');
+    toast.success(copy.common.toasts.reciterUpdated);
   };
 
   return (
@@ -127,14 +129,14 @@ function JourneyLessonHeader({
       <div className="mx-auto max-w-[740px] rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-4 backdrop-blur-sm md:px-5">
         <div className="min-w-0">
           <Link href="/journey" className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
-            Back to today&apos;s journey
+            {copy.journey.lesson.backToJourney}
           </Link>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Keep the lesson at the center.</p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">{copy.journey.lesson.centerPrompt}</p>
         </div>
 
         <details className="group mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/45 p-3">
           <summary className="flex cursor-pointer list-none items-center justify-between text-sm text-[var(--color-text-secondary)]">
-            Reading settings
+            {copy.journey.lesson.readingSettings}
             <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-transform group-open:rotate-180">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -142,7 +144,7 @@ function JourneyLessonHeader({
             </span>
           </summary>
           <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Only adjust these if needed. Your preferences stay saved quietly.
+            {copy.journey.lesson.readingSettingsDescription}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <JourneyTranslationSelector
@@ -172,6 +174,7 @@ export function StreamingLessonShell({
   hasNextDay
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
+  const copy = useCopy();
   const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
   const isCanonicalDayOne = lesson.day_number === 1;
   const week = getWeekForDay(lesson.day_number);
@@ -189,10 +192,10 @@ export function StreamingLessonShell({
       <div className="mb-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-[var(--color-text-muted)]">About {lesson.estimated_minutes} minutes</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{copy.common.labels.minutesAbout} {lesson.estimated_minutes} {copy.common.labels.minutesSuffix}</p>
             {currentArc && (
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Week {currentArc.week}: {currentArc.chapterTitle}
+                {copy.journey.lesson.weekLabel} {currentArc.week}: {currentArc.chapterTitle}
               </p>
             )}
           </div>
@@ -217,7 +220,7 @@ export function StreamingLessonShell({
           <div className="mb-10">
             <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
               <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-white">
-                Day {lesson.day_number}
+                {copy.journey.lesson.dayLabel} {lesson.day_number}
               </span>
             </div>
 
@@ -240,7 +243,7 @@ export function StreamingLessonShell({
 
           {lesson.description && (
             <div className="mb-10">
-              <h2 className="section-heading">Before you begin</h2>
+              <h2 className="section-heading">{copy.journey.lesson.beforeYouBegin}</h2>
               <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">{lesson.description}</p>
             </div>
           )}
@@ -330,6 +333,7 @@ interface VerseWithData {
 function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; translationId: number }) {
   const [verseDataMap, setVerseDataMap] = useState<Record<string, VerseWithData>>({});
   const [loadingVerses, setLoadingVerses] = useState(false);
+  const copy = useCopy();
 
   useEffect(() => {
     const verseBlocks = blocks?.filter(b => b.block_type === 'verse') || [];
@@ -445,7 +449,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
                     {verseData.translations[0].text}
                   </p>
                 ) : loadingVerses ? (
-                  <p className="text-[12px] text-[var(--color-text-muted)] mt-2">Loading translation...</p>
+                  <p className="text-[12px] text-[var(--color-text-muted)] mt-2">{copy.journey.lesson.loadingTranslation}</p>
                 ) : null}
               </div>
             );
@@ -482,7 +486,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-[var(--color-accent)]">Pause and reflect</h3>
+                  <h3 className="text-lg font-medium text-[var(--color-accent)]">{copy.journey.lesson.pauseReflect}</h3>
                 </div>
                 <div className="space-y-3">
                   {prompts.filter(Boolean).map((prompt, idx) => (

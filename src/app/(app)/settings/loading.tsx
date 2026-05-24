@@ -1,4 +1,8 @@
-export default function SettingsLoading() {
+import { getServerDictionary } from '@/lib/i18n/server';
+
+export default async function SettingsLoading() {
+  const { dictionary: copy } = await getServerDictionary();
+
   return (
     <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
       <div className="text-center mb-10">
@@ -6,6 +10,7 @@ export default function SettingsLoading() {
         <div className="h-5 w-32 bg-[var(--color-border)] animate-pulse rounded mx-auto mt-3" />
       </div>
       <div className="max-w-[680px] mx-auto space-y-8">
+        <p className="text-sm text-[var(--color-text-muted)] mb-4">{copy.journey.loading.settings}</p>
         <div>
           <div className="h-6 w-32 bg-[var(--color-border)] rounded mb-3" />
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 animate-pulse">

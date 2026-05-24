@@ -5,6 +5,7 @@ import { JourneyTodayCard } from '@/components/journey-today-card';
 import { JourneyTimelineVirtualized } from '@/components/journey-timeline-virtualized';
 import { DailyIntentionCard } from '@/components/daily-intention-card';
 import { DAY_IDENTITY_30, WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 interface Lesson {
   id: string;
@@ -38,6 +39,7 @@ export const revalidate = 60;
 
 export default async function JourneyPage({ searchParams }: JourneyPageProps) {
   const { notice } = await searchParams;
+  const { dictionary: copy } = await getServerDictionary();
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -58,12 +60,12 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
     <div className="px-4 md:px-8 lg:px-16 pt-8 md:pt-12 pb-16 max-w-[960px] mx-auto">
       {notice === 'return-tomorrow' && (
         <div className="mb-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
-          You returned with sincerity. Come back tomorrow and your next day will be here, in sha Allah.
+          {copy.journey.page.returnTomorrowNotice}
         </div>
       )}
       {notice === 'welcome-back' && (
         <div className="mb-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
-          Welcome back. You are not behind here - continue gently from where your heart is today.
+          {copy.journey.page.welcomeBackNotice}
         </div>
       )}
 
@@ -81,9 +83,9 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
         <details className="group rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-5 md:p-6">
           <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg md:text-xl font-medium text-[var(--color-text)]">If you want to revisit another day</h2>
+              <h2 className="text-lg md:text-xl font-medium text-[var(--color-text)]">{copy.journey.page.revisitHeading}</h2>
               <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                The rest of the journey is here quietly whenever you need to return, revisit, or read ahead.
+                {copy.journey.page.revisitDescription}
               </p>
             </div>
             <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-transform group-open:rotate-180">

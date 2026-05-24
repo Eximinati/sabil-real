@@ -1,6 +1,7 @@
 import { SurahSearch } from '@/components/surah-search';
 import { ContinueReading } from '@/components/continue-reading';
 import { getApiUrl } from '@/lib/api-url';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,7 @@ async function getChaptersFromApi(): Promise<any[]> {
 }
 
 export default async function QuranPage() {
+  const { dictionary: copy } = await getServerDictionary();
   let chapters: any[] = [];
 
   try {
@@ -19,7 +21,7 @@ export default async function QuranPage() {
     return (
       <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
         <div className="p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] rounded-lg text-center">
-          We could not open the surah list right now. Please try again in a moment.
+          {copy.quran.loadErrorTitle}
         </div>
       </div>
     );
@@ -29,8 +31,8 @@ export default async function QuranPage() {
     <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
       <div className="text-center mb-10">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">القرآن الكريم</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">Quran reading companion</p>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1">Read slowly, pause often, and return gently whenever you need.</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.quran.pageSubtitle}</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-1">{copy.quran.pageDescription}</p>
       </div>
 
       <ContinueReading />

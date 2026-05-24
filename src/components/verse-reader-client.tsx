@@ -14,6 +14,7 @@ import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
 import { AudioPlayer } from './audio-player';
 import { getApiUrl } from '@/lib/api-url';
+import { useCopy, useI18nText } from '@/hooks/use-copy';
 
 interface AudioFile {
   verse_key: string;
@@ -39,10 +40,8 @@ interface VerseCardProps {
   translationId: number;
 }
 
-function estimateReadingTime(verseCount: number): string {
-  const minutes = Math.ceil(verseCount * 0.17);
-  if (minutes < 5) return `${minutes} min`;
-  return `~${minutes} min`;
+function estimateReadingTimeMinutes(verseCount: number): number {
+  return Math.ceil(verseCount * 0.17);
 }
 
 export function VerseReaderClient({
@@ -71,6 +70,8 @@ export function VerseReaderClient({
   const { state, playSurah } = useAudioPlayerContext();
   const { isFocusMode } = useFocusMode();
   const toast = useToast();
+  const copy = useCopy();
+  const { interpolate } = useI18nText();
   const { updateProgress, getPositionForSurah } = useReadingProgress(chapterId);
   const { addToHistory } = useReadingHistory();
   const { bookmarks } = useBookmarks();
@@ -81,7 +82,7 @@ export function VerseReaderClient({
   const hasRestoredScroll = useRef(false);
 
   const showBismillah = chapterId !== 1 && chapterId !== 9;
-  const readingTime = estimateReadingTime(versesCount);
+  const readingTimeMinutes = estimateReadingTimeMinutes(versesCount);
   const isMaccan = revelationPlace === 'Meccan';
 
   const isActive = (verseKey: string) => state.currentVerseKey === verseKey;
@@ -180,7 +181,7 @@ export function VerseReaderClient({
         files = data.audio_files || [];
         setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
       } catch {
-        toast.error('Failed to load audio');
+        toast.error(copy.quran.audioFailed);
         setLoadingAudio(false);
         return;
       }
@@ -211,7 +212,7 @@ handlePlayVerse(verseKey, files);
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ surah_id: chapterId, verse_number: verseNumber }),
       });
-      toast.success(isCurrentlyBookmarked ? 'Bookmark removed' : 'Verse bookmarked');
+      toast.success(isCurrentlyBookmarked ? copy.quran.bookmarkRemoved : copy.quran.bookmarkAdded);
     } catch {
       setBookmarkedVerses(prev => {
         const updated = new Set(prev);
@@ -222,7 +223,7 @@ handlePlayVerse(verseKey, files);
         }
         return updated;
       });
-      toast.error('Failed to update bookmark');
+      toast.error(copy.quran.bookmarkUpdateFailed);
     }
   };
 
@@ -248,7 +249,7 @@ handlePlayVerse(verseKey, files);
                   href="/quran"
                   className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
                 >
-                  Back to Quran
+                  {copy.quran.backToQuran}
                 </Link>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-sm md:text-base">
                   <span className="font-medium text-[var(--color-text)]">{chapterName}</span>
@@ -258,9 +259,11 @@ handlePlayVerse(verseKey, files);
                   </span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)] md:text-sm">
-                  {isMaccan ? 'Revealed in Makkah' : 'Revealed in Madinah'}
+                  {isMaccan ? copy.quran.revealedMakkah : copy.quran.revealedMadinah}
                   <span className="mx-2">•</span>
-                  About {readingTime} of reading
+                  {interpolate(copy.quran.aboutReading, {
+                    time: `${readingTimeMinutes} ${copy.common.labels.minutesSuffix}`,
+                  })}
                 </p>
               </div>
 
@@ -350,7 +353,7 @@ handlePlayVerse(verseKey, files);
                           ? 'bg-[var(--color-accent)] text-white'
                           : 'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-accent)] hover:text-white hover:border-[var(--color-accent)]'
                       }`}
-                      aria-label={bookmarkedVerses.has(`verse-${verseNumber}`) ? 'Remove bookmark' : 'Add bookmark'}
+                      aria-label={bookmarkedVerses.has(`verse-${verseNumber}`) ? copy.quran.removeBookmark : copy.quran.addBookmark}
                     >
                       <svg
                         className="w-4 h-4"
@@ -374,7 +377,7 @@ handlePlayVerse(verseKey, files);
                           ? 'bg-[var(--color-primary)] text-white shadow-lg'
                           : 'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)]'
                       } ${playing ? 'animate-pulse-soft' : ''}`}
-                      aria-label={playing ? 'Pause' : 'Play verse'}
+                      aria-label={playing ? copy.quran.pauseVerse : copy.quran.playVerse}
                     >
                       {loadingAudio ? (
                         <svg
@@ -446,14 +449,14 @@ handlePlayVerse(verseKey, files);
                       isFocusMode ? 'text-[15px] md:text-base' : 'text-[14px] md:text-[15px]'
                     }`}
                   >
-                    {translation?.text || 'Translation unavailable'}
+                    {translation?.text || copy.quran.translationUnavailable}
                   </p>
                   <div className="mt-4 text-right">
                     <Link
                       href={`/tafsir?surah=${chapterId}&verse=${verseNumber}`}
                       className="text-xs text-[var(--color-primary)] hover:underline"
                     >
-                      Tafsir →
+                      {copy.quran.tafsirLink} →
                     </Link>
                   </div>
                 </div>
@@ -472,22 +475,22 @@ handlePlayVerse(verseKey, files);
           </p>
           <div className="flex justify-center gap-4 md:gap-8">
             {prevChapter ? (
-              <Link
-                href={`/quran/${prevChapter}`}
-                className="text-[var(--color-primary)] hover:underline text-sm"
-              >
-                ← Previous Surah
-              </Link>
+                <Link
+                  href={`/quran/${prevChapter}`}
+                  className="text-[var(--color-primary)] hover:underline text-sm"
+                >
+                  ← {copy.quran.previousSurah}
+                </Link>
             ) : (
               <span className="text-[var(--color-text-muted)]" />
             )}
             {nextChapter ? (
-              <Link
-                href={`/quran/${nextChapter}`}
-                className="text-[var(--color-primary)] hover:underline text-sm"
-              >
-                Next Surah →
-              </Link>
+                <Link
+                  href={`/quran/${nextChapter}`}
+                  className="text-[var(--color-primary)] hover:underline text-sm"
+                >
+                  {copy.quran.nextSurah} →
+                </Link>
             ) : (
               <span className="text-[var(--color-text-muted)]" />
             )}
@@ -500,22 +503,22 @@ handlePlayVerse(verseKey, files);
         <div className="fixed bottom-0 left-0 right-0 rounded-t-[24px] border-t border-[var(--color-border)] bg-[var(--color-surface)]/94 p-4 backdrop-blur-sm md:hidden safe-area-bottom">
           <div className="flex justify-between max-w-3xl mx-auto">
             {prevChapter ? (
-              <Link
-                href={`/quran/${prevChapter}`}
-                className="text-[var(--color-primary)] text-sm flex items-center gap-1"
-              >
-                ← Prev
-              </Link>
+                <Link
+                  href={`/quran/${prevChapter}`}
+                  className="text-[var(--color-primary)] text-sm flex items-center gap-1"
+                >
+                  ← {copy.quran.mobilePrev}
+                </Link>
             ) : (
               <span />
             )}
             {nextChapter ? (
-              <Link
-                href={`/quran/${nextChapter}`}
-                className="text-[var(--color-primary)] text-sm flex items-center gap-1"
-              >
-                Next →
-              </Link>
+                <Link
+                  href={`/quran/${nextChapter}`}
+                  className="text-[var(--color-primary)] text-sm flex items-center gap-1"
+                >
+                  {copy.quran.mobileNext} →
+                </Link>
             ) : (
               <span />
             )}
