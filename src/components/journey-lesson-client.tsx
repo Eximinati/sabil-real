@@ -10,6 +10,8 @@ import { JourneyReciterSelector } from './journey-reciter-selector';
 import { ReflectionInput } from './reflection-input';
 import { LessonCompleteButton } from './lesson-complete-button';
 import { useToast } from '@/hooks/use-toast';
+import { useCopy } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface VerseData {
   verse_key: string;
@@ -82,6 +84,9 @@ export function JourneyLessonClient({
   translationId,
 }: JourneyLessonClientProps) {
   const router = useSearchParams();
+  const copy = useCopy();
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
   const [currentPlayingVerse, setCurrentPlayingVerse] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -102,7 +107,7 @@ export function JourneyLessonClient({
   const handleReciterChange = (id: number) => {
     setReciterId(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
-    toast.success('Reciter updated');
+    toast.success(copy.common.toasts.reciterUpdated);
   };
 
   const getAudioUrl = useCallback((verseKey: string): string => {
@@ -134,7 +139,7 @@ export function JourneyLessonClient({
       }
       
       if (!url) {
-        toast.error('Audio not available for this verse');
+        toast.error(isUrdu ? 'اس آیت کے لیے آڈیو دستیاب نہیں' : 'Audio not available for this verse');
         return;
       }
       
@@ -149,7 +154,7 @@ export function JourneyLessonClient({
         .catch((err) => {
           console.error('Audio play error:', err);
           setLoadingAudio(false);
-          toast.error('Failed to play audio');
+          toast.error(isUrdu ? 'آڈیو چل نہیں سکی' : 'Failed to play audio');
         });
 
       audio.onended = () => {
@@ -211,7 +216,7 @@ export function JourneyLessonClient({
       <div className="sticky top-0 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)] -mx-4 md:-mx-6 px-4 md:px-6 py-4 z-10 -mt-4 md:-mt-12 pt-8 md:pt-16">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <Link href="/journey" className="text-[var(--color-primary)] hover:underline text-sm">
-            ← Back to Journey
+            ← {copy.reflections.backToJourney}
           </Link>
           <div className="flex items-center gap-2">
             <JourneyTranslationSelector 
@@ -228,18 +233,18 @@ export function JourneyLessonClient({
 
       <div className="mb-8">
         <div className="flex items-center gap-4 mt-4">
-          <span className="px-3 py-1 bg-[var(--color-accent)] text-white rounded-full text-sm">
-            Day {lesson.day_number}
-          </span>
+            <span className="px-3 py-1 bg-[var(--color-accent)] text-white rounded-full text-sm">
+              {copy.common.labels.day} {lesson.day_number}
+            </span>
           <span className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            ~{lesson.estimated_minutes} min
+            {isUrdu ? `~${lesson.estimated_minutes} منٹ` : `~${lesson.estimated_minutes} min`}
           </span>
           {isCompleted && (
             <span className="px-2 py-1 bg-[var(--color-primary)] text-white rounded text-xs">
-              Completed
+              {isUrdu ? 'مکمل' : 'Completed'}
             </span>
           )}
         </div>
@@ -256,9 +261,9 @@ export function JourneyLessonClient({
         <div className="h-px bg-[var(--color-accent)]/30 mt-6" />
       </div>
 
-      {lesson.description && (
+        {lesson.description && (
         <div className="mb-8">
-          <h2 className="section-heading">Overview</h2>
+          <h2 className="section-heading">{isUrdu ? 'خلاصہ' : 'Overview'}</h2>
           <p className="text-[16px] leading-[1.8] text-[var(--color-text)]">{lesson.description}</p>
         </div>
       )}
@@ -266,7 +271,7 @@ export function JourneyLessonClient({
       {verses.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="section-heading mb-0">Quranic Verses</h2>
+            <h2 className="section-heading mb-0">{isUrdu ? 'قرآنی آیات' : 'Quranic Verses'}</h2>
             <button
               onClick={handlePlayAll}
               disabled={loadingAudio}
@@ -282,7 +287,7 @@ export function JourneyLessonClient({
                   <path d="M8 5v14l11-7z" />
                 </svg>
               )}
-              Play All
+              {isUrdu ? 'سب چلائیں' : 'Play All'}
             </button>
           </div>
           <JourneyVerseSection
@@ -297,7 +302,7 @@ export function JourneyLessonClient({
 
       {lesson.lesson_text && (
         <div className="mb-8">
-          <h2 className="section-heading">Lesson</h2>
+          <h2 className="section-heading">{isUrdu ? 'سبق' : 'Lesson'}</h2>
           <div className="prose max-w-none">
             <ReactMarkdown
               components={{
@@ -314,7 +319,7 @@ export function JourneyLessonClient({
 
       {(lesson.hadith_text || hadith) && (
         <div className="mb-8">
-          <h2 className="section-heading">Related Hadith</h2>
+          <h2 className="section-heading">{isUrdu ? 'متعلقہ حدیث' : 'Related Hadith'}</h2>
           <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 relative">
             <span className="font-arabic text-[60px] text-[var(--color-accent)] absolute top-2 left-4 opacity-30" dir="rtl">"</span>
             {hadith ? (
@@ -354,7 +359,7 @@ export function JourneyLessonClient({
 
       {lesson.reflection_prompt && (
         <div className="mb-8">
-          <h2 className="section-heading">Reflection</h2>
+          <h2 className="section-heading">{copy.journey.lesson.reflectionTitle}</h2>
           <div className="bg-[var(--color-bg)] rounded-xl p-5 border border-[var(--color-primary)]/20">
             <p className="text-[16px] text-[var(--color-text)]">{lesson.reflection_prompt}</p>
           </div>

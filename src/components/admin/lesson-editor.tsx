@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   JourneyLessonMetadata, 
@@ -20,6 +20,28 @@ import {
   SABIL_CONTENT_SYSTEM,
   validateDayTemplateContract,
 } from '@/lib/journey-day-template';
+import { WEEKLY_EMOTIONAL_ARCS, getDayIdentity, getWeekForDay } from '@/lib/journey-emotional-arc';
+import {
+  URDU_EMOTIONAL_QA_CHECKLIST,
+  URDU_FORBIDDEN_PATTERNS,
+  URDU_GOOD_BAD_EXAMPLES,
+  URDU_READABILITY_STANDARDS,
+  URDU_TONE_PRINCIPLES,
+} from '@/lib/urdu-localization-system';
+import {
+  CROSS_LANGUAGE_CONSISTENCY_CHECKS,
+  EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST,
+  getDefaultChecklistMap,
+  hasLocalizedBlockContent,
+  hasLocalizedMetadataContent,
+  JOURNEY_EDITORIAL_STAGE_LABELS,
+  JOURNEY_EDITORIAL_STAGE_ORDER,
+  LOCALIZATION_QA_REVIEW_CHECKLIST,
+  normalizeTranslationStages,
+  PUBLISHING_SAFETY_CHECKS,
+  toEditorialStage,
+} from '@/lib/journey-editorial';
+import type { JourneyEditorialStage } from '@/types/journey-localization';
 
 interface LessonEditorProps {
   initialData?: {
@@ -47,6 +69,15 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
       estimated_minutes: 15,
       is_published: false,
       emotional_qa: Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
+      translation_status: {
+        en: 'qa_approved',
+        ur: 'untranslated',
+      },
+      localized_content: {},
+      shared_metadata: {
+        lesson_order: 1,
+        qa_status: {},
+      },
     }
   );
 
@@ -62,6 +93,96 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
 
   const templateCoverage = getDayTemplateCoverage(metadata.day_number, blocks);
   const emotionalQa = metadata.emotional_qa || {};
+  const hasUrduLocalizedContent =
+    hasLocalizedMetadataContent(metadata.localized_content, 'ur') ||
+    hasLocalizedBlockContent(blocks, 'ur');
+
+  const normalizedStatusForUi = normalizeTranslationStages(metadata.translation_status, {
+    hasContentByLanguage: {
+      en: true,
+      ur: hasUrduLocalizedContent,
+    },
+    isPublished: metadata.is_published,
+  });
+
+  const editorial = metadata.shared_metadata?.editorial || {};
+  const urEditorialState = editorial.language_states?.ur || {};
+
+  const urStage = toEditorialStage(normalizedStatusForUi.ur);
+
+  const urEmotionalReview = {
+    ...getDefaultChecklistMap(EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST),
+    ...(urEditorialState.emotional_review || {}),
+  };
+
+  const urQaReview = {
+    ...getDefaultChecklistMap(LOCALIZATION_QA_REVIEW_CHECKLIST),
+    ...(urEditorialState.qa_review || {}),
+  };
+
+  const crossLanguageChecks = {
+    ...getDefaultChecklistMap(CROSS_LANGUAGE_CONSISTENCY_CHECKS),
+    ...(editorial.cross_language_checks || {}),
+  };
+
+  const publishingSafetyChecks = {
+    ...getDefaultChecklistMap(PUBLISHING_SAFETY_CHECKS),
+    ...(editorial.publishing_safety_checks || {}),
+  };
+
+  useEffect(() => {
+    const week = getWeekForDay(metadata.day_number);
+    const weekArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === week);
+    const dayIdentity = getDayIdentity(metadata.day_number);
+
+    if (!weekArc && !dayIdentity) {
+      return;
+    }
+
+    setMetadata((prev) => {
+      const existingShared = prev.shared_metadata || {};
+      const nextShared = {
+        ...existingShared,
+        lesson_order: prev.day_number,
+        week_chapter: existingShared.week_chapter || weekArc?.chapterTitle,
+        emotional_note: existingShared.emotional_note || dayIdentity?.primaryEmotionalNote,
+        arc_identity: existingShared.arc_identity || (weekArc ? `week-${weekArc.week}` : undefined),
+        estimated_minutes: prev.estimated_minutes,
+        qa_status: {
+          ...(existingShared.qa_status || {}),
+          ...(prev.emotional_qa || {}),
+        },
+      };
+
+      const nextStatuses = {
+        ...normalizeTranslationStages(prev.translation_status, {
+          hasContentByLanguage: {
+            en: true,
+            ur: hasLocalizedMetadataContent(prev.localized_content, 'ur') || hasLocalizedBlockContent(blocks, 'ur'),
+          },
+          isPublished: prev.is_published,
+        }),
+      };
+
+      let changed = false;
+      if (JSON.stringify(existingShared) !== JSON.stringify(nextShared)) {
+        changed = true;
+      }
+      if (JSON.stringify(prev.translation_status || {}) !== JSON.stringify(nextStatuses)) {
+        changed = true;
+      }
+
+      if (!changed) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        shared_metadata: nextShared,
+        translation_status: nextStatuses,
+      };
+    });
+  }, [metadata.day_number, metadata.estimated_minutes, metadata.emotional_qa, blocks]);
 
   useEffect(() => {
     setHasUnsavedChanges(true);
@@ -84,7 +205,11 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
       return;
     }
 
-    const updatedMetadata = { ...metadata, is_published: publish };
+    const updatedMetadata: JourneyLessonMetadata = {
+      ...metadata,
+      is_published: publish,
+      translation_status: normalizedStatusForUi,
+    };
 
     if (publish) {
       const missingChecklist = EMOTIONAL_QA_CHECKLIST.filter((item) => !updatedMetadata.emotional_qa?.[item.id]);
@@ -110,7 +235,17 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
     setSaving(false);
 
     if (result.success) {
-      setMetadata(updatedMetadata);
+      setMetadata((prev) => ({
+        ...updatedMetadata,
+        shared_metadata: {
+          ...(prev.shared_metadata || {}),
+          ...(updatedMetadata.shared_metadata || {}),
+          editorial: {
+            ...(prev.shared_metadata?.editorial || {}),
+            ...(updatedMetadata.shared_metadata?.editorial || {}),
+          },
+        },
+      }));
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
       toast.success(publish ? 'Lesson published!' : 'Draft saved');
@@ -166,6 +301,134 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
 
     setBlocks([...blocks, ...appended]);
   };
+
+  const setUrEditorialStage = (nextStage: JourneyEditorialStage) => {
+    if (nextStage !== 'untranslated' && !hasUrduLocalizedContent) {
+      toast.info('Add Urdu localized text first, then move beyond untranslated.');
+      return;
+    }
+
+    setMetadata((prev) => {
+      const nextStatus = normalizeTranslationStages(
+        {
+          ...(prev.translation_status || {}),
+          ur: nextStage,
+        },
+        {
+          hasContentByLanguage: {
+            en: true,
+            ur: hasLocalizedMetadataContent(prev.localized_content, 'ur') || hasLocalizedBlockContent(blocks, 'ur'),
+          },
+          isPublished: prev.is_published,
+        }
+      );
+
+      return {
+        ...prev,
+        translation_status: nextStatus,
+      };
+    });
+  };
+
+  const toggleUrChecklist = (
+    kind: 'emotional_review' | 'qa_review',
+    checklistId: string,
+    checked: boolean
+  ) => {
+    setMetadata((prev) => {
+      const existingEditorial = prev.shared_metadata?.editorial || {};
+      const existingUrState = existingEditorial.language_states?.ur || {};
+
+      return {
+        ...prev,
+        shared_metadata: {
+          ...(prev.shared_metadata || {}),
+          editorial: {
+            ...existingEditorial,
+            language_states: {
+              ...(existingEditorial.language_states || {}),
+              ur: {
+                ...existingUrState,
+                [kind]: {
+                  ...((existingUrState as Record<string, unknown>)[kind] as Record<string, boolean> || {}),
+                  [checklistId]: checked,
+                },
+              },
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const toggleEditorialMap = (
+    kind: 'cross_language_checks' | 'publishing_safety_checks',
+    checklistId: string,
+    checked: boolean
+  ) => {
+    setMetadata((prev) => {
+      const existingEditorial = prev.shared_metadata?.editorial || {};
+
+      return {
+        ...prev,
+        shared_metadata: {
+          ...(prev.shared_metadata || {}),
+          editorial: {
+            ...existingEditorial,
+            [kind]: {
+              ...((existingEditorial as Record<string, unknown>)[kind] as Record<string, boolean> || {}),
+              [checklistId]: checked,
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const markUrSyncedWithCurrentSource = () => {
+    const sourceHash = metadata.shared_metadata?.editorial?.source_hash;
+    if (!sourceHash) {
+      toast.info('Save once to generate source sync hash.');
+      return;
+    }
+
+    setMetadata((prev) => {
+      const existingEditorial = prev.shared_metadata?.editorial || {};
+      const existingUrState = existingEditorial.language_states?.ur || {};
+
+      return {
+        ...prev,
+        shared_metadata: {
+          ...(prev.shared_metadata || {}),
+          editorial: {
+            ...existingEditorial,
+            language_states: {
+              ...(existingEditorial.language_states || {}),
+              ur: {
+                ...existingUrState,
+                synced_source_hash: sourceHash,
+              },
+            },
+          },
+        },
+      };
+    });
+
+    toast.success('Urdu sync marked to current source revision.');
+  };
+
+  const missingUrEmotionalReview = EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST.filter(
+    (item) => !urEmotionalReview[item.id]
+  );
+  const missingUrQaReview = LOCALIZATION_QA_REVIEW_CHECKLIST.filter(
+    (item) => !urQaReview[item.id]
+  );
+  const missingCrossLanguageChecks = CROSS_LANGUAGE_CONSISTENCY_CHECKS.filter(
+    (item) => !crossLanguageChecks[item.id]
+  );
+  const missingPublishingSafetyChecks = PUBLISHING_SAFETY_CHECKS.filter(
+    (item) => !publishingSafetyChecks[item.id]
+  );
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -242,6 +505,132 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
             />
           </div>
 
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                Urdu editorial stage
+              </label>
+              <select
+                value={urStage}
+                onChange={(e) => setUrEditorialStage(e.target.value as JourneyEditorialStage)}
+                className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)]"
+              >
+                {JOURNEY_EDITORIAL_STAGE_ORDER.map((stage) => (
+                  <option key={stage} value={stage}>
+                    {JOURNEY_EDITORIAL_STAGE_LABELS[stage]}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                This stage tracks emotional readiness, not translation speed.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                Arc identity
+              </label>
+              <input
+                type="text"
+                value={metadata.shared_metadata?.arc_identity || ''}
+                onChange={(e) =>
+                  setMetadata({
+                    ...metadata,
+                    shared_metadata: {
+                      ...(metadata.shared_metadata || {}),
+                      arc_identity: e.target.value,
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)]"
+                placeholder="e.g., week-1"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+              Urdu localized fields (optional in Phase 5C)
+            </label>
+            <div className="grid grid-cols-1 gap-3">
+              <input
+                type="text"
+                value={metadata.localized_content?.ur?.title || ''}
+                onChange={(e) =>
+                  setMetadata({
+                    ...metadata,
+                    localized_content: {
+                      ...(metadata.localized_content || {}),
+                      ur: {
+                        ...(metadata.localized_content?.ur || {}),
+                        title: e.target.value,
+                      },
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)]"
+                placeholder="Urdu title"
+                dir="rtl"
+              />
+              <textarea
+                value={metadata.localized_content?.ur?.description || ''}
+                onChange={(e) =>
+                  setMetadata({
+                    ...metadata,
+                    localized_content: {
+                      ...(metadata.localized_content || {}),
+                      ur: {
+                        ...(metadata.localized_content?.ur || {}),
+                        description: e.target.value,
+                      },
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] resize-none"
+                rows={3}
+                placeholder="Urdu overview"
+                dir="rtl"
+              />
+              <textarea
+                value={metadata.localized_content?.ur?.reflection_prompt || ''}
+                onChange={(e) =>
+                  setMetadata({
+                    ...metadata,
+                    localized_content: {
+                      ...(metadata.localized_content || {}),
+                      ur: {
+                        ...(metadata.localized_content?.ur || {}),
+                        reflection_prompt: e.target.value,
+                      },
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] resize-none"
+                rows={3}
+                placeholder="Urdu reflection prompt"
+                dir="rtl"
+              />
+            </div>
+
+            <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Source sync hash: <span className="font-mono">{metadata.shared_metadata?.editorial?.source_hash || 'pending-save'}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={markUrSyncedWithCurrentSource}
+                  className="px-2.5 py-1 rounded border border-[var(--color-border)] text-xs text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+                >
+                  Mark Urdu synced
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                Urdu synced hash: <span className="font-mono">{metadata.shared_metadata?.editorial?.language_states?.ur?.synced_source_hash || 'not-set'}</span>
+              </p>
+            </div>
+          </div>
+
           <div className="mt-4">
             <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
               Description (Overview)
@@ -307,6 +696,64 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
                 <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
                   {SABIL_CONTENT_SYSTEM.emotionalPacingRules.slice(0, 4).map((line) => (
                     <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </details>
+
+          <details className="group mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-[var(--color-text)]">
+              Urdu emotional localization guidance (Phase 5D)
+              <span className="text-xs text-[var(--color-text-muted)] transition-transform group-open:rotate-180">▼</span>
+            </summary>
+
+            <div className="mt-3 grid gap-3">
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Tone principles</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {URDU_TONE_PRINCIPLES.map((line) => (
+                    <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Forbidden patterns</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {URDU_FORBIDDEN_PATTERNS.map((line) => (
+                    <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Readability standards</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {URDU_READABILITY_STANDARDS.map((line) => (
+                    <li key={line}>- {line}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Good vs bad Urdu examples</p>
+                <div className="mt-2 space-y-3">
+                  {URDU_GOOD_BAD_EXAMPLES.slice(0, 4).map((example) => (
+                    <div key={example.surface} className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] p-2">
+                      <p className="text-xs font-medium text-[var(--color-text)] capitalize">{example.surface}</p>
+                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">Bad: {example.bad}</p>
+                      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Better: {example.better}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Urdu emotional QA</p>
+                <ul className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
+                  {URDU_EMOTIONAL_QA_CHECKLIST.map((item) => (
+                    <li key={item.id}>- {item.label}</li>
                   ))}
                 </ul>
               </div>
@@ -431,6 +878,109 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
           </div>
         </div>
 
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-medium text-[var(--color-text)]">Localization emotional review (Urdu)</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Review emotional authenticity before moving from draft localized to QA approved.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST.map((item) => (
+              <label key={item.id} className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+                <input
+                  type="checkbox"
+                  checked={!!urEmotionalReview[item.id]}
+                  onChange={(e) => toggleUrChecklist('emotional_review', item.id, e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)]"
+                />
+                <span className="text-sm leading-relaxed text-[var(--color-text)]">{item.label}</span>
+              </label>
+            ))}
+          </div>
+
+          {missingUrEmotionalReview.length > 0 && (
+            <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+              Remaining emotional review item: {missingUrEmotionalReview[0].label}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-medium text-[var(--color-text)]">Localization QA and cross-language consistency</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Keep English and Urdu emotionally parallel as one journey.
+          </p>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <p className="text-sm font-medium text-[var(--color-text)]">Urdu localization QA</p>
+              <div className="mt-3 space-y-2">
+                {LOCALIZATION_QA_REVIEW_CHECKLIST.map((item) => (
+                  <label key={item.id} className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!urQaReview[item.id]}
+                      onChange={(e) => toggleUrChecklist('qa_review', item.id, e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)]"
+                    />
+                    <span className="text-sm text-[var(--color-text)] leading-relaxed">{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <p className="text-sm font-medium text-[var(--color-text)]">Cross-language consistency checks</p>
+              <div className="mt-3 space-y-2">
+                {CROSS_LANGUAGE_CONSISTENCY_CHECKS.map((item) => (
+                  <label key={item.id} className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!crossLanguageChecks[item.id]}
+                      onChange={(e) => toggleEditorialMap('cross_language_checks', item.id, e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)]"
+                    />
+                    <span className="text-sm text-[var(--color-text)] leading-relaxed">{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {(missingUrQaReview.length > 0 || missingCrossLanguageChecks.length > 0) && (
+            <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+              Next gap: {missingUrQaReview[0]?.label || missingCrossLanguageChecks[0]?.label}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-medium text-[var(--color-text)]">Publishing safety checks</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Lightweight safeguards to prevent drift and orphaned translations.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {PUBLISHING_SAFETY_CHECKS.map((item) => (
+              <label key={item.id} className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+                <input
+                  type="checkbox"
+                  checked={!!publishingSafetyChecks[item.id]}
+                  onChange={(e) => toggleEditorialMap('publishing_safety_checks', item.id, e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)]"
+                />
+                <span className="text-sm leading-relaxed text-[var(--color-text)]">{item.label}</span>
+              </label>
+            ))}
+          </div>
+
+          {missingPublishingSafetyChecks.length > 0 && (
+            <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+              Required before publish: {missingPublishingSafetyChecks[0].label}
+            </p>
+          )}
+        </div>
+
         {/* Actions */}
         <div className="flex items-center justify-between">
           <div className="text-sm text-[var(--color-text-muted)]">
@@ -438,6 +988,14 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
             {lastSaved && !hasUnsavedChanges && (
               <span>Saved {lastSaved.toLocaleTimeString()}</span>
             )}
+            {!hasUnsavedChanges && !lastSaved && (
+              <span>Content version {metadata.shared_metadata?.content_version || 1}</span>
+            )}
+            {metadata.shared_metadata?.editorial?.drift_flags?.length ? (
+              <span className="ml-2 text-amber-700">
+                Drift flags: {metadata.shared_metadata?.editorial?.drift_flags?.join(', ')}
+              </span>
+            ) : null}
           </div>
           
           <div className="flex items-center gap-3">

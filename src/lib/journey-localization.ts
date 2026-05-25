@@ -1,4 +1,10 @@
 import { DEFAULT_LANGUAGE, type LanguageCode } from '@/lib/i18n/config';
+import { isRuntimeReadyStatus } from './journey-editorial';
+import type {
+  JourneyLanguageContext,
+  JourneyTranslationStatus,
+  JourneyTranslationStatusMap,
+} from '@/types/journey-localization';
 
 type LessonLocalizedFields = {
   title: string;
@@ -13,6 +19,7 @@ type LessonLocalizedPatch = Partial<LessonLocalizedFields>;
 
 type WithLocalizedContent = {
   localized_content?: Record<string, LessonLocalizedPatch> | null;
+  translation_status?: JourneyTranslationStatusMap | null;
 };
 
 const LOCALIZABLE_FIELDS: Array<keyof LessonLocalizedFields> = [
@@ -66,6 +73,68 @@ export function localizeLesson<T extends WithLocalizedContent & LessonLocalizedF
   }
 
   return localized;
+}
+
+function getTranslationStatusValue(
+  statuses: JourneyTranslationStatusMap | null | undefined,
+  language: LanguageCode
+): JourneyTranslationStatus {
+  const value = statuses?.[language];
+  if (
+    value === 'ready' ||
+    value === 'in_progress' ||
+    value === 'planned' ||
+    value === 'missing' ||
+    value === 'untranslated' ||
+    value === 'draft_localized' ||
+    value === 'emotionally_reviewed' ||
+    value === 'qa_approved' ||
+    value === 'published'
+  ) {
+    return value;
+  }
+  return language === DEFAULT_LANGUAGE ? 'ready' : 'missing';
+}
+
+function hasLocalizedFields(translation: LessonLocalizedPatch | undefined): boolean {
+  if (!translation) {
+    return false;
+  }
+
+  return LOCALIZABLE_FIELDS.some((field) => {
+    const value = translation[field];
+    return value === null || isNonEmpty(value);
+  });
+}
+
+export function resolveLessonLanguageContext<T extends WithLocalizedContent>(
+  lesson: T,
+  requestedLanguage: LanguageCode = DEFAULT_LANGUAGE
+): JourneyLanguageContext {
+  const requestedStatus = getTranslationStatusValue(lesson.translation_status, requestedLanguage);
+
+  if (requestedLanguage === DEFAULT_LANGUAGE) {
+    return {
+      requested: requestedLanguage,
+      resolved: DEFAULT_LANGUAGE,
+      fallbackUsed: false,
+      requestedStatus,
+    };
+  }
+
+  const requestedContent = lesson.localized_content?.[requestedLanguage] as LessonLocalizedPatch | undefined;
+  const hasRequestedContent = hasLocalizedFields(requestedContent);
+  const hasExplicitStatus = lesson.translation_status?.[requestedLanguage] !== undefined;
+  const canUseRequested = hasExplicitStatus
+    ? isRuntimeReadyStatus(requestedStatus)
+    : hasRequestedContent;
+
+  return {
+    requested: requestedLanguage,
+    resolved: canUseRequested ? requestedLanguage : DEFAULT_LANGUAGE,
+    fallbackUsed: !canUseRequested,
+    requestedStatus,
+  };
 }
 
 export function localizeLessonCollection<T extends WithLocalizedContent & LessonLocalizedFields>(

@@ -1,3 +1,10 @@
+import type { LanguageCode } from '@/lib/i18n/config';
+import type {
+  JourneyLocalizedContentMap,
+  JourneySharedMetadata,
+  JourneyTranslationStatusMap,
+} from './journey-localization';
+
 export type BlockType = 
   | 'heading' 
   | 'paragraph' 
@@ -33,6 +40,7 @@ export interface BlockContent {
   translation?: string;
   richText?: RichTextSegment[];
   arabic_text?: string;
+  i18n?: Partial<Record<LanguageCode, Partial<Omit<BlockContent, 'i18n'>>>>;
 }
 
 export interface JourneyLessonMetadata {
@@ -45,6 +53,9 @@ export interface JourneyLessonMetadata {
   estimated_minutes: number;
   is_published: boolean;
   emotional_qa?: Record<string, boolean>;
+  localized_content?: JourneyLocalizedContentMap;
+  translation_status?: JourneyTranslationStatusMap;
+  shared_metadata?: JourneySharedMetadata;
 }
 
 export interface LessonWithBlocks {

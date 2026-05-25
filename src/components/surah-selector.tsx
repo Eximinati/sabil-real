@@ -30,7 +30,7 @@ export function SurahSelector({ chapters }: SurahSelectorProps) {
   return (
     <div>
       <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">{copy.tafsir.selectSurah}</h3>
-      <div className="max-h-[400px] overflow-y-auto space-y-2">
+      <div className="max-h-[400px] overflow-y-auto space-y-2 quiet-controls">
         {chapters.map((chapter) => (
           <button
             key={chapter.id}

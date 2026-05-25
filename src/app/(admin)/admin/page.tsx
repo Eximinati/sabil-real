@@ -16,6 +16,16 @@ export default function AdminDashboard() {
           </p>
         </Link>
 
+        <Link
+          href="/admin/journey/localization-qa"
+          className="block p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl hover:border-[var(--color-primary)] transition-colors"
+        >
+          <h2 className="text-lg font-medium text-[var(--color-text)] mb-2">Localization QA</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Review multilingual emotional readiness and drift risks
+          </p>
+        </Link>
+
         <div className="block p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl opacity-50 cursor-not-allowed">
           <h2 className="text-lg font-medium text-[var(--color-text)] mb-2">Quran Content</h2>
           <p className="text-sm text-[var(--color-text-muted)]">

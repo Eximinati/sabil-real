@@ -1,6 +1,6 @@
 export default function JourneyLoading() {
   return (
-    <div className="mx-auto max-w-[960px] px-4 md:px-8 lg:px-16 pt-8 md:pt-12 pb-16">
+    <div className="reading-screen mx-auto max-w-[960px] px-4 md:px-8 lg:px-16 pt-8 md:pt-12 pb-20 md:pb-16">
       <p className="mb-4 text-sm text-[var(--color-text-muted)]">Preparing today&apos;s journey...</p>
       <div className="mb-8 rounded-[32px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-10">
         <div className="h-4 w-24 rounded bg-[var(--color-border)] animate-pulse" />

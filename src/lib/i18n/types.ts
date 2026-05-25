@@ -84,6 +84,9 @@ export interface AppCopy {
     page: {
       returnTomorrowNotice: string;
       welcomeBackNotice: string;
+      returnAfterShortPauseNotice: string;
+      returnAfterMediumPauseNotice: string;
+      returnAfterLongPauseNotice: string;
       revisitHeading: string;
       revisitDescription: string;
     };
@@ -118,6 +121,13 @@ export interface AppCopy {
       weekLabel: string;
       loadingTranslation: string;
       pauseReflect: string;
+      translationFallbackTitle: string;
+      translationFallbackDescription: string;
+      lessonTextTitle: string;
+      hadithTitle: string;
+      reflectionTitle: string;
+      hadithUnavailableTitle: string;
+      hadithUnavailableDescription: string;
     };
     loading: {
       journey: string;
@@ -143,6 +153,15 @@ export interface AppCopy {
     currentTafsir: string;
     defaultTranslation: string;
     defaultTafsir: string;
+    reminders: string;
+    remindersDescription: string;
+    reminderEnabled: string;
+    reminderTime: string;
+    reminderTimeHint: string;
+    reminderLanguage: string;
+    reminderLanguageAuto: string;
+    reminderLanguageEnglish: string;
+    reminderLanguageUrdu: string;
     loadingPreferences: string;
     appTagline: string;
     appDescription: string;
@@ -377,10 +396,36 @@ export interface AppCopy {
       returnBody: string;
     };
   };
+  notifications: {
+    categories: {
+      openingWindow: string;
+      steadyCompanionship: string;
+      gentleReturn: string;
+      reflectivePause: string;
+    };
+    reminders: {
+      openingWindow: string[];
+      steadyCompanionship: string[];
+      reflectivePause: string[];
+    };
+    returnAfterAbsence: {
+      shortPause: string[];
+      mediumPause: string[];
+      longPause: string[];
+    };
+  };
   metadata: {
     siteTitle: string;
     siteDescription: string;
     ogLocale: string;
+  };
+  buildNotice: {
+    triggerLabel: string;
+    triggerTitle: string;
+    modalTitle: string;
+    modalSubtitle: string;
+    body: string;
+    acknowledge: string;
   };
 }
 

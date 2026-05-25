@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { JourneyVerseSection } from './journey-verse-section';
 import { useToast } from '@/hooks/use-toast';
 import { getApiUrl } from '@/lib/api-url';
+import { useLanguage } from '@/lib/i18n/context';
 
 const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
 
@@ -47,6 +48,27 @@ function logPerformance(metric: string, value: number) {
 
 export function JourneyVerseContentInner({ verseKeys, translationId, title, intro }: JourneyVerseContentInnerProps) {
   const router = useSearchParams();
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
+  const uiCopy = isUrdu
+    ? {
+        sectionTitle: 'آج کے لیے قرآن',
+        fetchFailed: 'آیات لوڈ نہیں ہو سکیں',
+        audioUnavailable: 'اس آیت کے لیے آڈیو دستیاب نہیں',
+        audioFailed: 'آڈیو چل نہیں سکی',
+        errorTitle: 'آیات لوڈ نہیں ہو سکیں',
+        errorDescription: 'براہ کرم کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+        empty: 'اس سبق کے لیے ابھی آیات دستیاب نہیں۔',
+      }
+    : {
+        sectionTitle: 'Quran for today',
+        fetchFailed: 'Failed to load verses',
+        audioUnavailable: 'Audio not available for this verse',
+        audioFailed: 'Failed to play audio',
+        errorTitle: 'Unable to load verses',
+        errorDescription: 'Please check your connection and try again.',
+        empty: 'No verses available for this lesson.',
+      };
   const [verses, setVerses] = useState<VerseWithData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +82,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
 
   const urlTranslation = router.get('translation');
   const currentTranslation = urlTranslation ? parseInt(urlTranslation, 10) : translationId;
+  const verseKeysParam = verseKeys.join(',');
 
   useEffect(() => {
     const stored = localStorage.getItem('sabil-reciter-id');
@@ -70,7 +93,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
 
   useEffect(() => {
     setFetchKey(k => k + 1);
-  }, [verseKeys.join(','), currentTranslation, reciterId]);
+  }, [verseKeysParam, currentTranslation, reciterId]);
 
   useEffect(() => {
     if (fetchKey === 0) return;
@@ -80,22 +103,23 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
     
     async function fetchVerses() {
       try {
-        const res = await fetch(getApiUrl(`/verses?verse_keys=${verseKeys.join(',')}&translation=${currentTranslation}&reciter=${reciterId}`));
+        const res = await fetch(getApiUrl(`/verses?verse_keys=${verseKeysParam}&translation=${currentTranslation}&reciter=${reciterId}`));
         if (!res.ok) throw new Error('Failed to fetch verses');
         const data = await res.json();
         setVerses(data.verses || []);
         logPerformance('Verse content loaded', performance.now() - startTime);
       } catch (err) {
-        setError('Failed to load verses');
+        setError(uiCopy.fetchFailed);
       } finally {
         setLoading(false);
       }
     }
     
     fetchVerses();
-  }, [fetchKey]);
+  }, [fetchKey, currentTranslation, reciterId, uiCopy.fetchFailed, verseKeysParam]);
 
-  const sectionTitle = title || 'Quran for today';
+  const sectionTitle = title || uiCopy.sectionTitle;
+  const isUrduIntro = /[\u0600-\u06FF]/.test(intro || '') || language === 'ur';
 
   const getAudioUrl = (verseKey: string): string => {
     const chapter = verseKey.split(':')[0];
@@ -126,7 +150,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
       }
       
       if (!url) {
-        toast.error('Audio not available for this verse');
+        toast.error(uiCopy.audioUnavailable);
         return;
       }
       
@@ -141,7 +165,7 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
         .catch((err) => {
           console.error('Audio play error:', err);
           setLoadingAudio(false);
-          toast.error('Failed to play audio');
+          toast.error(uiCopy.audioFailed);
         });
 
       audio.onended = () => {
@@ -185,8 +209,8 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
           <svg className="w-10 h-10 mx-auto text-[var(--color-error)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <p className="text-[var(--color-text)] font-medium mb-1">Unable to load verses</p>
-          <p className="text-sm text-[var(--color-text-muted)]">Please check your connection and try again.</p>
+          <p className="text-[var(--color-text)] font-medium mb-1">{uiCopy.errorTitle}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{uiCopy.errorDescription}</p>
         </div>
       </div>
     );
@@ -197,17 +221,23 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
       <div className="mb-10">
         <h2 className="section-heading mb-0">{sectionTitle}</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-6 text-center mt-4">
-          <p className="text-[var(--color-text-muted)]">No verses available for this lesson.</p>
+          <p className="text-[var(--color-text-muted)]">{uiCopy.empty}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-10">
+    <div className="reading-section">
       <h2 className="section-heading mb-4">{sectionTitle}</h2>
       {intro && (
-        <p className="mb-6 max-w-3xl text-[15px] leading-[1.9] text-[var(--color-text-muted)] md:text-[16px]">
+        <p
+          className={`mb-6 max-w-3xl text-[var(--color-text-muted)] ${
+            isUrduIntro ? 'font-urdu text-[17px] leading-[2.2]' : 'text-[15px] leading-[1.95] md:text-[16px]'
+          }`}
+          dir={isUrduIntro ? 'rtl' : 'ltr'}
+          data-script-direction={isUrduIntro ? 'rtl' : 'ltr'}
+        >
           {intro}
         </p>
       )}

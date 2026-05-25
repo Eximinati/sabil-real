@@ -1,6 +1,11 @@
 'use client';
 
 import { JourneyLessonMetadata, LessonBlock } from '@/types/admin-journey';
+import {
+  getEditorialStageLabel,
+  JOURNEY_EDITORIAL_STAGE_TONES,
+  toEditorialStage,
+} from '@/lib/journey-editorial';
 
 interface LessonRendererProps {
   metadata: JourneyLessonMetadata;
@@ -8,6 +13,10 @@ interface LessonRendererProps {
 }
 
 export function LessonRenderer({ metadata, blocks }: LessonRendererProps) {
+  const urduStage = toEditorialStage(metadata.translation_status?.ur);
+  const urduStatusLabel = getEditorialStageLabel(metadata.translation_status?.ur);
+  const urduTone = JOURNEY_EDITORIAL_STAGE_TONES[urduStage];
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -24,6 +33,12 @@ export function LessonRenderer({ metadata, blocks }: LessonRendererProps) {
               Draft
             </span>
           )}
+          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs">
+            EN QA approved
+          </span>
+          <span className={`px-2 py-0.5 rounded text-xs ${urduTone}`}>
+            UR {urduStatusLabel}
+          </span>
         </div>
         
         {metadata.topic && (

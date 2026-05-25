@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface Reciter {
   id: number;
@@ -26,6 +27,24 @@ export function JourneyReciterSelector({
 }: JourneyReciterSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
+
+  const copy = isUrdu
+    ? {
+        changeReciter: 'قاری تبدیل کریں',
+        reciterShort: 'قاری',
+        title: 'قاری منتخب کریں',
+        subtitle: 'آڈیو اختیاری ہے۔ صرف وہ آواز رکھیں جو دل کو حاضر رکھے۔',
+        close: 'بند کریں',
+      }
+    : {
+        changeReciter: 'Change reciter',
+        reciterShort: 'Reciter',
+        title: 'Choose a reciter',
+        subtitle: 'Audio is optional. Keep only the voice that helps you stay present.',
+        close: 'Close',
+      };
 
   const currentReciter = reciters.find(r => r.id === currentReciterId) || reciters[0];
   const displayName = currentReciter.name.length > 22 
@@ -46,14 +65,14 @@ export function JourneyReciterSelector({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)]/40"
-        aria-label="Change reciter"
+        className="quiet-controls flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)]/40"
+        aria-label={copy.changeReciter}
       >
         <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
         </svg>
         <span className="hidden max-w-[110px] truncate sm:inline">{displayName}</span>
-        <span className="sm:hidden">Reciter</span>
+        <span className="sm:hidden">{copy.reciterShort}</span>
       </button>
 
       {isOpen && (
@@ -74,16 +93,16 @@ export function JourneyReciterSelector({
               <div className="flex items-center justify-between">
                 <div>
                   <h2 id="reciter-modal-title" className="text-lg font-semibold text-[var(--color-text)]">
-                    Choose a reciter
+                    {copy.title}
                   </h2>
                   <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                    Audio is optional. Keep only the voice that helps you stay present.
+                    {copy.subtitle}
                   </p>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-full hover:bg-[var(--color-border)]/50 transition-colors"
-                  aria-label="Close"
+                  aria-label={copy.close}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -1,9 +1,224 @@
 'use server';
 
+import { createHash } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { supabaseServer } from './supabase-server';
 import type { LessonWithBlocks, JourneyLessonMetadata, LessonBlock } from '@/types/admin-journey';
 import { EMOTIONAL_QA_CHECKLIST, validateDayTemplateContract } from './journey-day-template';
+import {
+  CROSS_LANGUAGE_CONSISTENCY_CHECKS,
+  EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST,
+  getDefaultChecklistMap,
+  hasLocalizedBlockContent,
+  hasLocalizedMetadataContent,
+  isStageAtLeast,
+  JOURNEY_EDITORIAL_STAGE_ORDER,
+  LOCALIZATION_QA_REVIEW_CHECKLIST,
+  normalizeTranslationStages,
+  PUBLISHING_SAFETY_CHECKS,
+  toEditorialStage,
+} from './journey-editorial';
+import type {
+  JourneyEditorialStage,
+  JourneyEditorialWorkflowState,
+  JourneyLanguageEditorialState,
+  JourneySharedMetadata,
+  JourneyTranslationStatusMap,
+} from '@/types/journey-localization';
+
+function hashLessonSource(metadata: JourneyLessonMetadata, blocks: LessonBlock[]): string {
+  const payload = JSON.stringify({
+    day_number: metadata.day_number,
+    title: metadata.title,
+    subtitle: metadata.subtitle,
+    topic: metadata.topic,
+    description: metadata.description,
+    estimated_minutes: metadata.estimated_minutes,
+    localized_content: metadata.localized_content || {},
+    blocks: blocks.map((block) => ({
+      order_index: block.order_index,
+      block_type: block.block_type,
+      content: block.content,
+    })),
+  });
+
+  return createHash('sha256').update(payload).digest('hex').slice(0, 16);
+}
+
+function getHighestStage(languageStates: Partial<Record<'en' | 'ur', JourneyLanguageEditorialState>>): JourneyEditorialStage {
+  let highest: JourneyEditorialStage = 'untranslated';
+
+  for (const stage of JOURNEY_EDITORIAL_STAGE_ORDER) {
+    const hasStage = Object.values(languageStates).some((state) => state?.stage === stage);
+    if (hasStage) {
+      highest = stage;
+    }
+  }
+
+  return highest;
+}
+
+function normalizeSharedMetadata(
+  metadata: JourneyLessonMetadata,
+  blocks: LessonBlock[],
+  translationStatus: JourneyTranslationStatusMap,
+  contentVersion: number,
+  userId: string
+): JourneySharedMetadata {
+  const nowIso = new Date().toISOString();
+  const sourceHash = hashLessonSource(metadata, blocks);
+  const sourceRevision = `day-${String(metadata.day_number).padStart(2, '0')}-v${contentVersion}`;
+  const qa = metadata.emotional_qa || {};
+  const existingShared = metadata.shared_metadata || {};
+  const existingEditorial = existingShared.editorial || {};
+
+  const crossLanguageChecks = {
+    ...getDefaultChecklistMap(CROSS_LANGUAGE_CONSISTENCY_CHECKS),
+    ...(existingEditorial.cross_language_checks || {}),
+  };
+
+  const publishingSafetyChecks = {
+    ...getDefaultChecklistMap(PUBLISHING_SAFETY_CHECKS),
+    ...(existingEditorial.publishing_safety_checks || {}),
+  };
+
+  const existingLanguageStates = existingEditorial.language_states || {};
+
+  const languageStates: Partial<Record<'en' | 'ur', JourneyLanguageEditorialState>> = {
+    en: {
+      ...(existingLanguageStates.en || {}),
+      stage: toEditorialStage(translationStatus.en),
+      emotional_review: {
+        ...getDefaultChecklistMap(EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST, true),
+        ...(existingLanguageStates.en?.emotional_review || {}),
+      },
+      qa_review: {
+        ...getDefaultChecklistMap(LOCALIZATION_QA_REVIEW_CHECKLIST, true),
+        ...(existingLanguageStates.en?.qa_review || {}),
+      },
+      synced_source_hash: sourceHash,
+      content_hash: sourceHash,
+      updated_at: nowIso,
+      updated_by: userId,
+      reviewer_note: existingLanguageStates.en?.reviewer_note,
+    },
+    ur: {
+      ...(existingLanguageStates.ur || {}),
+      stage: toEditorialStage(translationStatus.ur),
+      emotional_review: {
+        ...getDefaultChecklistMap(EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST),
+        ...(existingLanguageStates.ur?.emotional_review || {}),
+      },
+      qa_review: {
+        ...getDefaultChecklistMap(LOCALIZATION_QA_REVIEW_CHECKLIST),
+        ...(existingLanguageStates.ur?.qa_review || {}),
+      },
+      synced_source_hash: existingLanguageStates.ur?.synced_source_hash || sourceHash,
+      content_hash: sourceHash,
+      updated_at: nowIso,
+      updated_by: userId,
+      reviewer_note: existingLanguageStates.ur?.reviewer_note,
+    },
+  };
+
+  const urStage = languageStates.ur?.stage || 'untranslated';
+  const driftFlags = new Set(existingEditorial.drift_flags || []);
+  const urSyncedHash = languageStates.ur?.synced_source_hash;
+
+  if (isStageAtLeast(urStage, 'draft_localized') && urSyncedHash && urSyncedHash !== sourceHash) {
+    driftFlags.add('ur-needs-resync-with-source');
+  } else {
+    driftFlags.delete('ur-needs-resync-with-source');
+  }
+
+  if (urStage === 'draft_localized') {
+    driftFlags.add('ur-awaiting-emotional-review');
+  } else {
+    driftFlags.delete('ur-awaiting-emotional-review');
+  }
+
+  if (urStage === 'emotionally_reviewed') {
+    driftFlags.add('ur-awaiting-qa-approval');
+  } else {
+    driftFlags.delete('ur-awaiting-qa-approval');
+  }
+
+  if (isStageAtLeast(urStage, 'qa_approved')) {
+    driftFlags.delete('ur-awaiting-emotional-review');
+    driftFlags.delete('ur-awaiting-qa-approval');
+  }
+
+  const highestStage = getHighestStage(languageStates);
+
+  return {
+    ...existingShared,
+    lesson_order: existingShared.lesson_order || metadata.day_number,
+    estimated_minutes: metadata.estimated_minutes,
+    content_version: contentVersion,
+    source_revision: sourceRevision,
+    qa_status: {
+      ...(existingShared.qa_status || {}),
+      ...qa,
+    },
+    editorial: {
+      ...(existingEditorial as JourneyEditorialWorkflowState),
+      workflow_version: 1,
+      canonical_source_language: 'en',
+      source_hash: sourceHash,
+      source_updated_at: nowIso,
+      source_revision: sourceRevision,
+      highest_stage: highestStage,
+      cross_language_checks: crossLanguageChecks,
+      publishing_safety_checks: publishingSafetyChecks,
+      language_states: languageStates,
+      drift_flags: Array.from(driftFlags),
+    },
+  };
+}
+
+function getPublishedSafetyError(metadata: JourneyLessonMetadata, translationStatus: JourneyTranslationStatusMap): string | null {
+  const editorial = metadata.shared_metadata?.editorial;
+  const urStage = toEditorialStage(translationStatus.ur);
+  const urState = editorial?.language_states?.ur;
+
+  const missingPublishingSafety = PUBLISHING_SAFETY_CHECKS.filter(
+    (item) => !editorial?.publishing_safety_checks?.[item.id]
+  );
+  if (missingPublishingSafety.length > 0) {
+    return `Complete publishing safety check: ${missingPublishingSafety[0].label}`;
+  }
+
+  if (urStage === 'draft_localized' || urStage === 'emotionally_reviewed') {
+    return 'Urdu localization is not QA approved yet. Keep as draft or finish review.';
+  }
+
+  if (isStageAtLeast(urStage, 'emotionally_reviewed')) {
+    const missingEmotionalReview = EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST.filter(
+      (item) => !urState?.emotional_review?.[item.id]
+    );
+    if (missingEmotionalReview.length > 0) {
+      return `Complete Urdu emotional review: ${missingEmotionalReview[0].label}`;
+    }
+  }
+
+  if (isStageAtLeast(urStage, 'qa_approved')) {
+    const missingQaReview = LOCALIZATION_QA_REVIEW_CHECKLIST.filter(
+      (item) => !urState?.qa_review?.[item.id]
+    );
+    if (missingQaReview.length > 0) {
+      return `Complete Urdu QA review: ${missingQaReview[0].label}`;
+    }
+
+    const missingConsistency = CROSS_LANGUAGE_CONSISTENCY_CHECKS.filter(
+      (item) => !editorial?.cross_language_checks?.[item.id]
+    );
+    if (missingConsistency.length > 0) {
+      return `Complete cross-language consistency check: ${missingConsistency[0].label}`;
+    }
+  }
+
+  return null;
+}
 
 export async function saveLesson(
   lessonData: LessonWithBlocks,
@@ -32,6 +247,18 @@ export async function saveLesson(
 
     const { metadata, blocks } = lessonData;
 
+    const hasUrduContent =
+      hasLocalizedMetadataContent(metadata.localized_content, 'ur') ||
+      hasLocalizedBlockContent(blocks, 'ur');
+
+    const normalizedStatus = normalizeTranslationStages(metadata.translation_status, {
+      hasContentByLanguage: {
+        en: true,
+        ur: hasUrduContent,
+      },
+      isPublished: metadata.is_published,
+    });
+
     if (metadata.is_published) {
       const qa = metadata.emotional_qa || {};
       const missingQa = EMOTIONAL_QA_CHECKLIST.filter((item) => !qa[item.id]);
@@ -51,7 +278,61 @@ export async function saveLesson(
           error: `Day template missing section: ${firstMissing.title}`,
         };
       }
+
+      const publishingSafetyError = getPublishedSafetyError(
+        {
+          ...metadata,
+          translation_status: normalizedStatus,
+        },
+        normalizedStatus
+      );
+
+      if (publishingSafetyError) {
+        return {
+          success: false,
+          error: publishingSafetyError,
+        };
+      }
     }
+
+    let nextContentVersion = metadata.shared_metadata?.content_version || 1;
+
+    if (metadata.id) {
+      const { data: existingLesson, error: existingLessonError } = await supabase
+        .from('journey_lessons')
+        .select('shared_metadata')
+        .eq('id', metadata.id)
+        .single();
+
+      if (existingLessonError) {
+        return { success: false, error: existingLessonError.message };
+      }
+
+      const currentVersion =
+        ((existingLesson?.shared_metadata as JourneySharedMetadata | null)?.content_version as number | undefined) ||
+        1;
+      const incomingVersion = metadata.shared_metadata?.content_version || currentVersion;
+
+      if (incomingVersion < currentVersion) {
+        return {
+          success: false,
+          error: 'This lesson was updated elsewhere. Please refresh before saving.',
+        };
+      }
+
+      nextContentVersion = currentVersion + 1;
+    }
+
+    const normalizedSharedMetadata = normalizeSharedMetadata(
+      {
+        ...metadata,
+        translation_status: normalizedStatus,
+      },
+      blocks,
+      normalizedStatus,
+      nextContentVersion,
+      user.id
+    );
 
     const lessonPayload: Record<string, unknown> = {
       day_number: metadata.day_number,
@@ -61,6 +342,9 @@ export async function saveLesson(
       description: metadata.description || null,
       estimated_minutes: metadata.estimated_minutes,
       is_published: metadata.is_published,
+      localized_content: metadata.localized_content || null,
+      translation_status: normalizedStatus,
+      shared_metadata: normalizedSharedMetadata,
       updated_at: new Date().toISOString(),
     };
 
@@ -109,6 +393,15 @@ export async function saveLesson(
       if (blocksError) {
         return { success: false, error: blocksError.message };
       }
+
+      await supabase
+        .from('journey_lessons')
+        .update({
+          translation_status: normalizedStatus,
+          shared_metadata: normalizedSharedMetadata,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', lessonId);
     }
 
     revalidatePath('/admin/journey');
@@ -145,20 +438,37 @@ export async function getLessonForEditing(lessonId: string): Promise<LessonWithB
       console.error('Error fetching blocks:', blocksError);
     }
 
-    return {
-      metadata: {
-        id: lesson.id,
-        day_number: lesson.day_number,
-        title: lesson.title,
-        subtitle: lesson.subtitle || '',
-        topic: lesson.topic,
-        description: lesson.description || '',
-        estimated_minutes: lesson.estimated_minutes,
-        is_published: lesson.is_published,
-        emotional_qa: Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
-      },
-      blocks: blocks || [],
-    };
+      return {
+        metadata: {
+          id: lesson.id,
+          day_number: lesson.day_number,
+          title: lesson.title,
+          subtitle: lesson.subtitle || '',
+          topic: lesson.topic,
+          description: lesson.description || '',
+          estimated_minutes: lesson.estimated_minutes,
+          is_published: lesson.is_published,
+          emotional_qa: {
+            ...Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
+            ...((lesson.shared_metadata as { qa_status?: Record<string, boolean> } | null)?.qa_status || {}),
+          },
+          localized_content: (lesson.localized_content || {}) as Record<string, unknown>,
+          translation_status: normalizeTranslationStages(
+            (lesson.translation_status || {}) as JourneyTranslationStatusMap,
+            {
+              hasContentByLanguage: {
+                en: true,
+                ur:
+                  hasLocalizedMetadataContent(lesson.localized_content || {}, 'ur') ||
+                  hasLocalizedBlockContent((blocks || []) as LessonBlock[], 'ur'),
+              },
+              isPublished: lesson.is_published,
+            }
+          ),
+          shared_metadata: (lesson.shared_metadata || {}) as Record<string, unknown>,
+        },
+        blocks: blocks || [],
+      };
   } catch (error) {
     console.error('Error fetching lesson:', error);
     return null;

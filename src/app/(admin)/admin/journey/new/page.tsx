@@ -45,6 +45,31 @@ export default async function NewLessonPage() {
             estimated_minutes: 15,
             is_published: false,
             emotional_qa: Object.fromEntries(EMOTIONAL_QA_CHECKLIST.map((item) => [item.id, false])),
+            translation_status: {
+              en: 'qa_approved',
+              ur: 'untranslated',
+            },
+            localized_content: {},
+            shared_metadata: {
+              lesson_order: nextDayNumber,
+              content_version: 1,
+              qa_status: {},
+              editorial: {
+                workflow_version: 1,
+                canonical_source_language: 'en',
+                cross_language_checks: {},
+                publishing_safety_checks: {},
+                language_states: {
+                  en: {
+                    stage: 'qa_approved',
+                  },
+                  ur: {
+                    stage: 'untranslated',
+                  },
+                },
+                drift_flags: [],
+              },
+            },
           },
           blocks: [],
         }}

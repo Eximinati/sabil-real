@@ -1,4 +1,11 @@
-export default function NotFound() {
+import { cookies } from 'next/headers';
+import { getSystemCopy } from '@/lib/i18n/system-copy';
+import { LANGUAGE_COOKIE_NAME } from '@/lib/i18n/config';
+
+export default async function NotFound() {
+  const cookieStore = await cookies();
+  const copy = getSystemCopy(cookieStore.get(LANGUAGE_COOKIE_NAME)?.value).notFound;
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--color-bg)]">
       <div className="max-w-md w-full text-center p-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-sm">
@@ -9,22 +16,22 @@ export default function NotFound() {
         </div>
         
         <h1 className="text-xl font-medium text-[var(--color-text)] mb-2">
-          Page not found
+          {copy.title}
         </h1>
         
         <p className="text-[var(--color-text-muted)] text-sm mb-6">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
+          {copy.description}
         </p>
         
         <a
           href="/journey"
           className="inline-block px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity font-medium text-sm"
         >
-          Go to Journey
+          {copy.goToJourney}
         </a>
         
         <p className="text-xs text-[var(--color-text-subtle)] mt-6" dir="rtl">
-          والحمد لله رب العالمين
+          {copy.verse}
         </p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface TafsirData {
   text: string;
@@ -14,6 +15,35 @@ interface JourneyTafsirStreamingProps {
 }
 
 export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStreamingProps) {
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
+  const uiCopy = isUrdu
+    ? {
+        loadFailed: 'تفسیر لوڈ نہیں ہو سکی',
+        openTitle: 'تفسیری نوٹس کھولیں',
+        openHint: 'علمی پس منظر صرف آپ کے کھولنے پر ظاہر ہوگا۔',
+        notesTitle: 'تفسیری نوٹس',
+        empty: 'ان آیات کے لیے ابھی تفسیر دستیاب نہیں۔',
+        notesHint: 'آپ کے منتخب عالم سے معاون سیاق۔',
+        showFull: 'مکمل تفسیر دکھائیں',
+        showCondensed: 'مختصر تفسیر',
+        verseLabel: 'آیت',
+        readFull: 'مکمل تفسیر پڑھیں',
+        readCondensed: 'مختصر تفسیر دکھائیں',
+      }
+    : {
+        loadFailed: 'Failed to load tafsir',
+        openTitle: 'Open tafsir notes',
+        openHint: 'Scholar context appears only when you ask for it.',
+        notesTitle: 'Tafsir notes',
+        empty: 'No tafsir available for these verses yet.',
+        notesHint: 'Supportive context from your selected scholar.',
+        showFull: 'Show full tafsir',
+        showCondensed: 'Condensed tafsir',
+        verseLabel: 'Verse',
+        readFull: 'Read full tafsir',
+        readCondensed: 'Show condensed tafsir',
+      };
   const [isExpanded, setIsExpanded] = useState(false);
   const [tafsirs, setTafsirs] = useState<TafsirData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,12 +90,12 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
       setTafsirs(filtered);
       setHasTriedLoading(true);
     } catch (err) {
-      setError('Failed to load tafsir');
+      setError(uiCopy.loadFailed);
       setHasTriedLoading(true);
     } finally {
       setLoading(false);
     }
-  }, [verseKeys, hasTriedLoading]);
+  }, [verseKeys, hasTriedLoading, uiCopy.loadFailed]);
 
   useEffect(() => {
     if (isExpanded && !hasTriedLoading) {
@@ -123,20 +153,30 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
     }));
   }, []);
 
+  const sourceCopy = language === 'ur'
+    ? {
+        title: 'علمی ماخذ کی تفسیر',
+        hint: 'یہ حصہ اہلِ علم کی تشریح ہے۔ Sabil کی رہنمائی سے الگ سمجھیں۔',
+      }
+    : {
+        title: 'Scholarly source tafsir',
+        hint: 'This section is scholar commentary and is separate from Sabil guidance.',
+      };
+
   if (!isExpanded) {
     return (
-      <div className="mb-8">
+      <div className="reading-section">
         <button
           onClick={toggleExpanded}
-          className="flex w-full items-center justify-between rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 px-4 py-4 text-left transition-colors hover:border-[var(--color-primary)]/35"
+          className="quiet-controls flex w-full items-center justify-between rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 px-4 py-4 text-left transition-colors hover:border-[var(--color-primary)]/35"
         >
           <div className="flex items-center gap-3">
             <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-[var(--color-text)]">Open tafsir notes</p>
-              <p className="text-xs text-[var(--color-text-muted)]">Scholar context appears only when you ask for it.</p>
+              <p className="text-sm font-medium text-[var(--color-text)]">{uiCopy.openTitle}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">{uiCopy.openHint}</p>
             </div>
           </div>
           <svg 
@@ -154,7 +194,7 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
 
   if (loading) {
     return (
-      <div className="mb-8 animate-pulse">
+      <div className="reading-section animate-pulse">
         <div className="flex w-full items-center justify-between rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4">
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 bg-[var(--color-border)] rounded" />
@@ -176,7 +216,7 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
 
   if (error || tafsirs.length === 0) {
     return (
-      <div className="mb-8">
+      <div className="reading-section">
         <button
           onClick={() => setIsExpanded(false)}
           className="flex w-full items-center justify-between rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4"
@@ -185,7 +225,7 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
             <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            <span className="font-medium text-[var(--color-text)]">Tafsir notes</span>
+            <span className="font-medium text-[var(--color-text)]">{uiCopy.notesTitle}</span>
           </div>
           <svg 
             className="w-5 h-5 text-[var(--color-text-muted)] rotate-180" 
@@ -197,14 +237,14 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
           </svg>
         </button>
         <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4">
-          <p className="text-sm text-[var(--color-text-muted)]">No tafsir available for these verses yet.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">{uiCopy.empty}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-8">
+      <div className="reading-section">
       <button
         onClick={() => setIsExpanded(false)}
         className="flex w-full items-center justify-between rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4"
@@ -214,8 +254,8 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
           <div>
-            <p className="text-sm font-medium text-[var(--color-text)]">Tafsir notes</p>
-            <p className="text-xs text-[var(--color-text-muted)]">Supportive context from your selected scholar.</p>
+            <p className="text-sm font-medium text-[var(--color-text)]">{uiCopy.notesTitle}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">{uiCopy.notesHint}</p>
           </div>
         </div>
         <svg 
@@ -229,19 +269,24 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
       </button>
 
       <div className="mt-3 space-y-4">
-        <div className="mb-2 flex justify-end">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/40 p-3">
+          <p className="text-xs font-medium text-[var(--color-primary)]">{sourceCopy.title}</p>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{sourceCopy.hint}</p>
+        </div>
+
+        <div className="quiet-controls mb-2 flex justify-end">
           <button
             onClick={() => setIsCondensed((prev) => !prev)}
             className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg)]/60 px-3 py-1.5 text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/35"
           >
-            {isCondensed ? 'Show full tafsir' : 'Condensed tafsir'}
+            {isCondensed ? uiCopy.showFull : uiCopy.showCondensed}
           </button>
         </div>
 
         {tafsirs.slice(0, 3).map((tafsir, idx) => (
           <div key={idx} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-5 md:p-6">
             <div className="text-xs text-[var(--color-primary)] mb-2">
-              Verse {tafsir.verse_number}
+              {uiCopy.verseLabel} {tafsir.verse_number}
               {tafsir.resource_name && (
                 <span className="text-[var(--color-text-muted)] ml-2">
                   — {tafsir.resource_name}
@@ -250,20 +295,20 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
             </div>
             {isCondensed && !expandedCards[idx] ? (
               <>
-                <p className="text-[15px] leading-[1.85] text-[var(--color-text)]">
+                <p className="text-[15px] leading-[1.95] text-[var(--color-text)]">
                   {getCondensedText(tafsir.text)}
                 </p>
                 <button
                   onClick={() => toggleCardExpand(idx)}
                   className="mt-3 text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
                 >
-                  Read full tafsir
+                  {uiCopy.readFull}
                 </button>
               </>
             ) : (
               <>
                 <div
-                  className="prose prose-sm max-w-none text-[15px] leading-[1.85] text-[var(--color-text)]"
+                  className="prose prose-sm max-w-none text-[15px] leading-[1.95] text-[var(--color-text)]"
                   dangerouslySetInnerHTML={{ __html: tafsir.text }}
                 />
                 {isCondensed && (
@@ -271,7 +316,7 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
                     onClick={() => toggleCardExpand(idx)}
                     className="mt-3 text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
                   >
-                    Show condensed tafsir
+                    {uiCopy.readCondensed}
                   </button>
                 )}
               </>

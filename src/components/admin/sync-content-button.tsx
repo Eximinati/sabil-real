@@ -22,7 +22,11 @@ export function SyncContentButton() {
         return;
       }
 
-      setMessage(`Synced ${data.synced} day files (${data.failed} failed).`);
+      const draftLocalized = data.editorialSummary?.draftLocalized || 0;
+      const untranslated = data.editorialSummary?.untranslated || 0;
+      setMessage(
+        `Synced ${data.synced} days (${data.failed} failed). Urdu draft-localized: ${draftLocalized}, untranslated: ${untranslated}.`
+      );
     } catch (error) {
       setMessage('Sync failed. Please try again.');
     } finally {
@@ -37,7 +41,7 @@ export function SyncContentButton() {
         disabled={loading}
         className="px-4 py-2 border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-50"
       >
-        {loading ? 'Syncing...' : 'Sync Days 2-30 from files'}
+        {loading ? 'Syncing...' : 'Sync multilingual day files'}
       </button>
       {message && <p className="text-sm text-[var(--color-text-muted)]">{message}</p>}
     </div>

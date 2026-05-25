@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { useCopy } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface Chapter {
   id: number;
@@ -88,12 +90,80 @@ const FEATURES = [
 ];
 
 export function LandingContent({ staticChapters, staticBismillah, staticQuran65, previewDays }: LandingContentProps) {
+  const copy = useCopy();
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
+
   const [data, setData] = useState<FetchedData>({
     chapters: staticChapters,
     bismillah: staticBismillah,
     quran65: staticQuran65,
   });
-  const [loading, setLoading] = useState(true);
+
+  const urduFeatureText = [
+    {
+      title: 'رہنمائی والا راستہ',
+      description: 'قرآن، سیرت اور بنیادی اسلامی فہم کے ساتھ نرم روزانہ رہنمائی، بغیر بوجھ کے۔',
+    },
+    {
+      title: 'دل کے لیے تامل',
+      description: 'تامل کے سوالات اور نوٹس جو مطالعے کو دل میں اترنے میں مدد دیتے ہیں۔',
+    },
+    {
+      title: 'اخلاص کے ساتھ عمل',
+      description: 'صرف معلومات سے آگے بڑھ کر اخلاص اور روزمرہ کے نرم عملی قدموں تک آئیں۔',
+    },
+    {
+      title: 'نوآموز دوست',
+      description: 'جہاں سے ہیں وہیں سے شروع کریں۔ پیشگی علم ضروری نہیں، اور کچھ بھی ڈرانے والا نہیں بنایا گیا۔',
+    },
+    {
+      title: 'ایک دن میں ایک قدم',
+      description: 'ایک طویل سفر جو آہستگی سے کھلتا ہے تاکہ ہر دن قابلِ عمل اور بامعنی لگے۔',
+    },
+    {
+      title: 'جب چاہیں واپس آئیں',
+      description: 'وقفہ کریں، دوبارہ پڑھیں، اور نرمی سے جاری رکھیں۔ آپ کی جگہ بغیر دباؤ محفوظ رہتی ہے۔',
+    },
+  ];
+
+  const features = isUrdu
+    ? FEATURES.map((feature, index) => ({
+        ...feature,
+        title: urduFeatureText[index]?.title || feature.title,
+        description: urduFeatureText[index]?.description || feature.description,
+      }))
+    : FEATURES;
+
+  const identityCards = isUrdu
+    ? {
+        firstTitle: 'نرم رہنمائی',
+        firstBody: 'روزانہ اسباق جو اسلام کے قریب لاتے ہیں، بغیر الجھن اور بغیر جلدی کے۔',
+        secondTitle: 'تامل اور عمل',
+        secondBody: 'مطالعہ تامل، اخلاص اور روزمرہ کے چھوٹے عملی قدموں میں بدلتا ہے۔',
+        thirdTitle: 'ایک ثابت قدم ساتھی',
+        thirdBody: 'یہ سفر ایمان کو نمبروں میں بدلے بغیر خاموشی سے آپ کے ساتھ رہتا ہے۔',
+      }
+    : {
+        firstTitle: 'Gentle guidance',
+        firstBody: 'Daily lessons that help you approach Islam without feeling lost or rushed.',
+        secondTitle: 'Reflection and practice',
+        secondBody: 'Reading opens into reflection, sincerity, and small lived steps.',
+        thirdTitle: 'A steady companion',
+        thirdBody: 'The journey stays with you quietly, without reducing faith to metrics.',
+      };
+
+  const localizedPreviewDays = isUrdu
+    ? [
+        { day: 1, title: 'ہم یہاں کیوں ہیں؟', topic: 'مقصد اور تخلیق' },
+        { day: 2, title: 'اللہ کون ہے؟', topic: 'اسماء و صفات' },
+        { day: 3, title: 'پہلی وحی', topic: 'نبوت' },
+        { day: 4, title: 'قرآن کیا ہے؟', topic: 'کتابِ ہدایت' },
+        { day: 5, title: 'حضورِ قلب کے ساتھ کیسے پڑھیں؟', topic: 'ذہنی حضوری' },
+        { day: 6, title: 'نماز کا مقصد', topic: 'عبادت' },
+        { day: 7, title: 'توکل - اللہ پر بھروسہ', topic: 'بھروسہ' },
+      ]
+    : previewDays;
 
   useEffect(() => {
     async function checkAuthAndFetch() {
@@ -134,14 +204,12 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
       } catch {
         // Keep static fallback
       }
-      
-      setLoading(false);
     }
 
     checkAuthAndFetch();
   }, []);
 
-  const { chapters, bismillah, quran65 } = data;
+  const { bismillah, quran65 } = data;
 
   return (
     <>
@@ -157,9 +225,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
             <span className="font-arabic text-[var(--color-accent)] text-sm" dir="rtl">سبيل</span>
           </div>
           <div className="flex items-center gap-3 md:gap-4">
-            <Link href="/login" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm">Sign In</Link>
+            <Link href="/login" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm">{copy.landing.nav.signIn}</Link>
             <Link href="/register" className="bg-[var(--color-accent)] text-white px-5 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
-              Begin gently
+              {copy.landing.nav.beginGently}
             </Link>
           </div>
         </div>
@@ -168,25 +236,25 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           <div className="max-w-[680px] text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)]/10 rounded-full mb-6">
               <span className="w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" />
-              <span className="text-xs text-[var(--color-accent)] font-medium">A gentle guided journey through Islam</span>
+              <span className="text-xs text-[var(--color-accent)] font-medium">{copy.landing.hero.badge}</span>
             </div>
             
             <p className="font-arabic text-[24px] md:text-[28px] text-center text-[var(--color-accent)] mb-3" dir="rtl">
               {bismillah}
             </p>
             <p className="text-xs text-[var(--color-text-muted)] italic mb-8">
-              In the name of Allah, the Most Compassionate, the Most Merciful
+              {copy.landing.hero.bismillahTranslation}
             </p>
 
             <div className="w-16 h-px bg-[var(--color-accent)]/40 mx-auto my-8" />
 
             <h1 className="text-[36px] md:text-[52px] font-bold leading-tight">
-              <span className="text-[var(--color-text)]">Walk gently</span>
-              <span className="block text-[var(--color-accent)]">toward Allah</span>
+              <span className="text-[var(--color-text)]">{copy.landing.hero.walkGently}</span>
+              <span className="block text-[var(--color-accent)]">{copy.landing.hero.towardAllah}</span>
             </h1>
 
             <p className="text-[16px] md:text-[18px] text-[var(--color-text-muted)] leading-relaxed text-center mt-6 max-w-[520px] mx-auto">
-              A calm space for Quran, Seerah, and reflection. Beginner-friendly, emotionally safe, and designed for one sincere day at a time.
+              {copy.landing.hero.description}
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-10">
@@ -194,13 +262,13 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 href="/register"
                 className="bg-[var(--color-accent)] text-white font-medium px-8 py-4 rounded-xl hover:opacity-90 transition-all text-lg"
               >
-                Begin gently
+                {copy.landing.nav.beginGently}
               </Link>
               <Link 
                 href="/login"
                 className="border border-[var(--color-border)] text-[var(--color-text)] px-8 py-4 rounded-xl hover:border-[var(--color-accent)] transition-colors"
               >
-                Continue your journey
+                {copy.landing.hero.continueJourney}
               </Link>
             </div>
 
@@ -209,19 +277,19 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                 <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>20 min/day</span>
+                <span>{copy.landing.hero.minutesPerDay}</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>365 days</span>
+                <span>{copy.landing.hero.totalDays}</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-                <span>Beginner friendly</span>
+                <span>{copy.landing.hero.beginnerFriendly}</span>
               </div>
             </div>
           </div>
@@ -233,12 +301,12 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.06),transparent_50%)]" />
         <div className="max-w-[900px] mx-auto relative">
           <div className="text-center mb-12">
-            <span className="text-[var(--color-accent)] text-sm font-medium">Why Sabil exists</span>
+            <span className="text-[var(--color-accent)] text-sm font-medium">{copy.landing.sections.whySabilExists}</span>
             <h2 className="text-[28px] md:text-[40px] font-bold text-[var(--color-text)] mt-3">
-              More than consuming content
+              {copy.landing.sections.moreThanConsumingContent}
             </h2>
             <p className="text-[var(--color-text-muted)] text-lg mt-4 max-w-[550px] mx-auto">
-              Sabil was created for people who want Islam to feel welcoming, rooted, and lived rather than overwhelming.
+              {copy.landing.sections.whyDescription}
             </p>
           </div>
 
@@ -249,9 +317,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Gentle guidance</h3>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">{identityCards.firstTitle}</h3>
               <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                Daily lessons that help you approach Islam without feeling lost or rushed.
+                {identityCards.firstBody}
               </p>
             </div>
 
@@ -261,9 +329,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">Reflection and practice</h3>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">{identityCards.secondTitle}</h3>
               <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                Reading opens into reflection, sincerity, and small lived steps.
+                {identityCards.secondBody}
               </p>
             </div>
 
@@ -273,9 +341,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">A steady companion</h3>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-3 group-hover:text-[var(--color-accent)] transition-colors">{identityCards.thirdTitle}</h3>
               <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-                The journey stays with you quietly, without reducing faith to metrics.
+                {identityCards.thirdBody}
               </p>
             </div>
           </div>
@@ -287,15 +355,15 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] mb-4">
-              What is Sabil?
+              {copy.landing.sections.whatIsSabil}
             </h2>
             <p className="text-[var(--color-text-muted)] text-lg max-w-[600px] mx-auto">
-              Sabil is a guided Islamic journey designed to help you return to Allah through calm daily reading, reflection, and understanding.
+              {copy.landing.sections.whatDescription}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map((feature, idx) => (
+            {features.map((feature, idx) => (
               <div 
                 key={idx} 
                 className="group bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-6 hover:border-[var(--color-accent)]/50 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all"
@@ -320,9 +388,9 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(212,175,55,0.05),transparent_50%)]" />
         <div className="max-w-[800px] mx-auto relative">
           <div className="text-center mb-14">
-            <span className="text-[var(--color-accent)] text-sm font-medium">How the journey unfolds</span>
+            <span className="text-[var(--color-accent)] text-sm font-medium">{copy.landing.sections.howJourneyUnfolds}</span>
             <h2 className="text-[28px] md:text-[40px] font-bold text-[var(--color-text)] mt-3">
-              A simple rhythm
+              {copy.landing.sections.simpleRhythm}
             </h2>
           </div>
 
@@ -331,8 +399,8 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
                 <span className="text-2xl font-bold text-[var(--color-accent)]">1</span>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Read</h3>
-              <p className="text-[var(--color-text-muted)] text-sm">Begin with the Quran and a guided lesson rooted in meaning.</p>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">{copy.landing.rhythm.read}</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">{copy.landing.rhythm.readBody}</p>
               <div className="hidden md:block absolute -right-6 top-10">
                 <svg className="w-8 h-8 text-[var(--color-accent)]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -344,8 +412,8 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
                 <span className="text-2xl font-bold text-[var(--color-accent)]">2</span>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Reflect</h3>
-              <p className="text-[var(--color-text-muted)] text-sm">Pause with sincere questions that bring the reading closer to your life.</p>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">{copy.landing.rhythm.reflect}</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">{copy.landing.rhythm.reflectBody}</p>
               <div className="hidden md:block absolute -right-6 top-10">
                 <svg className="w-8 h-8 text-[var(--color-accent)]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -357,8 +425,8 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/30 flex items-center justify-center">
                 <span className="text-2xl font-bold text-[var(--color-accent)]">3</span>
               </div>
-              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">Return</h3>
-              <p className="text-[var(--color-text-muted)] text-sm">Come back tomorrow and continue the journey without pressure.</p>
+              <h3 className="text-[var(--color-text)] font-semibold text-lg mb-2">{copy.landing.rhythm.return}</h3>
+              <p className="text-[var(--color-text-muted)] text-sm">{copy.landing.rhythm.returnBody}</p>
             </div>
           </div>
         </div>
@@ -369,15 +437,15 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
         <div className="max-w-[700px] mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] mb-4">
-              Your First Week
+              {copy.landing.sections.yourFirstWeek}
             </h2>
             <p className="text-[var(--color-text-muted)] text-lg">
-              Each day is a gentle guided experience. Thoughtfully structured and spiritually grounding.
+              {copy.landing.sections.firstWeekDescription}
             </p>
           </div>
 
           <div className="space-y-3">
-            {previewDays.map((day, idx) => (
+            {localizedPreviewDays.map((day) => (
               <div 
                 key={day.day} 
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 flex items-center gap-4 hover:border-[var(--color-accent)]/30 transition-colors"
@@ -392,7 +460,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[var(--color-text-muted)] text-sm">~20 min</span>
+                  <span className="text-[var(--color-text-muted)] text-sm">{isUrdu ? 'تقریباً 20 منٹ' : '~20 min'}</span>
                 </div>
               </div>
             ))}
@@ -403,10 +471,10 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
               href="/register"
               className="bg-[var(--color-accent)] text-white font-medium px-10 py-4 rounded-xl inline-block hover:opacity-90 transition-opacity text-lg"
             >
-              Begin your journey
+              {copy.common.actions.startJourney}
             </Link>
             <p className="text-[var(--color-text-muted)] text-sm mt-3">
-              No credit card required. You are welcome to begin gently.
+              {copy.landing.sections.noCardRequired}
             </p>
           </div>
         </div>
@@ -416,26 +484,26 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
       <section className="py-20 md:py-28 px-4 bg-[var(--color-surface)]">
         <div className="max-w-[600px] mx-auto text-center">
           <p className="font-arabic text-[24px] md:text-[32px] text-[var(--color-accent)]" dir="rtl">{quran65}</p>
-          <p className="text-[var(--color-text-muted)] text-base italic mt-4">And whoever fears Allah — He will make for him a way out.</p>
-          <p className="text-[var(--color-text-muted)]/60 text-sm mt-1">(Quran 65:3)</p>
+          <p className="text-[var(--color-text-muted)] text-base italic mt-4">{copy.landing.sections.quoteTranslation}</p>
+          <p className="text-[var(--color-text-muted)]/60 text-sm mt-1">{isUrdu ? '(قرآن 65:3)' : '(Quran 65:3)'}</p>
           
           <div className="mt-10 p-6 bg-[var(--color-bg)] rounded-2xl border border-[var(--color-border)]">
             <p className="text-[var(--color-text)] text-lg font-medium">
-              A quiet place for understanding, reflection, and returning to Allah.
+              {copy.landing.sections.quietPlaceTitle}
             </p>
             <p className="text-[var(--color-text-muted)] text-sm mt-2">
-              Not a productivity app. Not a pressure system. Just a gentle path forward.
+              {copy.landing.sections.quietPlaceBody}
             </p>
           </div>
           
           <Link 
-            href="/register"
-            className="inline-block mt-8 bg-[var(--color-accent)] text-white font-medium px-12 py-4 rounded-xl text-lg hover:opacity-90 transition-opacity"
-          >
-            Begin gently
-          </Link>
-        </div>
-      </section>
+              href="/register"
+              className="inline-block mt-8 bg-[var(--color-accent)] text-white font-medium px-12 py-4 rounded-xl text-lg hover:opacity-90 transition-opacity"
+            >
+              {copy.landing.nav.beginGently}
+            </Link>
+          </div>
+        </section>
 
       {/* FOOTER */}
       <footer className="py-8 px-6 bg-[var(--color-bg)] border-t border-[var(--color-border)]">
@@ -443,10 +511,10 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
           <div className="flex items-center gap-2">
             <span className="text-[var(--color-text)] font-semibold">Sabil</span>
             <span className="font-arabic text-[var(--color-accent)] text-sm" dir="rtl">سبيل</span>
-            <span className="text-[var(--color-text-muted)] text-xs ml-2">| A gentle guided journey</span>
+            <span className="text-[var(--color-text-muted)] text-xs ml-2">| {copy.landing.sections.footerTagline}</span>
           </div>
           <p className="text-[var(--color-text-muted)] text-sm">
-            Read. Reflect. Return. One day at a time.
+            {copy.landing.sections.footerLine}
           </p>
         </div>
       </footer>

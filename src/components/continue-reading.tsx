@@ -87,7 +87,7 @@ export function ContinueReading() {
   }
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 reading-section">
       <h3 className="mb-2 text-center text-sm font-medium text-[var(--color-text-muted)]">
         {copy.quran.continueReadingTitle}
       </h3>
@@ -103,7 +103,7 @@ export function ContinueReading() {
             <Link
               key={`${position.surah_id}-${position.updated_at}`}
               href={`/quran/${position.surah_id}?verse=${position.verse_number}&scroll=${position.scroll_position}`}
-              className="min-w-[150px] max-w-[170px] flex-shrink-0 rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-primary)]/30"
+              className="min-w-[156px] max-w-[176px] flex-shrink-0 rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/88 p-4 transition-all hover:border-[var(--color-primary)]/30"
             >
               <div className="flex items-start justify-between mb-2">
                 <span className="font-arabic text-[18px] text-[var(--color-accent)]" dir="rtl">

@@ -50,6 +50,9 @@ export default function AdminLayout({
               <a href="/admin/journey" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors">
                 Lessons
               </a>
+              <a href="/admin/journey/localization-qa" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors">
+                Localization QA
+              </a>
             </nav>
           </div>
           <div className="flex items-center gap-4">

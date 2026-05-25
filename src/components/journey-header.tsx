@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { useToast } from '@/hooks/use-toast';
+import { useCopy } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface Translation {
   id: number;
@@ -32,6 +34,9 @@ export function JourneyHeader({
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const copy = useCopy();
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -77,7 +82,7 @@ export function JourneyHeader({
   const handleReciterChange = (id: number) => {
     setSelectedReciter(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
-    toast.success('Reciter updated');
+    toast.success(copy.common.toasts.reciterUpdated);
   };
 
   return (
@@ -86,10 +91,10 @@ export function JourneyHeader({
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="text-3xl font-arabic text-[var(--color-accent)]" dir="rtl">رحلتي</span>
-            <span className="text-[var(--color-text-muted)] text-sm">My Journey</span>
+            <span className="text-[var(--color-text-muted)] text-sm">{isUrdu ? 'میرا سفر' : 'My Journey'}</span>
           </div>
           <p className="text-[var(--color-text-muted)] text-sm">
-            Day {currentDay} of {totalDays}
+            {copy.common.labels.day} {currentDay} {isUrdu ? 'میں سے' : 'of'} {totalDays}
           </p>
         </div>
 
@@ -97,22 +102,22 @@ export function JourneyHeader({
           {streak > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-accent)]/10 rounded-full">
               <span className="text-lg">🔥</span>
-              <span className="text-sm font-medium text-[var(--color-accent)]">{streak} day streak</span>
+              <span className="text-sm font-medium text-[var(--color-accent)]">{isUrdu ? `${streak} دن کا تسلسل` : `${streak} day streak`}</span>
             </div>
           )}
           <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            ~{estimatedMinutes} min/day
+            {isUrdu ? `~${estimatedMinutes} منٹ/دن` : `~${estimatedMinutes} min/day`}
           </div>
         </div>
       </div>
 
       <div className="mb-6">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-[var(--color-text-muted)]">Progress</span>
-          <span className="text-[var(--color-text)] font-medium">{completedDays} of {totalDays} days</span>
+          <span className="text-[var(--color-text-muted)]">{isUrdu ? 'پیش رفت' : 'Progress'}</span>
+          <span className="text-[var(--color-text)] font-medium">{isUrdu ? `${totalDays} میں سے ${completedDays} دن` : `${completedDays} of ${totalDays} days`}</span>
         </div>
         <div className="h-3 bg-[var(--color-border)] rounded-full overflow-hidden">
           <div
@@ -137,7 +142,7 @@ export function JourneyHeader({
             href={nextLessonHref}
             className="ml-auto bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors flex items-center gap-2"
           >
-            Continue Journey
+            {copy.common.actions.continueJourney}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>

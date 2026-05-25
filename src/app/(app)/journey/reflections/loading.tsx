@@ -1,6 +1,6 @@
 export default function ReflectionsLoading() {
   return (
-    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
+    <div className="reading-screen px-4 md:px-16 pt-8 md:pt-12 pb-20 md:pb-12">
       <div className="max-w-2xl mx-auto">
         <p className="mb-4 text-sm text-[var(--color-text-muted)]">Opening your reflection space...</p>
         <div className="mb-8">

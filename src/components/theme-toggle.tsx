@@ -1,24 +1,36 @@
 'use client';
 
 import { useTheme, Theme } from './theme-provider';
+import { useLanguage } from '@/lib/i18n/context';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { language } = useLanguage();
+  const isUrdu = language === 'ur';
 
   const options: { value: Theme; label: string }[] = [
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-    { value: 'system', label: 'System' },
+    {
+      value: 'light',
+      label: isUrdu ? 'روشن' : 'Light',
+    },
+    {
+      value: 'dark',
+      label: isUrdu ? 'مدھم' : 'Dark',
+    },
+    {
+      value: 'system',
+      label: isUrdu ? 'آلہ کے مطابق' : 'System',
+    },
   ];
 
   return (
-    <div className="flex items-center gap-1" role="group" aria-label="Theme selector">
+    <div className="flex items-center gap-1" role="group" aria-label={isUrdu ? 'ظاہری انداز منتخب کریں' : 'Theme selector'}>
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => setTheme(opt.value)}
           aria-pressed={theme === opt.value}
-          title={`${opt.label} mode`}
+          title={isUrdu ? `${opt.label} انداز` : `${opt.label} mode`}
           className={`p-1.5 rounded-md transition-all ${
             theme === opt.value
               ? 'bg-white/20 text-white shadow-sm'

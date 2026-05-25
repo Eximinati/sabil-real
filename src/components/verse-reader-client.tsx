@@ -15,6 +15,7 @@ import { SurahControls } from './surah-controls';
 import { AudioPlayer } from './audio-player';
 import { getApiUrl } from '@/lib/api-url';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface AudioFile {
   verse_key: string;
@@ -72,6 +73,7 @@ export function VerseReaderClient({
   const toast = useToast();
   const copy = useCopy();
   const { interpolate } = useI18nText();
+  const { language } = useLanguage();
   const { updateProgress, getPositionForSurah } = useReadingProgress(chapterId);
   const { addToHistory } = useReadingHistory();
   const { bookmarks } = useBookmarks();
@@ -84,6 +86,19 @@ export function VerseReaderClient({
   const showBismillah = chapterId !== 1 && chapterId !== 9;
   const readingTimeMinutes = estimateReadingTimeMinutes(versesCount);
   const isMaccan = revelationPlace === 'Meccan';
+  const verseFrame = language === 'ur'
+    ? {
+        sourceLabel: 'اصل قرآنی متن',
+        sourceHint: 'یہ آیت کا اصل عربی متن ہے۔',
+        translationLabel: 'فہم کے لیے ترجمہ',
+        translationHint: 'یہ حصہ معنی سمجھنے کے لیے ہے، اصل متن نہیں۔',
+      }
+    : {
+        sourceLabel: 'Sacred source text',
+        sourceHint: 'This is the Arabic source wording of the verse.',
+        translationLabel: 'Meaning translation',
+        translationHint: 'This helps understanding and is not source wording.',
+      };
 
   const isActive = (verseKey: string) => state.currentVerseKey === verseKey;
   const isPlaying = (verseKey: string) => isActive(verseKey) && state.isPlaying;
@@ -233,16 +248,17 @@ handlePlayVerse(verseKey, files);
       className={`min-h-screen pb-32 md:pb-24 transition-all duration-300 ease-in-out ${
         isFocusMode ? 'md:ml-0' : 'md:ml-[240px]'
       }`}
+      data-script-direction={language === 'ur' ? 'rtl' : 'ltr'}
     >
       <div
         className="z-20 transition-all duration-300 md:sticky md:top-0"
       >
         <div
-          className={`mx-auto px-4 pt-4 md:pt-6 transition-all duration-300 ${
+          className={`mx-auto px-4 pt-3 md:pt-6 transition-all duration-300 ${
             isFocusMode ? 'px-4 md:px-8 max-w-[850px]' : 'px-4 md:px-6 max-w-3xl'
           }`}
         >
-          <div className="rounded-[26px] border border-[var(--color-border)] bg-[var(--color-surface)]/88 px-4 py-4 backdrop-blur-sm md:px-5 md:py-5">
+          <div className="quiet-controls rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 px-4 py-3.5 backdrop-blur-sm md:px-5 md:py-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <Link
@@ -258,7 +274,7 @@ handlePlayVerse(verseKey, files);
                     {chapterNameArabic}
                   </span>
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)] md:text-sm">
+                <p className="mt-2 text-xs leading-[1.7] text-[var(--color-text-muted)] md:text-sm">
                   {isMaccan ? copy.quran.revealedMakkah : copy.quran.revealedMadinah}
                   <span className="mx-2">•</span>
                   {interpolate(copy.quran.aboutReading, {
@@ -267,7 +283,7 @@ handlePlayVerse(verseKey, files);
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="quiet-controls flex shrink-0 items-center gap-2">
                 <SurahControls chapterId={chapterId} />
                 <FocusModeToggle />
               </div>
@@ -278,19 +294,19 @@ handlePlayVerse(verseKey, files);
 
       {/* Content */}
       <main
-        className={`py-6 md:py-10 transition-all duration-300 ${
+        className={`reading-screen py-6 md:py-10 transition-all duration-300 ${
           isFocusMode ? 'px-4 md:px-8 max-w-[850px] mx-auto' : 'px-4 md:px-6 max-w-3xl mx-auto'
         }`}
       >
         {/* Surah Header */}
-        <header className="text-center mb-8 md:mb-12">
+        <header className="reading-section text-center mb-8 md:mb-12">
           <span
             className="font-arabic text-[36px] md:text-[42px] text-[var(--color-accent)] block mb-4"
             dir="rtl"
           >
             {chapterNameArabic}
           </span>
-          <h1 className="text-[var(--color-text)] text-xl md:text-2xl font-medium">
+          <h1 className="text-[var(--color-text)] text-[22px] md:text-2xl font-medium leading-[1.3]">
             {chapterName}
           </h1>
         </header>
@@ -299,7 +315,7 @@ handlePlayVerse(verseKey, files);
         {showBismillah && (
           <div className="text-center mb-8 md:mb-12 py-4">
             <p
-              className={`font-arabic text-[22px] md:text-[26px] text-[var(--color-text)] ${
+              className={`reading-arabic font-arabic text-[24px] md:text-[26px] text-[var(--color-text)] ${
                 isFocusMode ? 'arabic-text-focus' : 'arabic-text'
               }`}
               dir="rtl"
@@ -311,7 +327,7 @@ handlePlayVerse(verseKey, files);
 
         {/* Verses */}
         <div
-          className={`space-y-4 md:space-y-6 ${
+          className={`space-y-5 md:space-y-6 ${
             isFocusMode ? 'space-y-6 md:space-y-8' : ''
           }`}
         >
@@ -335,7 +351,7 @@ handlePlayVerse(verseKey, files);
                 }`}
               >
                 {/* Verse Controls */}
-                <div className="flex items-start justify-between mb-4 md:mb-6">
+                <div className="quiet-controls flex items-start justify-between mb-4 md:mb-6">
                   <span
                     className={`w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full text-sm font-medium transition-colors ${
                       active
@@ -421,32 +437,47 @@ handlePlayVerse(verseKey, files);
                     <CopyButton
                       text={verse.text_uthmani}
                       translation={translation?.text}
+                      className="quiet-controls"
                     />
                   </div>
                 </div>
 
                 {/* Arabic Text */}
-                <p
-                  className={`font-arabic text-right mb-6 md:mb-8 transition-all duration-300 ${
-                    isFocusMode
-                      ? 'text-[26px] md:text-[32px] leading-[2.5]'
-                      : 'text-[22px] md:text-[28px] leading-[2.3]'
-                  } ${
-                    isFocusMode ? 'arabic-text-focus' : 'arabic-text'
-                  } text-[var(--color-text)]`}
-                  dir="rtl"
-                >
-                  {verse.text_uthmani}
-                </p>
+                <div className="mb-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/35 p-4 md:p-5">
+                  <p className="text-[11px] md:text-xs font-medium text-[var(--color-primary)]">
+                    {verseFrame.sourceLabel}
+                  </p>
+                  <p className="mt-0.5 text-[11px] md:text-xs text-[var(--color-text-muted)]">
+                    {verseFrame.sourceHint}
+                  </p>
+                  <p
+                    className={`reading-arabic font-arabic text-right mt-4 transition-all duration-300 ${
+                      isFocusMode
+                        ? 'text-[26px] md:text-[32px] leading-[2.5]'
+                        : 'text-[22px] md:text-[28px] leading-[2.3]'
+                    } ${
+                      isFocusMode ? 'arabic-text-focus' : 'arabic-text'
+                    } text-[var(--color-text)]`}
+                    dir="rtl"
+                  >
+                    {verse.text_uthmani}
+                  </p>
+                </div>
 
                 {/* Translation */}
                 <div className="border-t border-[var(--color-border)]/60 pt-4 md:pt-5">
+                  <p className="text-[11px] md:text-xs font-medium text-[var(--color-primary)] mb-0.5">
+                    {verseFrame.translationLabel}
+                  </p>
+                  <p className="text-[11px] md:text-xs text-[var(--color-text-muted)] mb-2">
+                    {verseFrame.translationHint}
+                  </p>
                   <p className="text-xs md:text-sm text-[var(--color-text-muted)] mb-2">
                     {translatorLabel}
                   </p>
                   <p
-                    className={`text-[var(--color-text-secondary)] leading-relaxed ${
-                      isFocusMode ? 'text-[15px] md:text-base' : 'text-[14px] md:text-[15px]'
+                    className={`text-[var(--color-text-secondary)] ${
+                      isFocusMode ? 'text-[15px] md:text-base leading-[1.95]' : 'text-[15px] md:text-[15px] leading-[1.95]'
                     }`}
                   >
                     {translation?.text || copy.quran.translationUnavailable}
@@ -454,10 +485,11 @@ handlePlayVerse(verseKey, files);
                   <div className="mt-4 text-right">
                     <Link
                       href={`/tafsir?surah=${chapterId}&verse=${verseNumber}`}
-                      className="text-xs text-[var(--color-primary)] hover:underline"
-                    >
-                      {copy.quran.tafsirLink} →
-                    </Link>
+                    className="rtl-ready-arrow text-xs text-[var(--color-primary)] hover:underline"
+                    data-script-direction={language === 'ur' ? 'rtl' : 'ltr'}
+                  >
+                    {copy.quran.tafsirLink} →
+                  </Link>
                   </div>
                 </div>
               </article>
@@ -500,7 +532,7 @@ handlePlayVerse(verseKey, files);
 
       {/* Mobile Navigation */}
       {!isFocusMode && (
-        <div className="fixed bottom-0 left-0 right-0 rounded-t-[24px] border-t border-[var(--color-border)] bg-[var(--color-surface)]/94 p-4 backdrop-blur-sm md:hidden safe-area-bottom">
+        <div className="quiet-controls fixed bottom-0 left-0 right-0 rounded-t-[20px] border-t border-[var(--color-border)] bg-[var(--color-surface)]/88 p-3 backdrop-blur-sm md:hidden safe-area-bottom">
           <div className="flex justify-between max-w-3xl mx-auto">
             {prevChapter ? (
                 <Link

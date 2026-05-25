@@ -1,6 +1,6 @@
 export default function VerseLoading() {
   return (
-    <div className="px-6 md:px-[64px] pt-[32px] pb-[48px]">
+    <div className="reading-screen px-5 md:px-[64px] pt-[32px] pb-[90px] md:pb-[48px]">
       <div className="flex items-center gap-4 mb-8">
         <div className="h-6 w-16 bg-[var(--color-border)] animate-pulse rounded" />
       </div>

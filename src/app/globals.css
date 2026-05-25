@@ -27,6 +27,12 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-arabic: var(--font-amiri), 'Scheherazade New', serif;
 
+  --reading-gap-mobile: 30px;
+  --reading-paragraph-gap-mobile: 18px;
+  --reading-line-english-mobile: 1.95;
+  --reading-line-urdu-mobile: 2.2;
+  --reading-line-arabic-mobile: 2.5;
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -128,10 +134,16 @@
 
 html {
   font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .font-arabic {
   font-family: var(--font-arabic);
+}
+
+.font-urdu {
+  font-family: var(--font-urdu), var(--font-arabic), serif;
 }
 
 .arabic-text {
@@ -144,6 +156,47 @@ html {
   font-family: var(--font-arabic);
   line-height: 2.6;
   letter-spacing: 0.03em;
+}
+
+.reading-screen {
+  margin-inline: auto;
+}
+
+.reading-section {
+  margin-bottom: 2.5rem;
+}
+
+.reading-prose {
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.reading-prose > p + p {
+  margin-top: 1rem;
+}
+
+.reading-prose-urdu {
+  font-family: var(--font-urdu), var(--font-arabic), serif;
+  font-size: 18px;
+  line-height: 2.15;
+}
+
+.reading-prose-urdu > p + p {
+  margin-top: 1rem;
+}
+
+.reading-arabic {
+  font-family: var(--font-arabic);
+  line-height: 2.4;
+  letter-spacing: 0.02em;
+}
+
+.quiet-controls {
+  opacity: 0.9;
+}
+
+[data-script-direction='rtl'] .rtl-ready-arrow {
+  transform: scaleX(-1);
 }
 
 html, body {
@@ -283,6 +336,48 @@ details summary::-webkit-details-marker {
     left: 16px !important;
     right: 16px !important;
     align-items: center !important;
+  }
+
+  .section-heading {
+    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.65;
+    letter-spacing: 0.02em;
+  }
+
+  .reading-screen {
+    padding-top: 28px;
+    padding-bottom: 84px;
+  }
+
+  .reading-section {
+    margin-bottom: var(--reading-gap-mobile);
+  }
+
+  .reading-prose {
+    font-size: 16px;
+    line-height: var(--reading-line-english-mobile);
+  }
+
+  .reading-prose > p + p {
+    margin-top: var(--reading-paragraph-gap-mobile);
+  }
+
+  .reading-prose-urdu {
+    font-size: 18px;
+    line-height: var(--reading-line-urdu-mobile);
+  }
+
+  .reading-prose-urdu > p + p {
+    margin-top: 20px;
+  }
+
+  .reading-arabic {
+    line-height: var(--reading-line-arabic-mobile);
+  }
+
+  .quiet-controls {
+    opacity: 0.82;
   }
 }
 

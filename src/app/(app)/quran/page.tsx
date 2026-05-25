@@ -12,14 +12,15 @@ async function getChaptersFromApi(): Promise<any[]> {
 }
 
 export default async function QuranPage() {
-  const { dictionary: copy } = await getServerDictionary();
+  const { dictionary: copy, language } = await getServerDictionary();
+  const isUrdu = language === 'ur';
   let chapters: any[] = [];
 
   try {
     chapters = await getChaptersFromApi();
   } catch (e) {
     return (
-      <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
+      <div className="reading-screen px-6 md:px-[64px] pt-[44px] pb-[92px] md:pb-[48px]">
         <div className="p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] rounded-lg text-center">
           {copy.quran.loadErrorTitle}
         </div>
@@ -28,11 +29,11 @@ export default async function QuranPage() {
   }
 
   return (
-    <div className="px-6 md:px-[64px] pt-[48px] pb-[48px]">
-      <div className="text-center mb-10">
+    <div className="reading-screen px-5 md:px-[64px] pt-[40px] pb-[94px] md:pb-[48px]">
+      <div className="text-center mb-9 reading-section">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">القرآن الكريم</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.quran.pageSubtitle}</p>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1">{copy.quran.pageDescription}</p>
+        <p className={`text-[var(--color-text-muted)] mt-2 ${isUrdu ? 'font-urdu text-[16px] leading-[2.05]' : 'text-sm leading-[1.8]'}`}>{copy.quran.pageSubtitle}</p>
+        <p className={`text-[var(--color-text-muted)] mt-1 ${isUrdu ? 'font-urdu text-[16px] leading-[2.05]' : 'text-sm leading-[1.8]'}`}>{copy.quran.pageDescription}</p>
       </div>
 
       <ContinueReading />

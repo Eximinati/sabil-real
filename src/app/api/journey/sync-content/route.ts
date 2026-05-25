@@ -1,24 +1,45 @@
 import { NextResponse } from 'next/server';
-import { readFile, readdir } from 'node:fs/promises';
-import path from 'node:path';
 import { supabaseServer } from '@/lib/supabase-server';
 import { parseMarkdownToBlocks } from '@/lib/markdown-importer';
 import { getDayIdentity } from '@/lib/journey-emotional-arc';
+import { loadJourneyDayBundles } from '@/lib/journey-content-files';
+import type { LanguageCode } from '@/lib/i18n/config';
+import { normalizeTranslationStages } from '@/lib/journey-editorial';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-interface ParsedDayFile {
-  dayNumber: number;
-  title: string;
-  markdown: string;
+interface ParsedBlock {
+  order_index: number;
+  block_type: string;
+  content: Record<string, unknown>;
+}
+
+const LOCALIZABLE_BLOCK_KEYS = [
+  'text',
+  'prompt',
+  'prompts',
+  'items',
+  'source',
+  'translation',
+  'transliteration',
+] as const;
+
+function parseFirstHeading(markdown: string): string | null {
+  return markdown
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.startsWith('# '))
+    ?.replace(/^#\s+/, '')
+    .trim() || null;
 }
 
 function parseDayTitle(markdown: string): { dayNumber: number; title: string } | null {
-  const firstLine = markdown.split('\n').find((line) => line.trim().startsWith('# '));
-  if (!firstLine) return null;
+  const content = parseFirstHeading(markdown);
+  if (!content) {
+    return null;
+  }
 
-  const content = firstLine.replace(/^#\s+/, '').trim();
   const match = content.match(/^Day\s*(\d+)\s*[-:]\s*(.+)$/i);
   if (!match) return null;
 
@@ -31,13 +52,63 @@ function parseDayTitle(markdown: string): { dayNumber: number; title: string } |
   };
 }
 
-function extractSectionText(markdown: string, heading: string): string {
-  const normalized = markdown.replace(/\r\n/g, '\n');
-  const parts = normalized.split(`## ${heading}`);
-  if (parts.length < 2) return '';
+function parseDayTitleWithFallback(markdown: string, fallbackDayNumber: number, fallbackTitle: string): { dayNumber: number; title: string } {
+  const parsed = parseDayTitle(markdown);
+  if (parsed) {
+    return parsed;
+  }
 
-  const afterHeading = parts[1];
-  const sectionBody = afterHeading.split('\n## ')[0].trim();
+  const firstHeading = parseFirstHeading(markdown);
+  if (firstHeading) {
+    return {
+      dayNumber: fallbackDayNumber,
+      title: firstHeading,
+    };
+  }
+
+  return {
+    dayNumber: fallbackDayNumber,
+    title: fallbackTitle,
+  };
+}
+
+function parseLocalizedTitle(markdown: string): string | null {
+  const heading = parseFirstHeading(markdown);
+  if (!heading) {
+    return null;
+  }
+
+  const match = heading.match(/^Day\s*\d+\s*[-:]\s*(.+)$/i);
+  if (match) {
+    return match[1].trim();
+  }
+
+  const urduMatch = heading.match(/^دن\s*\d+\s*[-:،]?\s*(.+)$/i);
+  if (urduMatch) {
+    return urduMatch[1].trim();
+  }
+
+  return heading.trim();
+}
+
+function extractSectionText(markdown: string, heading: string | string[]): string {
+  const headingCandidates = Array.isArray(heading) ? heading : [heading];
+  const normalized = markdown.replace(/\r\n/g, '\n');
+  let sectionBody = '';
+
+  for (const headingCandidate of headingCandidates) {
+    const parts = normalized.split(`## ${headingCandidate}`);
+    if (parts.length < 2) {
+      continue;
+    }
+
+    const afterHeading = parts[1];
+    sectionBody = afterHeading.split('\n## ')[0].trim();
+    if (sectionBody) {
+      break;
+    }
+  }
+
   if (!sectionBody) return '';
 
   const firstParagraph = sectionBody
@@ -51,39 +122,59 @@ function extractSectionText(markdown: string, heading: string): string {
     .trim();
 }
 
-async function loadDayFiles(): Promise<ParsedDayFile[]> {
-  const contentDir = path.join(process.cwd(), 'content', 'journey');
-  const files = await readdir(contentDir);
+function hasMeaningfulValue(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
+  }
+  if (Array.isArray(value)) {
+    return value.some((item) => hasMeaningfulValue(item));
+  }
+  return value !== null && value !== undefined;
+}
 
-  const targets = files
-    .filter((file) => {
-      const match = file.match(/^day(\d+)\.md$/i);
-      if (!match) return false;
-      const day = parseInt(match[1], 10);
-      return day >= 2 && day <= 30;
-    })
-    .sort((a, b) => {
-      const dayA = parseInt((a.match(/^day(\d+)\.md$/i) || [])[1] || '0', 10);
-      const dayB = parseInt((b.match(/^day(\d+)\.md$/i) || [])[1] || '0', 10);
-      return dayA - dayB;
-    });
+function pickLocalizableBlockContent(content: Record<string, unknown>): Record<string, unknown> {
+  const picked: Record<string, unknown> = {};
 
-  const parsed: ParsedDayFile[] = [];
-
-  for (const fileName of targets) {
-    const filePath = path.join(contentDir, fileName);
-    const markdown = await readFile(filePath, 'utf-8');
-    const titleData = parseDayTitle(markdown);
-    if (!titleData) continue;
-
-    parsed.push({
-      dayNumber: titleData.dayNumber,
-      title: titleData.title,
-      markdown,
-    });
+  for (const key of LOCALIZABLE_BLOCK_KEYS) {
+    const value = content[key];
+    if (hasMeaningfulValue(value)) {
+      picked[key] = value;
+    }
   }
 
-  return parsed;
+  return picked;
+}
+
+function mergeLocalizedBlocks(
+  baseBlocks: ParsedBlock[],
+  localizedBlocks: ParsedBlock[],
+  language: LanguageCode
+): ParsedBlock[] {
+  return baseBlocks.map((baseBlock, index) => {
+    const localizedBlock = localizedBlocks[index];
+    if (!localizedBlock || localizedBlock.block_type !== baseBlock.block_type) {
+      return baseBlock;
+    }
+
+    const localizedContent = pickLocalizableBlockContent(localizedBlock.content || {});
+    if (Object.keys(localizedContent).length === 0) {
+      return baseBlock;
+    }
+
+    const baseContent = (baseBlock.content || {}) as Record<string, unknown>;
+    const existingI18n = (baseContent.i18n || {}) as Record<string, Record<string, unknown>>;
+
+    return {
+      ...baseBlock,
+      content: {
+        ...baseContent,
+        i18n: {
+          ...existingI18n,
+          [language]: localizedContent,
+        },
+      },
+    };
+  });
 }
 
 export async function POST() {
@@ -110,42 +201,106 @@ export async function POST() {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 
-    const dayFiles = await loadDayFiles();
-    if (dayFiles.length === 0) {
-      return NextResponse.json({ error: 'No day2-day30 markdown files found' }, { status: 404 });
+    const dayBundles = await loadJourneyDayBundles(1, 30);
+    if (dayBundles.length === 0) {
+      return NextResponse.json({ error: 'No journey day files found in structured or legacy paths' }, { status: 404 });
     }
 
-    const results: Array<{ day: number; lessonId?: string; blocks: number; status: string; error?: string }> = [];
+    const results: Array<{
+      day: number;
+      lessonId?: string;
+      blocks: number;
+      status: string;
+      source?: string;
+      languages?: string[];
+      error?: string;
+    }> = [];
 
-    for (const dayFile of dayFiles) {
+    for (const dayBundle of dayBundles) {
       try {
-        const parsed = await parseMarkdownToBlocks(dayFile.markdown, false);
-        const reflectionPrompt = extractSectionText(dayFile.markdown, 'Private reflection');
-        const openingSummary = extractSectionText(dayFile.markdown, 'Opening reflection');
-        const dayIdentity = getDayIdentity(dayFile.dayNumber);
+        const englishMarkdown = dayBundle.markdownByLanguage.en;
+        if (!englishMarkdown) {
+          throw new Error(`Missing English markdown for day ${dayBundle.dayNumber}`);
+        }
+
+        const parsedTitle = parseDayTitleWithFallback(
+          englishMarkdown,
+          dayBundle.dayNumber,
+          `Day ${dayBundle.dayNumber}`
+        );
+
+        const parsedEn = await parseMarkdownToBlocks(englishMarkdown, false);
+        const reflectionPrompt = extractSectionText(englishMarkdown, ['Private reflection', 'Reflection for the heart']);
+        const openingSummary = extractSectionText(englishMarkdown, 'Opening reflection');
+        const dayIdentity = getDayIdentity(dayBundle.dayNumber);
+
+        let mergedBlocks = parsedEn.blocks as ParsedBlock[];
+        const localizedContent: Record<string, Record<string, unknown>> = {};
+
+        const urduMarkdown = dayBundle.markdownByLanguage.ur;
+        if (urduMarkdown) {
+          const parsedUr = await parseMarkdownToBlocks(urduMarkdown, false);
+          mergedBlocks = mergeLocalizedBlocks(mergedBlocks, parsedUr.blocks as ParsedBlock[], 'ur');
+
+          const urduTitle = parseLocalizedTitle(urduMarkdown);
+          const urduOpeningSummary = extractSectionText(urduMarkdown, [
+            'Opening reflection',
+            'ابتدائی تامل',
+            'ابتدائی غور',
+          ]);
+          const urduReflectionPrompt = extractSectionText(urduMarkdown, [
+            'Private reflection',
+            'دل کا تامل',
+            'نجی تامل',
+          ]);
+
+          const urduFields: Record<string, unknown> = {};
+          if (urduTitle) {
+            urduFields.title = urduTitle;
+          }
+          if (urduOpeningSummary) {
+            urduFields.description = urduOpeningSummary;
+          }
+          if (urduReflectionPrompt) {
+            urduFields.reflection_prompt = urduReflectionPrompt;
+          }
+
+          if (Object.keys(urduFields).length > 0) {
+            localizedContent.ur = urduFields;
+          }
+        }
 
         const { data: existingLesson } = await supabase
           .from('journey_lessons')
           .select('id, is_published')
-          .eq('day_number', dayFile.dayNumber)
+          .eq('day_number', dayBundle.dayNumber)
           .maybeSingle();
 
         const lessonPayload = {
-          day_number: dayFile.dayNumber,
-          title: dayFile.title,
+          day_number: dayBundle.dayNumber,
+          title: parsedTitle.title,
           subtitle: null,
           topic: dayIdentity
             ? `${dayIdentity.primaryEmotionalNote} - ${dayIdentity.dominantSpiritualMovement}`
             : 'Guided spiritual journey',
           description: openingSummary || null,
-          verse_keys: parsed.verseReferences,
+          verse_keys: parsedEn.verseReferences,
           lesson_text: null,
           hadith_text: null,
           hadith_source: null,
           hadith_collection: null,
           hadith_number: null,
           reflection_prompt: reflectionPrompt || null,
-          estimated_minutes: 10,
+          estimated_minutes: dayBundle.metadata.estimated_minutes ?? 10,
+          localized_content: Object.keys(localizedContent).length > 0 ? localizedContent : null,
+          translation_status: normalizeTranslationStages(dayBundle.translationStatus, {
+            hasContentByLanguage: {
+              en: true,
+              ur: Boolean(dayBundle.markdownByLanguage.ur),
+            },
+            isPublished: existingLesson?.is_published ?? false,
+          }),
+          shared_metadata: dayBundle.metadata,
           is_published: existingLesson?.is_published ?? false,
           updated_at: new Date().toISOString(),
         };
@@ -184,8 +339,8 @@ export async function POST() {
           .delete()
           .eq('lesson_id', lessonId);
 
-        if (parsed.blocks.length > 0) {
-          const blockPayload = parsed.blocks.map((block, index) => ({
+        if (mergedBlocks.length > 0) {
+          const blockPayload = mergedBlocks.map((block, index) => ({
             lesson_id: lessonId,
             order_index: index,
             block_type: block.block_type,
@@ -204,16 +359,20 @@ export async function POST() {
         }
 
         results.push({
-          day: dayFile.dayNumber,
+          day: dayBundle.dayNumber,
           lessonId,
-          blocks: parsed.blocks.length,
+          blocks: mergedBlocks.length,
           status: 'ok',
+          source: dayBundle.source,
+          languages: Object.keys(dayBundle.markdownByLanguage),
         });
       } catch (error) {
         results.push({
-          day: dayFile.dayNumber,
+          day: dayBundle.dayNumber,
           blocks: 0,
           status: 'failed',
+          source: dayBundle.source,
+          languages: Object.keys(dayBundle.markdownByLanguage),
           error: error instanceof Error ? error.message : 'Unknown sync error',
         });
       }
@@ -223,6 +382,10 @@ export async function POST() {
       success: true,
       synced: results.filter((r) => r.status === 'ok').length,
       failed: results.filter((r) => r.status === 'failed').length,
+      editorialSummary: {
+        draftLocalized: results.filter((r) => r.status === 'ok' && r.languages?.includes('ur')).length,
+        untranslated: results.filter((r) => r.status === 'ok' && !r.languages?.includes('ur')).length,
+      },
       results,
     });
   } catch (error) {

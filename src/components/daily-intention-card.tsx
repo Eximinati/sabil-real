@@ -21,7 +21,7 @@ export function DailyIntentionCard({ nextLessonDay = 1 }: DailyIntentionCardProp
   return (
     <a 
       href={`/journey/${nextLessonDay}`}
-      className="group relative mb-8 block overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-6 md:p-7 transition-colors hover:border-[var(--color-accent)]/35"
+      className="group relative mb-8 block overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-5 md:p-7 transition-colors hover:border-[var(--color-accent)]/35"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,rgba(212,175,55,0.04),transparent_60%)]" />
       <div className="relative">
@@ -33,7 +33,7 @@ export function DailyIntentionCard({ nextLessonDay = 1 }: DailyIntentionCardProp
           </div>
           <div className="flex-1">
             <p className="text-sm text-[var(--color-text-muted)]">{copy.journey.dailyIntention.title}</p>
-            <p className="mt-3 text-[17px] md:text-[20px] leading-[1.9] text-[var(--color-text)]">
+            <p className="mt-3 text-[17px] md:text-[20px] leading-[2] text-[var(--color-text)]">
               {question}
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">

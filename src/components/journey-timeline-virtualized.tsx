@@ -42,6 +42,8 @@ export function VirtualizedTimeline({
         const lessonProgress = getProgressForLesson(lesson.id);
         const status = lessonProgress?.status || 'not_started';
         const isToday = lesson.day_number === currentDay;
+        const isUrduTitle = /[\u0600-\u06FF]/.test(lesson.title || '');
+        const isUrduSubtitle = /[\u0600-\u06FF]/.test(lesson.subtitle || '');
         const actionLabel = isToday
           ? copy.common.actions.continueLabel
           : status === 'completed' || status === 'in_progress'
@@ -71,9 +73,21 @@ export function VirtualizedTimeline({
                   {isToday && <span className="text-[var(--color-primary)]">{copy.journey.timeline.todayBadge}</span>}
                 </div>
 
-                <h3 className="mt-3 text-lg font-medium text-[var(--color-text)]">{lesson.title}</h3>
+                <h3
+                  className={`mt-3 font-medium text-[var(--color-text)] ${isUrduTitle ? 'font-urdu text-[19px] leading-[2.15]' : 'text-[18px] leading-[1.4]'}`}
+                  dir={isUrduTitle ? 'rtl' : 'ltr'}
+                  data-script-direction={isUrduTitle ? 'rtl' : 'ltr'}
+                >
+                  {lesson.title}
+                </h3>
                 {lesson.subtitle && (
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">{lesson.subtitle}</p>
+                  <p
+                    className={`mt-2 text-[var(--color-text-muted)] ${isUrduSubtitle ? 'font-urdu text-[17px] leading-[2.15]' : 'text-sm leading-[1.8]'}`}
+                    dir={isUrduSubtitle ? 'rtl' : 'ltr'}
+                    data-script-direction={isUrduSubtitle ? 'rtl' : 'ltr'}
+                  >
+                    {lesson.subtitle}
+                  </p>
                 )}
                 <p className="mt-3 text-sm text-[var(--color-text-muted)]">{lesson.topic}</p>
               </div>

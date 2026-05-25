@@ -6,18 +6,25 @@ export const revalidate = 3600;
 export const dynamic = 'force-static';
 
 export const metadata = {
-  title: 'Sabil — A Gentle Guided Journey',
-  description: 'A gentle guided journey through Quran, Seerah, and reflection for anyone seeking to walk toward Allah one day at a time.',
+  title: 'Sabil — A Gentle Guided Journey | سبیل',
+  description: 'A multilingual, spiritually grounded space for Quran, Seerah, and reflection - one gentle step at a time.',
+  alternates: {
+    languages: {
+      en: '/',
+      ur: '/?lang=ur',
+    },
+  },
   openGraph: {
-    title: 'Sabil — A Gentle Guided Journey',
-    description: 'A calm, beginner-friendly space for Quran, Seerah, and reflection.',
+    title: 'Sabil — A Gentle Guided Journey | سبیل',
+    description: 'A multilingual, spiritually grounded space for Quran, Seerah, and reflection.',
     type: 'website',
     locale: 'en_US',
+    alternateLocale: ['ur_PK'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sabil — A Gentle Guided Journey',
-    description: 'A calm, beginner-friendly space for Quran, Seerah, and reflection.',
+    title: 'Sabil — A Gentle Guided Journey | سبیل',
+    description: 'A multilingual, spiritually grounded space for Quran, Seerah, and reflection.',
   },
 };
 

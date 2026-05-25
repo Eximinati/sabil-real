@@ -25,6 +25,9 @@ export default async function SettingsPage() {
 
   const currentTranslation = translations.find(t => t.id === preferences.translation_id);
   const currentTafsir = tafsirs.find(t => t.id === preferences.tafsir_id);
+  const reminderTimeValue = preferences.reminder_time
+    ? preferences.reminder_time.slice(0, 5)
+    : '20:30';
 
   const createdDate = user.created_at 
     ? new Date(user.created_at).toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', {
@@ -91,6 +94,9 @@ export default async function SettingsPage() {
             <PreferencesForm 
               initialTranslationId={preferences.translation_id}
               initialTafsirId={preferences.tafsir_id}
+              initialRemindersEnabled={preferences.reminders_enabled}
+              initialReminderTime={reminderTimeValue}
+              initialReminderLanguage={preferences.reminder_language}
             />
           </div>
         </div>

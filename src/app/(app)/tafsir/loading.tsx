@@ -4,7 +4,7 @@ export default async function TafsirLoading() {
   const { dictionary: copy } = await getServerDictionary();
 
   return (
-    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
+    <div className="reading-screen px-4 md:px-16 pt-8 md:pt-12 pb-20 md:pb-12">
       <p className="mb-4 text-sm text-[var(--color-text-muted)] text-center">{copy.journey.loading.tafsir}</p>
       <div className="text-center mb-8">
         <div className="h-9 w-32 bg-[var(--color-border)] animate-pulse rounded mx-auto" />

@@ -31,20 +31,24 @@ const notoNastaliqUrdu = Noto_Nastaliq_Urdu({
 });
 
 export const metadata: Metadata = {
-  title: 'Sabil — A Gentle Guided Journey',
-  description: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
+  title: {
+    default: 'Sabil — A Gentle Guided Journey | سبیل',
+    template: '%s | Sabil',
+  },
+  description: 'A gentle multilingual space for Quran, Seerah, and reflection - spiritually grounded, beginner-friendly, and emotionally safe.',
   keywords: ['Quran', 'Islam', 'Tafsir', 'Hadith', 'Islamic Learning', 'Daily Reading'],
   authors: [{ name: 'Sabil' }],
   openGraph: {
-    title: 'Sabil — A Gentle Guided Journey',
-    description: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
+    title: 'Sabil — A Gentle Guided Journey | سبیل',
+    description: 'A multilingual, spiritually grounded reading companion for Quran, Seerah, and reflection.',
     type: 'website',
     locale: 'en_US',
+    alternateLocale: ['ur_PK'],
   },
   twitter: {
     card: 'summary',
-    title: 'Sabil — A Gentle Guided Journey',
-    description: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
+    title: 'Sabil — A Gentle Guided Journey | سبیل',
+    description: 'A multilingual, spiritually grounded reading companion for Quran, Seerah, and reflection.',
   },
   icons: {
     icon: '/favicon.svg',
@@ -84,6 +88,7 @@ export default async function RootLayout({
           nextLanguage = 'en';
         }
         document.documentElement.setAttribute('lang', nextLanguage);
+        document.documentElement.setAttribute('dir', nextLanguage === 'ur' ? 'rtl' : 'ltr');
         document.documentElement.setAttribute('data-language', nextLanguage);
         if (!stored || stored !== nextLanguage) {
           localStorage.setItem('sabil-language', nextLanguage);
@@ -95,6 +100,7 @@ export default async function RootLayout({
   return (
     <html
       lang={initialLanguage}
+      dir={initialLanguage === 'ur' ? 'rtl' : 'ltr'}
       data-language={initialLanguage}
       className={`${inter.variable} ${amiri.variable} ${notoNastaliqUrdu.variable}`}
     >

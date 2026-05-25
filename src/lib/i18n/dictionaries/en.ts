@@ -74,6 +74,9 @@ export const EN_COPY: AppCopy = {
     page: {
       returnTomorrowNotice: 'You returned with sincerity. Come back tomorrow and your next day will be here, in sha Allah.',
       welcomeBackNotice: 'Welcome back. You are not behind here - continue gently from where your heart is today.',
+      returnAfterShortPauseNotice: 'Welcome back. Even after a short pause, your place stays open here.',
+      returnAfterMediumPauseNotice: 'Welcome back. It is good to see you again. Begin with one gentle step today.',
+      returnAfterLongPauseNotice: 'Welcome back. You were missed with mercy, not pressure. Start from where your heart feels ready.',
       revisitHeading: 'If you want to revisit another day',
       revisitDescription: 'The rest of the journey is here quietly whenever you need to return, revisit, or read ahead.',
     },
@@ -119,6 +122,13 @@ export const EN_COPY: AppCopy = {
       weekLabel: 'Week',
       loadingTranslation: 'Loading translation...',
       pauseReflect: 'Pause and reflect',
+      translationFallbackTitle: 'This reflection is still being prepared in اردو.',
+      translationFallbackDescription: 'You can continue gently in English for now.',
+      lessonTextTitle: 'Sit with this',
+      hadithTitle: 'A Prophetic reminder',
+      reflectionTitle: 'Reflection for the heart',
+      hadithUnavailableTitle: 'Hadith unavailable',
+      hadithUnavailableDescription: 'Could not load hadith content.',
     },
     loading: {
       journey: "Preparing today's journey...",
@@ -144,6 +154,15 @@ export const EN_COPY: AppCopy = {
     currentTafsir: 'Current Tafsir',
     defaultTranslation: 'Default Translation',
     defaultTafsir: 'Default Tafsir',
+    reminders: 'Reminders',
+    remindersDescription: 'Optional gentle reminders to help you return in your own rhythm.',
+    reminderEnabled: 'Receive gentle reminders',
+    reminderTime: 'Reminder time',
+    reminderTimeHint: 'Your local time. You can change this anytime.',
+    reminderLanguage: 'Reminder language',
+    reminderLanguageAuto: 'Match app language',
+    reminderLanguageEnglish: 'English',
+    reminderLanguageUrdu: 'Urdu',
     loadingPreferences: 'Loading preferences...',
     appTagline: 'Your Guided Islamic Journey',
     appDescription: "A structured, gentle journey through the Qur'an, one day at a time.",
@@ -378,9 +397,68 @@ export const EN_COPY: AppCopy = {
       returnBody: 'Come back tomorrow and continue the journey without pressure.',
     },
   },
+  notifications: {
+    categories: {
+      openingWindow: 'Opening window',
+      steadyCompanionship: 'Steady companionship',
+      gentleReturn: 'Gentle return',
+      reflectivePause: 'Reflective pause',
+    },
+    reminders: {
+      openingWindow: [
+        'When your day softens, your place in Sabil is here.',
+        'A quiet opening is here whenever you want to read.',
+        'If tonight feels right, your next gentle step is waiting.',
+      ],
+      steadyCompanionship: [
+        'One calm page can be enough for today.',
+        'No rush. Return for a few quiet minutes when ready.',
+        'Your journey can continue with one sincere moment.',
+      ],
+      reflectivePause: [
+        'Pause, breathe, and open your reflection space when ready.',
+        'A small return with sincerity is beloved to Allah.',
+        'Read a little, reflect a little, and leave the rest for tomorrow.',
+      ],
+    },
+    returnAfterAbsence: {
+      shortPause: [
+        'Welcome back. Your place stayed warm for you.',
+        'You are here again. Continue gently from today.',
+      ],
+      mediumPause: [
+        'Welcome back. You are not behind - begin with one calm step.',
+        'It is good to see you again. Start softly, one page at a time.',
+      ],
+      longPause: [
+        'Welcome back. Mercy makes room for every return.',
+        'No catching up needed. Begin from where your heart is today.',
+      ],
+    },
+  },
   metadata: {
     siteTitle: 'Sabil - A Gentle Guided Journey',
     siteDescription: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
     ogLocale: 'en_US',
+  },
+  buildNotice: {
+    triggerLabel: 'Build note',
+    triggerTitle: 'About this build',
+    modalTitle: 'Build note',
+    modalSubtitle: 'About the current experience',
+    body: `This release carries the core vision of Sabil.
+
+Some supporting surfaces are still being refined while we continue strengthening content depth and reflective flow.
+
+What comes next:
+
+- Deeper personalization
+- More reflective guidance
+- Richer interaction in reflection spaces
+- Thoughtful AI-assisted learning paths
+- Ongoing curriculum refinement
+
+We chose to share this now so you can walk with the vision as it matures, instead of waiting for perfection.`,
+    acknowledge: 'I understand',
   },
 };

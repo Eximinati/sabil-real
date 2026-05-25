@@ -1,0 +1,27 @@
+{
+  "dayNumber": 5,
+  "lessonOrder": 5,
+  "arcIdentity": "week-1",
+  "weekChapter": "Seen and Welcomed by Allah",
+  "emotionalNote": "discipline",
+  "seerahReferences": [
+    "endurance in hardship"
+  ],
+  "estimatedMinutes": 10,
+  "translationStatus": {
+    "en": "ready",
+    "ur": "ready"
+  },
+  "qaStatus": {
+    "emotionally-safe": true,
+    "coherent-flow": true,
+    "pacing-balanced": true,
+    "quran-central": true,
+    "seerah-human": true,
+    "tafsir-light": true,
+    "reflection-sincere": true,
+    "beginner-safe": true,
+    "gentle-action": true,
+    "peaceful-close": true
+  }
+}

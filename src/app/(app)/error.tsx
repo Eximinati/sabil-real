@@ -1,5 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
+import { getSystemCopyFromClient } from '@/lib/i18n/system-copy';
+
 export default function ErrorPage({
   error,
   reset,
@@ -7,6 +10,8 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const copy = useMemo(() => getSystemCopyFromClient().globalError, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--color-bg)]">
       <div className="max-w-md w-full text-center p-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-sm">
@@ -17,22 +22,22 @@ export default function ErrorPage({
         </div>
         
         <h1 className="text-xl font-medium text-[var(--color-text)] mb-2">
-          Something went wrong
+          {copy.title}
         </h1>
         
         <p className="text-[var(--color-text-muted)] text-sm mb-6">
-          We encountered an unexpected issue. Please try again.
+          {copy.description}
         </p>
         
         <button
           onClick={reset}
           className="px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity font-medium text-sm"
         >
-          Try Again
+          {copy.retry}
         </button>
         
         <p className="text-xs text-[var(--color-text-subtle)] mt-6" dir="rtl">
-          وما造化 لنا
+          {copy.verse}
         </p>
       </div>
     </div>

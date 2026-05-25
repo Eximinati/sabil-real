@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface ReflectionInputProps {
   lessonId: string;
@@ -16,6 +17,7 @@ export function ReflectionInput({ lessonId, dayNumber, initialValue = '' }: Refl
   const [saved, setSaved] = useState(false);
   const toast = useToast();
   const copy = useCopy();
+  const { language } = useLanguage();
 
   const handleSave = async () => {
     if (!text.trim()) return;
@@ -40,20 +42,29 @@ export function ReflectionInput({ lessonId, dayNumber, initialValue = '' }: Refl
     setSaving(false);
   };
 
+  const hasUrduText = /[\u0600-\u06FF]/.test(text);
+  const isUrduDraft = language === 'ur' || hasUrduText;
+
   return (
-    <div>
+    <div className="rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/78 p-4 md:p-5">
+      <p className="mb-3 text-xs text-[var(--color-text-muted)]">{copy.reflectionInput.helper}</p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={copy.reflectionInput.placeholder}
-        className="min-h-[180px] w-full resize-none rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+        className={`min-h-[220px] md:min-h-[200px] w-full resize-y rounded-[22px] border border-[var(--color-border)] bg-[var(--color-bg)]/55 p-4 md:p-5 text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 ${
+          isUrduDraft ? 'font-urdu text-[18px] leading-[2.15]' : 'text-[16px] leading-[1.95]'
+        }`}
+        dir={isUrduDraft ? 'rtl' : 'ltr'}
       />
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <p className="text-sm text-[var(--color-text-muted)]">{copy.reflectionInput.helper}</p>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-[var(--color-text-muted)]">
+          {isUrduDraft ? 'Write gently in your own words.' : 'Write slowly and honestly. This space is private.'}
+        </p>
         <button
           onClick={handleSave}
           disabled={saving || !text.trim()}
-          className="flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
         >
           {saving ? (
             <>

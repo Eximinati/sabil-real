@@ -38,7 +38,7 @@ export const UR_COPY: DeepPartial<AppCopy> = {
     },
     toasts: {
       preferencesUpdated: 'ترجیحات اپڈیٹ ہو گئیں',
-      somethingWentWrong: 'کچھ غلط ہو گیا',
+      somethingWentWrong: 'ابھی کچھ ٹھیک سے نہیں ہو سکا',
       reciterUpdated: 'قاری اپڈیٹ ہو گیا',
       languageUpdated: 'زبان اپڈیٹ ہو گئی',
     },
@@ -70,8 +70,11 @@ export const UR_COPY: DeepPartial<AppCopy> = {
   },
   journey: {
     page: {
-      returnTomorrowNotice: 'آپ اخلاص کے ساتھ واپس آئے۔ کل دوبارہ آئیں، ان شاء اللہ اگلا دن حاضر ہوگا۔',
+      returnTomorrowNotice: 'آپ اخلاص کے ساتھ واپس آئے۔ کل پھر آئیے، ان شاء اللہ اگلا دن آپ کا انتظار کرے گا۔',
       welcomeBackNotice: 'خوش آمدید۔ یہاں آپ پیچھے نہیں ہیں، آج دل جہاں ہے وہیں سے نرمی سے جاری رکھیں۔',
+      returnAfterShortPauseNotice: 'خوش آمدید۔ تھوڑی سی وقفے کے بعد بھی آپ کی جگہ یہاں محفوظ ہے۔',
+      returnAfterMediumPauseNotice: 'خوش آمدید۔ آپ کو دوبارہ دیکھ کر اچھا لگا۔ آج ایک نرم قدم سے آغاز کریں۔',
+      returnAfterLongPauseNotice: 'خوش آمدید۔ آپ کی کمی محسوس ہوئی، مگر کبھی دباؤ کے ساتھ نہیں۔ دل جہاں آمادہ ہو وہیں سے شروع کریں۔',
       revisitHeading: 'اگر آپ کسی اور دن کو دوبارہ دیکھنا چاہیں',
       revisitDescription: 'باقی سفر یہاں خاموشی سے موجود ہے، جب چاہیں واپس آئیں، دہرائیں، یا آگے پڑھیں۔',
     },
@@ -111,16 +114,23 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       backToJourney: 'آج کے سفر پر واپس',
       centerPrompt: 'سبق کو مرکز میں رکھیں۔',
       readingSettings: 'مطالعہ کی ترتیبات',
-      readingSettingsDescription: 'ضرورت ہو تو ہی تبدیل کریں۔ آپ کی ترجیحات خاموشی سے محفوظ رہتی ہیں۔',
+      readingSettingsDescription: 'صرف ضرورت ہو تو تبدیل کریں۔ آپ کی ترجیحات خاموشی سے محفوظ رہیں گی۔',
       beforeYouBegin: 'شروع کرنے سے پہلے',
       dayLabel: 'دن',
       weekLabel: 'ہفتہ',
       loadingTranslation: 'ترجمہ لوڈ ہو رہا ہے...',
       pauseReflect: 'ٹھہریں اور غور کریں',
+      translationFallbackTitle: 'یہ تامل ابھی اردو میں تیار کیا جا رہا ہے۔',
+      translationFallbackDescription: 'فی الحال آپ نرمی سے انگریزی میں پڑھ سکتے ہیں۔',
+      lessonTextTitle: 'اس پر دل سے ٹھہریں',
+      hadithTitle: 'ایک نبوی یاددہانی',
+      reflectionTitle: 'دل کے لئے تامل',
+      hadithUnavailableTitle: 'حدیث اس وقت دستیاب نہیں',
+      hadithUnavailableDescription: 'حدیث کا مواد لوڈ نہیں ہو سکا۔',
     },
     loading: {
       journey: 'آج کا سفر تیار ہو رہا ہے...',
-      lesson: 'آپ کے سبق کی جگہ تیار ہو رہی ہے...',
+      lesson: 'آپ کے سبق کے لئے پُرسکون جگہ تیار ہو رہی ہے...',
       quran: 'پُرسکون قرآنی مطالعہ کی جگہ تیار ہو رہی ہے...',
       reflections: 'آپ کی تامل کی جگہ کھل رہی ہے...',
       settings: 'آپ کی ترتیبات تیار ہو رہی ہیں...',
@@ -142,6 +152,15 @@ export const UR_COPY: DeepPartial<AppCopy> = {
     currentTafsir: 'موجودہ تفسیر',
     defaultTranslation: 'ڈیفالٹ ترجمہ',
     defaultTafsir: 'ڈیفالٹ تفسیر',
+    reminders: 'یاددہانیاں',
+    remindersDescription: 'اختیاری نرم یاددہانیاں جو آپ کو اپنی رفتار سے واپس آنے میں مدد دیں۔',
+    reminderEnabled: 'نرم یاددہانیاں وصول کریں',
+    reminderTime: 'یاددہانی کا وقت',
+    reminderTimeHint: 'آپ کا مقامی وقت۔ اسے کبھی بھی تبدیل کیا جا سکتا ہے۔',
+    reminderLanguage: 'یاددہانی کی زبان',
+    reminderLanguageAuto: 'ایپ کی زبان کے مطابق',
+    reminderLanguageEnglish: 'انگریزی',
+    reminderLanguageUrdu: 'اردو',
     loadingPreferences: 'ترجیحات لوڈ ہو رہی ہیں...',
     appTagline: 'آپ کا رہنمائی والا اسلامی سفر',
     appDescription: 'قرآن کے ساتھ ایک منظم اور نرم سفر، ایک دن میں ایک قدم۔',
@@ -163,7 +182,7 @@ export const UR_COPY: DeepPartial<AppCopy> = {
   },
   reflections: {
     backToJourney: 'سفر پر واپس',
-    title: 'آپ کے تاملات',
+    title: 'آپ کے دل کے نوٹس',
     description: 'ایک خاموش جگہ، جہاں سفر کے دوران لکھی ہوئی باتیں محفوظ رہتی ہیں۔',
     emptyTitle: 'ابھی کوئی تامل موجود نہیں',
     emptyDescription: 'جوں جوں آپ لکھیں گے، آپ کے تاملات یہاں نرمی سے جمع ہوتے جائیں گے۔',
@@ -271,7 +290,7 @@ export const UR_COPY: DeepPartial<AppCopy> = {
   },
   reflectionInput: {
     placeholder: 'دل میں جو سچائی ہو وہ اللہ کے سامنے یہاں لکھیں...',
-    helper: 'یہ اخلاص کے لیے نجی جگہ ہے، دکھاوے کے لیے نہیں۔',
+    helper: 'یہ اخلاص کی نجی جگہ ہے، دکھاوے کے لئے نہیں۔',
     saveAction: 'تامل محفوظ کریں',
     savedAction: 'خاموشی سے محفوظ ہو گیا',
     toastSaved: 'تامل محفوظ ہو گیا',
@@ -303,31 +322,31 @@ export const UR_COPY: DeepPartial<AppCopy> = {
     onboarding: {
       stepLabel: 'مرحلہ {step} از 3',
       welcomeTitle: 'سبیل میں خوش آمدید',
-      welcomeBody1: 'Sabil قرآن، سیرت اور تامل کا ایک نرم رہنمائی والا سفر ہے، ایک پرسکون دن میں ایک قدم۔',
+      welcomeBody1: 'Sabil قرآن، سیرت اور تامل کا نرم رہنمائی والا سفر ہے، ایک پُرسکون دن میں ایک قدم۔',
       welcomeBody2: 'یہاں نہ کوئی فیڈ ہے، نہ بحث، نہ کارکردگی کا دباؤ۔ جب چاہیں نرمی سے واپس آئیں۔',
       flowTitle: 'آپ کا سفر کیسے آگے بڑھتا ہے',
       flowOneTitle: 'روزانہ اسباق',
       flowOneBody: 'ہر دن قرآن، سیرت اور تامل پر مبنی ایک رہنمائی والا تجربہ دیتا ہے۔',
       flowTwoTitle: 'اپنے تاملات لکھیں',
-      flowTwoBody: 'دل جو سیکھ رہا ہے اسے نجی اور مخلص جگہ میں محفوظ کریں۔',
+      flowTwoBody: 'دل جو سیکھ رہا ہے، اسے ایک نجی اور مخلص جگہ میں لکھ لیں۔',
       flowThreeTitle: 'اپنی رفتار سے چلیں',
       flowThreeBody: 'کچھ دن ہلکے ہوں گے، کچھ گہرے۔ دن چھوٹ بھی جائیں تو احساسِ جرم نہیں، نرمی سے واپس آئیں۔',
       chooseTranslationTitle: 'اپنا ترجمہ منتخب کریں',
-      chooseTranslationBody: 'یہ آپ کا ڈیفالٹ مطالعہ ساتھی ہوگا۔ آپ اسے بعد میں ترتیبات میں بدل سکتے ہیں۔',
+      chooseTranslationBody: 'یہ آپ کا بنیادی مطالعہ ساتھی ہوگا۔ آپ اسے بعد میں ترتیبات میں بدل سکتے ہیں۔',
       suggestedTranslationTitle: 'محمد تقی الدین ہلالی اور محمد محسن خان',
       suggestedTranslationDescription: 'آغاز کے لیے ایک واضح ترجمہ',
       translationBody2: 'آپ بعد میں ترتیبات میں دوسرے تراجم دیکھ سکتے ہیں۔',
       skip: 'چھوڑ دیں',
       next: 'اگلا',
-      startJourney: 'سفر شروع کریں',
+      startJourney: 'نرمی سے سفر شروع کریں',
       loading: 'لوڈ ہو رہا ہے...',
     },
     errors: {
-      enterEmailPassword: 'براہ کرم ای میل اور پاس ورڈ درج کریں',
-      fillAllFields: 'براہ کرم تمام خانے پُر کریں',
+      enterEmailPassword: 'ای میل اور پاس ورڈ لکھ دیں',
+      fillAllFields: 'سب خانے بھر دیں',
       passwordsMismatch: 'پاس ورڈ ایک جیسے نہیں ہیں',
       passwordMin: 'پاس ورڈ کم از کم 8 حروف کا ہونا چاہیے',
-      unableCompleteSetup: 'سیٹ اپ مکمل نہیں ہو سکا',
+      unableCompleteSetup: 'سیٹ اپ ابھی مکمل نہیں ہو سکا',
     },
     shared: {
       or: 'یا',
@@ -351,7 +370,7 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       beginnerFriendly: 'نوآموز دوست',
     },
     sections: {
-      whySabilExists: 'Sabil کیوں موجود ہے',
+      whySabilExists: 'Sabil کیوں بنایا گیا',
       moreThanConsumingContent: 'صرف مواد دیکھنے سے بڑھ کر',
       whyDescription: 'Sabil ان لوگوں کے لیے بنایا گیا ہے جو اسلام کو مہربان، مضبوط بنیاد والا اور قابلِ عمل محسوس کرنا چاہتے ہیں، نہ کہ بوجھل۔',
       whatIsSabil: 'Sabil کیا ہے؟',
@@ -376,9 +395,68 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       returnBody: 'کل واپس آئیں اور بغیر دباؤ کے سفر جاری رکھیں۔',
     },
   },
+  notifications: {
+    categories: {
+      openingWindow: 'ابتدائی لمحہ',
+      steadyCompanionship: 'پُرسکون ساتھ',
+      gentleReturn: 'نرم واپسی',
+      reflectivePause: 'تامل کا وقفہ',
+    },
+    reminders: {
+      openingWindow: [
+        'جب دن نرم پڑے، Sabil میں آپ کی جگہ موجود ہے۔',
+        'جب دل چاہے، ایک پُرسکون آغاز یہاں آپ کا منتظر ہے۔',
+        'اگر آج رات مناسب لگے تو اگلا نرم قدم حاضر ہے۔',
+      ],
+      steadyCompanionship: [
+        'آج کے لیے ایک پُرسکون صفحہ بھی کافی ہو سکتا ہے۔',
+        'جلدی نہیں۔ جب آمادہ ہوں چند خاموش منٹ کے لیے واپس آئیں۔',
+        'آپ کا سفر ایک سچے لمحے سے بھی آگے بڑھ سکتا ہے۔',
+      ],
+      reflectivePause: [
+        'ذرا ٹھہریں، سانس لیں، اور جب چاہیں تامل کی جگہ کھولیں۔',
+        'اخلاص کے ساتھ چھوٹی واپسی بھی اللہ کے نزدیک محبوب ہے۔',
+        'تھوڑا پڑھیں، تھوڑا غور کریں، باقی کل کے لیے چھوڑ دیں۔',
+      ],
+    },
+    returnAfterAbsence: {
+      shortPause: [
+        'خوش آمدید۔ آپ کی جگہ یہاں گرمجوشی سے محفوظ رہی۔',
+        'آپ دوبارہ یہاں ہیں۔ آج سے نرمی کے ساتھ آگے بڑھیں۔',
+      ],
+      mediumPause: [
+        'خوش آمدید۔ آپ پیچھے نہیں ہیں، ایک پُرسکون قدم سے آغاز کریں۔',
+        'آپ کو پھر دیکھ کر خوشی ہوئی۔ آہستہ سے، ایک صفحہ ایک وقت میں۔',
+      ],
+      longPause: [
+        'خوش آمدید۔ ہر واپسی کے لیے رحمت میں کشادگی ہے۔',
+        'پکڑنے کی ضرورت نہیں۔ دل جہاں ہے وہیں سے آغاز کریں۔',
+      ],
+    },
+  },
   metadata: {
     siteTitle: 'Sabil - ایک نرم رہنمائی والا سفر',
     siteDescription: 'قرآن، سیرت اور تامل کا ایک پرسکون اور نوآموز دوست رہنمائی والا سفر۔',
     ogLocale: 'ur_PK',
+  },
+  buildNotice: {
+    triggerLabel: 'تعمیر نوٹ',
+    triggerTitle: 'اس ریلیز کے بارے میں',
+    modalTitle: 'تعمیر نوٹ',
+    modalSubtitle: 'موجودہ تجربے کے بارے میں',
+    body: `یہ ریلیز Sabil کے بنیادی وژن کو پیش کرتی ہے۔
+
+چند معاون حصے ابھی مزید نکھار میں ہیں جبکہ ہم مواد کی گہرائی اور تاملی بہاو کو بہتر بنا رہے ہیں۔
+
+اگلا مرحلہ:
+
+- زیادہ گہری ذاتی رہنمائی
+- مزید تاملی معاونت
+- تامل کی جگہوں میں بہتر تعامل
+- سوچ سمجھ کر AI مدد یافتہ سیکھنے کے راستے
+- نصاب کی مسلسل درستی
+
+ہم نے انتظار کے بجائے اسے ابھی آپ کے ساتھ شیئر کیا ہے تاکہ آپ اس وژن کے ساتھ چل سکیں جیسے جیسے یہ بالغ ہوتا جائے۔`,
+    acknowledge: 'سمجھ گیا',
   },
 };

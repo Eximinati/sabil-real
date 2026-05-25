@@ -2,24 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-
-const NOTICE_CONTENT = `This submission represents the foundation of the vision.
-
-Due to hackathon time constraints, Day 1 curriculum content is using raw authored educational material while our structured curriculum engine and enhanced interactive systems are still being refined.
-
-Our next phase focuses on:
-
-• Deeper personalization
-• More reflective guidance
-• Interactive reflections
-• AI-assisted learning paths
-• Curriculum refinement
-
-We chose to share the vision now rather than delay, so you can see where Sabil is headed.`;
+import { useCopy } from '@/hooks/use-copy';
 
 export function FloatingNotice() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const copy = useCopy();
+  const noticeContent = copy.buildNotice.body;
 
   const isImmersiveRoute = pathname?.startsWith('/journey') || /^\/quran\/\d+/.test(pathname || '');
 
@@ -33,13 +22,13 @@ export function FloatingNotice() {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/92 px-4 py-2.5 text-[var(--color-text-muted)] shadow-md backdrop-blur-sm transition-all hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)]"
-        aria-label="About This Build"
-        title="About This Build"
+        aria-label={copy.buildNotice.triggerTitle}
+        title={copy.buildNotice.triggerTitle}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span className="text-xs font-medium hidden sm:inline">Build Note</span>
+        <span className="text-xs font-medium hidden sm:inline">{copy.buildNotice.triggerLabel}</span>
       </button>
 
       {/* Modal */}
@@ -56,8 +45,8 @@ export function FloatingNotice() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-[var(--color-text)] font-semibold">Build note</h2>
-                <p className="text-[var(--color-text-muted)] text-sm">About the current experience</p>
+                <h2 className="text-[var(--color-text)] font-semibold">{copy.buildNotice.modalTitle}</h2>
+                <p className="text-[var(--color-text-muted)] text-sm">{copy.buildNotice.modalSubtitle}</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -70,11 +59,11 @@ export function FloatingNotice() {
             </div>
             <div className="p-6">
               <div className="text-[var(--color-text)] leading-relaxed space-y-3">
-                {NOTICE_CONTENT.split('\n').map((line, i) => {
-                  if (line.startsWith('•')) {
-                    return <p key={i} className="text-[var(--color-text-secondary)] pl-4">• {line.slice(1).trim()}</p>;
+                {noticeContent.split('\n').map((line, i) => {
+                  if (line.startsWith('-')) {
+                    return <p key={i} className="text-[var(--color-text-secondary)] pl-4">- {line.slice(1).trim()}</p>;
                   }
-                  if (line === 'Our next phase focuses on:') {
+                  if (line.endsWith(':')) {
                     return <p key={i} className="text-[var(--color-text)] font-medium mt-4">{line}</p>;
                   }
                   if (line.trim() === '') {
@@ -89,7 +78,7 @@ export function FloatingNotice() {
                 onClick={() => setIsOpen(false)}
                 className="px-5 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium"
               >
-                Understand
+                {copy.buildNotice.acknowledge}
               </button>
             </div>
           </div>

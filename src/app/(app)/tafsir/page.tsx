@@ -12,7 +12,18 @@ export default async function TafsirPage({
 }: {
   searchParams: Promise<{ tafsir?: string; surah?: string }>;
 }) {
-  const { dictionary: copy } = await getServerDictionary();
+  const { dictionary: copy, language } = await getServerDictionary();
+  const isUrdu = language === 'ur';
+
+  const pageCopy = isUrdu
+    ? {
+        sourceTitle: 'علمی ماخذ کی تفسیر',
+        sourceDescription: 'یہ متن منتخب تفسیر سے بطور ماخذ پیش کیا جا رہا ہے، Sabil کے درسی رہنمائی متن سے الگ۔',
+      }
+    : {
+        sourceTitle: 'Scholarly source tafsir',
+        sourceDescription: 'These entries are source commentary from your selected tafsir, presented separately from Sabil lesson guidance.',
+      };
   const { tafsir, surah } = await searchParams;
 
   const [tafsirs, chapters] = await Promise.all([
@@ -46,13 +57,15 @@ export default async function TafsirPage({
   }
 
   return (
-    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
-      <div className="text-center mb-8">
+    <div className="reading-screen px-4 md:px-16 pt-7 md:pt-12 pb-20 md:pb-12">
+      <div className="text-center mb-8 reading-section">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">التفسير</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.tafsir.subtitle}</p>
+        <p className={`text-[var(--color-text-muted)] mt-2 ${isUrdu ? 'font-urdu text-[16px] leading-[2.05]' : 'text-sm leading-[1.8]'}`}>
+          {copy.tafsir.subtitle}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-6 md:gap-8 mb-8 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-6 md:gap-8 mb-8 max-w-4xl mx-auto reading-section">
         <div>
           <TafsirSelector initialTafsirs={tafsirs} />
         </div>
@@ -86,12 +99,19 @@ export default async function TafsirPage({
             <p className="text-sm text-[var(--color-text-muted)] mt-1">{selectedTafsir.author_name || selectedTafsir.name}</p>
           </div>
 
+          <div className="mb-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/75 p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-primary)]">{pageCopy.sourceTitle}</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+              {pageCopy.sourceDescription}
+            </p>
+          </div>
+
           {tafsirVerses.length > 0 ? (
             <div className="space-y-4">
               {tafsirVerses.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-5"
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 md:p-5"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <span className="w-7 h-7 flex items-center justify-center bg-[var(--color-accent)] text-white rounded-full text-xs">
@@ -101,7 +121,7 @@ export default async function TafsirPage({
                     <span className="text-xs text-[var(--color-text-muted)] ml-auto">{item.resource_name}</span>
                   </div>
                   <div
-                    className="text-[var(--color-text)] text-[14px] md:text-[15px] leading-relaxed font-arabic"
+                    className="reading-arabic text-[var(--color-text)] text-[16px] md:text-[18px] font-arabic"
                     dir="rtl"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.text || '') }}
                   />

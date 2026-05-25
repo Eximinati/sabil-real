@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyState } from './ui/empty-state';
 import { getCachedHadithCollections, getCachedHadith } from '@/lib/api-utils';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface HadithCollection {
   id: string;
@@ -16,7 +17,10 @@ interface HadithData {
   name: string;
   number: string;
   section?: string;
+  arabic?: string | null;
   english?: string;
+  urdu?: string | null;
+  available_languages?: string[];
 }
 
 interface HadithBrowserProps {
@@ -32,6 +36,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
   const searchParams = useSearchParams();
   const copy = useCopy();
   const { interpolate } = useI18nText();
+  const { language } = useLanguage();
   const [collections, setCollections] = useState<HadithCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [hadith, setHadith] = useState<HadithData | null>(null);
@@ -41,6 +46,30 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
   const collection = searchParams.get('collection') || initialCollection || '';
   const defaultNumber = collection === 'muslim' ? 93 : 1;
   const number = searchParams.get('number') || initialNumber || defaultNumber.toString();
+  const requestedTextLanguage = searchParams.get('lang');
+  const [textLanguage, setTextLanguage] = useState<'english' | 'urdu'>(
+    language === 'ur' ? 'urdu' : 'english'
+  );
+
+  useEffect(() => {
+    if (requestedTextLanguage === 'urdu' || requestedTextLanguage === 'english') {
+      setTextLanguage(requestedTextLanguage);
+      return;
+    }
+
+    setTextLanguage(language === 'ur' ? 'urdu' : 'english');
+  }, [language, requestedTextLanguage]);
+
+  const buildHadithUrl = useCallback(
+    (nextCollection: string, nextNumber: string, nextLanguage: 'english' | 'urdu' = textLanguage) => {
+      const params = new URLSearchParams();
+      params.set('collection', nextCollection);
+      params.set('number', nextNumber);
+      params.set('lang', nextLanguage);
+      return `/hadith?${params.toString()}`;
+    },
+    [textLanguage]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -108,36 +137,69 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
 
   const handleCollectionSelect = useCallback((collectionId: string) => {
     const defaultNum = collectionId === 'muslim' ? '93' : '1';
-    const params = new URLSearchParams();
-    params.set('collection', collectionId);
-    params.set('number', defaultNum);
-    router.push(`/hadith?${params.toString()}`);
-  }, [router]);
+    router.push(buildHadithUrl(collectionId, defaultNum));
+  }, [buildHadithUrl, router]);
 
   const handleRead = useCallback(() => {
     if (!number || parseInt(number, 10) < 1) return;
-    const params = new URLSearchParams();
-    params.set('collection', collection);
-    params.set('number', number);
-    router.push(`/hadith?${params.toString()}`);
-  }, [collection, number, router]);
+    router.push(buildHadithUrl(collection, number));
+  }, [buildHadithUrl, collection, number, router]);
 
   const navigateHadith = useCallback((delta: number) => {
     const currentNum = parseInt(number, 10) || 1;
     const newNum = Math.max(1, currentNum + delta);
-    const params = new URLSearchParams();
-    params.set('collection', collection);
-    params.set('number', newNum.toString());
-    router.push(`/hadith?${params.toString()}`);
-  }, [collection, number, router]);
+    router.push(buildHadithUrl(collection, newNum.toString()));
+  }, [buildHadithUrl, collection, number, router]);
 
   const handleInputChange = useCallback((value: string) => {
-    router.push(`/hadith?collection=${collection}&number=${value}`);
-  }, [collection, router]);
+    router.push(buildHadithUrl(collection, value));
+  }, [buildHadithUrl, collection, router]);
+
+  const handleLanguageChange = useCallback((nextLanguage: 'english' | 'urdu') => {
+    setTextLanguage(nextLanguage);
+    if (!collection) {
+      return;
+    }
+    router.push(buildHadithUrl(collection, number, nextLanguage));
+  }, [buildHadithUrl, collection, number, router]);
 
   const goBack = useCallback(() => {
     router.push('/hadith');
   }, [router]);
+
+  const hadithUi = language === 'ur'
+    ? {
+        sourceFrame: 'اصل ماخذ',
+        sourceHint: 'متن کو ماخذ کے طور پر پڑھیں۔',
+        arabicSource: 'عربی متن',
+        translationFrame: 'فہم کے لیے ترجمہ',
+        translationHint: 'یہ حصہ معنی کے لیے ہے، اصل متن نہیں۔',
+        englishLabel: 'English',
+        urduLabel: 'اردو',
+        selectedLanguageMissing: 'اس حدیث میں منتخب زبان دستیاب نہیں، دوسری زبان دکھائی جا رہی ہے۔',
+      }
+    : {
+        sourceFrame: 'Sacred source text',
+        sourceHint: 'Read this as transmitted source text.',
+        arabicSource: 'Arabic source',
+        translationFrame: 'Meaning translation',
+        translationHint: 'This supports understanding and is not the source wording.',
+        englishLabel: 'English',
+        urduLabel: 'Urdu',
+        selectedLanguageMissing: 'Your selected language is unavailable for this hadith, so the available translation is shown.',
+      };
+
+  const availableEnglish = Boolean(hadith?.english);
+  const availableUrdu = Boolean(hadith?.urdu);
+  const canShowLanguageSwitch = availableEnglish || availableUrdu;
+
+  const displayedText = textLanguage === 'urdu'
+    ? hadith?.urdu || hadith?.english || ''
+    : hadith?.english || hadith?.urdu || '';
+  const displayedLanguage = textLanguage === 'urdu'
+    ? (hadith?.urdu ? 'urdu' : hadith?.english ? 'english' : null)
+    : (hadith?.english ? 'english' : hadith?.urdu ? 'urdu' : null);
+  const showLanguageFallbackNotice = Boolean(hadith && displayedLanguage && displayedLanguage !== textLanguage);
 
   if (loading) {
     return (
@@ -151,11 +213,13 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
   }
 
   return (
-    <div className="px-4 md:px-16 pt-8 md:pt-12 pb-12">
-      <div className="text-center mb-10">
+    <div className="reading-screen px-4 md:px-16 pt-7 md:pt-12 pb-20 md:pb-12" data-script-direction={language === 'ur' ? 'rtl' : 'ltr'}>
+      <div className="text-center mb-9 reading-section">
         <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">الحديث</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.hadith.subtitle}</p>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1 max-w-lg mx-auto">
+        <p className={`text-[var(--color-text-muted)] mt-2 ${language === 'ur' ? 'font-urdu text-[16px] leading-[2.05]' : 'text-sm leading-[1.8]'}`}>
+          {copy.hadith.subtitle}
+        </p>
+        <p className={`text-[var(--color-text-muted)] mt-1 max-w-lg mx-auto ${language === 'ur' ? 'font-urdu text-[16px] leading-[2.05]' : 'text-sm leading-[1.8]'}`}>
           {copy.hadith.description}
         </p>
       </div>
@@ -198,7 +262,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
             ← {copy.hadith.backToCollections}
           </button>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-8">
+          <div className="quiet-controls flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-8">
             <label htmlFor="hadith-number" className="text-sm text-[var(--color-text-muted)]">{copy.hadith.enterNumber}</label>
             <input
               id="hadith-number"
@@ -212,7 +276,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
             <button
               onClick={handleRead}
               disabled={hadithLoading || !number}
-              className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
+              className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
             >
               {copy.hadith.read}
             </button>
@@ -233,7 +297,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
               description={copy.hadith.loadErrorDescription}
             />
           ) : hadith ? (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 md:p-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 md:p-6 reading-section">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <span className="text-[var(--color-primary)] font-medium">{hadith.name}</span>
                 <span className="bg-[var(--color-accent)] text-white text-xs px-3 py-1 rounded-full">
@@ -244,11 +308,70 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
               {hadith.section && (
                 <p className="text-xs text-[var(--color-text-muted)] mb-3">{copy.hadith.chapterLabel}: {hadith.section}</p>
               )}
-              
-              <div className="border-t border-[var(--color-border)] pt-4">
-                {hadith.english ? (
-                  <p className="text-[15px] leading-[1.9] text-[var(--color-text)]">
-                    {hadith.english}
+
+              {canShowLanguageSwitch && (
+                <div className="quiet-controls mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]/45 px-3 py-2">
+                  <span className="text-xs text-[var(--color-text-muted)]">{hadithUi.translationFrame}</span>
+                  <div className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
+                    <button
+                      onClick={() => handleLanguageChange('english')}
+                      disabled={!availableEnglish}
+                      className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                        textLanguage === 'english'
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]'
+                      } disabled:opacity-40`}
+                    >
+                      {hadithUi.englishLabel}
+                    </button>
+                    <button
+                      onClick={() => handleLanguageChange('urdu')}
+                      disabled={!availableUrdu}
+                      className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                        textLanguage === 'urdu'
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]'
+                      } disabled:opacity-40`}
+                    >
+                      {hadithUi.urduLabel}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showLanguageFallbackNotice && (
+                <p className="mb-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]/45 px-3 py-2 text-xs text-[var(--color-text-muted)]">
+                  {hadithUi.selectedLanguageMissing}
+                </p>
+              )}
+
+              {hadith.arabic && (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/35 p-4 mb-3">
+                  <div className="mb-2">
+                    <p className="text-xs font-medium text-[var(--color-primary)]">{hadithUi.sourceFrame}</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)]">{hadithUi.sourceHint}</p>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">{hadithUi.arabicSource}</p>
+                  <p className="reading-arabic font-arabic text-right text-[22px] text-[var(--color-text)]" dir="rtl">
+                    {hadith.arabic}
+                  </p>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/30 p-4">
+                <div className="mb-2">
+                  <p className="text-xs font-medium text-[var(--color-primary)]">{hadithUi.translationFrame}</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">{hadithUi.translationHint}</p>
+                </div>
+                {displayedText ? (
+                  <p
+                    className={`text-[15px] leading-[2] text-[var(--color-text)] ${
+                      displayedLanguage === 'urdu' ? 'font-urdu text-[17px] leading-[2.15]' : ''
+                    }`}
+                    dir={displayedLanguage === 'urdu' ? 'rtl' : 'ltr'}
+                    data-script-direction={displayedLanguage === 'urdu' ? 'rtl' : 'ltr'}
+                  >
+                    {displayedText}
                   </p>
                 ) : (
                   <div className="text-center py-4">
@@ -262,7 +385,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
                 )}
               </div>
               
-              <div className="flex justify-between mt-6 pt-4 border-t border-[var(--color-border)]">
+              <div className="quiet-controls flex justify-between mt-6 pt-4 border-t border-[var(--color-border)]">
                 <button
                   onClick={() => navigateHadith(-1)}
                   disabled={parseInt(number, 10) <= 1}

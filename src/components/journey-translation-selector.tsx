@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface Translation {
   id: number;
@@ -16,315 +17,279 @@ interface JourneyTranslationSelectorProps {
   variant?: 'header' | 'lesson';
 }
 
-const LANGUAGE_CATEGORIES = [
-  { id: 'all', label: 'All', pattern: null },
-  { id: 'English', label: 'English', pattern: /^english$/i },
-  { id: 'Urdu', label: 'Urdu', pattern: /^urdu$/i },
-  { id: 'Arabic', label: 'Arabic', pattern: /^arabic$/i },
-  { id: 'Indonesian', label: 'Indonesian', pattern: /^indonesian$/i },
-  { id: 'French', label: 'French', pattern: /^french$/i },
-  { id: 'German', label: 'German', pattern: /^german$/i },
-  { id: 'Spanish', label: 'Spanish', pattern: /^spanish$/i },
-  { id: 'Turkish', label: 'Turkish', pattern: /^turkish$/i },
-  { id: 'Other', label: 'Other', pattern: /^(?!english|urdu|arabic|indonesian|french|german|spanish|turkish).+$/i },
-];
+const STORAGE_KEY = 'sabil-translation-id';
 
-const STORAGE_KEY = 'sabil-recent-translations';
+function getLanguageRank(languageName: string, preferredLanguage: 'english' | 'urdu') {
+  const normalized = (languageName || '').toLowerCase();
+  if (normalized === preferredLanguage) return 0;
+  if (normalized === 'arabic') return 1;
+  if (normalized === 'english' || normalized === 'urdu') return 2;
+  return 3;
+}
 
-export function JourneyTranslationSelector({ 
+export function JourneyTranslationSelector({
   currentTranslationId,
   onTranslationChange,
-  variant = 'lesson'
+  variant = 'lesson',
 }: JourneyTranslationSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [translations, setTranslations] = useState<Translation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [currentTranslation, setCurrentTranslation] = useState<Translation | null>(null);
-  const [recentTranslations, setRecentTranslations] = useState<number[]>([]);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { language } = useLanguage();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState('');
+  const [translations, setTranslations] = useState<Translation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentTranslation, setCurrentTranslation] = useState<Translation | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     fetch('/api/translations')
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
+        if (!mounted) return;
         const list = Array.isArray(data) ? data : data.translations || [];
         setTranslations(list);
-        const current = list.find((t: Translation) => t.id === currentTranslationId);
-        setCurrentTranslation(current || list[0] || null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, [currentTranslationId]);
+      .catch(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setRecentTranslations(JSON.parse(stored));
-      } catch (e) {}
-    }
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
+    const next = translations.find((t) => t.id === currentTranslationId) || null;
+    setCurrentTranslation(next);
+  }, [currentTranslationId, translations]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen]);
-
-  const handleSelect = useCallback((translation: Translation) => {
-    if (translation.id === currentTranslationId) {
-      setIsOpen(false);
-      return;
-    }
-
-    setCurrentTranslation(translation);
-    setIsOpen(false);
-    
-    const updatedRecent = [translation.id, ...recentTranslations.filter(id => id !== translation.id)].slice(0, 5);
-    setRecentTranslations(updatedRecent);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRecent));
-    localStorage.setItem('sabil-translation-id', translation.id.toString());
-    
-    if (onTranslationChange) {
-      onTranslationChange(translation.id);
-    } else {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('translation', translation.id.toString());
-      
-      router.replace(`${pathname}?${params.toString()}`, {
-        scroll: false,
-      });
-    }
-  }, [onTranslationChange, recentTranslations, currentTranslationId, pathname, searchParams, router]);
-
-  const filteredTranslations = useMemo(() => {
-    let filtered = translations;
-
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = translations.filter(t => 
-        (t.author_name || '').toLowerCase().includes(searchLower) ||
-        (t.language_name || '').toLowerCase().includes(searchLower) ||
-        (t.name || '').toLowerCase().includes(searchLower)
-      );
-    }
-
-    if (activeCategory !== 'all') {
-      const category = LANGUAGE_CATEGORIES.find(c => c.id === activeCategory);
-      if (category?.pattern) {
-        filtered = filtered.filter(t => {
-          const lang = t.language_name || '';
-          return category.pattern!.test(lang);
-        });
+  const preferredLanguage = language === 'ur' ? 'urdu' : 'english';
+  const isUrdu = language === 'ur';
+  const copy = isUrdu
+    ? {
+        buttonFallback: 'ترجمہ',
+        buttonCollapsed: 'ترجمہ',
+        changeTranslation: 'ترجمہ تبدیل کریں',
+        closePicker: 'ترجمہ فہرست بند کریں',
+        chooseTitle: 'ترجمہ منتخب کریں',
+        chooseSubtitle: 'ایک بار منتخب کریں، پھر توجہ پڑھنے پر رکھیں۔',
+        close: 'بند کریں',
+        current: 'موجودہ',
+        loading: 'لوڈ ہو رہا ہے...',
+        recommended: 'تجویز کردہ',
+        moreTranslations: 'مزید تراجم',
+        hide: 'چھپائیں',
+        show: 'دکھائیں',
+        searchPlaceholder: 'زبان یا مترجم تلاش کریں',
+        noneFound: 'کوئی ترجمہ نہیں ملا۔',
       }
+    : {
+        buttonFallback: 'Translation',
+        buttonCollapsed: 'Translation',
+        changeTranslation: 'Change translation',
+        closePicker: 'Close translation picker',
+        chooseTitle: 'Choose translation',
+        chooseSubtitle: 'Set once, then keep reading central.',
+        close: 'Close',
+        current: 'Current',
+        loading: 'Loading...',
+        recommended: 'Recommended',
+        moreTranslations: 'More translations',
+        hide: 'Hide',
+        show: 'Show',
+        searchPlaceholder: 'Search language or translator',
+        noneFound: 'No translations found.',
+      };
+
+  const recommendedTranslations = useMemo(() => {
+    return [...translations]
+      .sort((a, b) => {
+        const rankA = getLanguageRank(a.language_name, preferredLanguage);
+        const rankB = getLanguageRank(b.language_name, preferredLanguage);
+
+        if (rankA !== rankB) {
+          return rankA - rankB;
+        }
+
+        return (a.author_name || '').localeCompare(b.author_name || '');
+      })
+      .slice(0, 6);
+  }, [preferredLanguage, translations]);
+
+  const filteredAllTranslations = useMemo(() => {
+    const sorted = [...translations].sort((a, b) => {
+      const lang = (a.language_name || '').localeCompare(b.language_name || '');
+      if (lang !== 0) {
+        return lang;
+      }
+
+      return (a.author_name || '').localeCompare(b.author_name || '');
+    });
+
+    const needle = search.trim().toLowerCase();
+    if (!needle) {
+      return sorted;
     }
 
-    return filtered;
-  }, [translations, search, activeCategory]);
+    return sorted.filter((t) => {
+      return (
+        (t.author_name || '').toLowerCase().includes(needle) ||
+        (t.language_name || '').toLowerCase().includes(needle) ||
+        (t.name || '').toLowerCase().includes(needle)
+      );
+    });
+  }, [search, translations]);
 
-  const groupedTranslations = useMemo(() => {
-    return filteredTranslations.reduce((acc, t) => {
-      const lang = t.language_name || 'Other';
-      if (!acc[lang]) acc[lang] = [];
-      acc[lang].push(t);
-      return acc;
-    }, {} as Record<string, Translation[]>);
-  }, [filteredTranslations]);
+  const handleSelect = useCallback(
+    (selected: Translation) => {
+      setCurrentTranslation(selected);
+      setIsOpen(false);
+      setShowAll(false);
+      setSearch('');
+      localStorage.setItem(STORAGE_KEY, selected.id.toString());
 
-  const myTranslations = useMemo(() => {
-    return recentTranslations
-      .map(id => translations.find(t => t.id === id))
-      .filter((t): t is Translation => t !== undefined);
-  }, [recentTranslations, translations]);
+      if (onTranslationChange) {
+        onTranslationChange(selected.id);
+        return;
+      }
 
-  const buttonText = currentTranslation 
-    ? variant === 'header'
-      ? 'Translation'
-      : currentTranslation.author_name || 'Translation'
-    : 'Translation';
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('translation', selected.id.toString());
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [onTranslationChange, pathname, router, searchParams]
+  );
 
-  const displayText = buttonText.length > 35 
-    ? buttonText.slice(0, 35) + '...' 
-    : buttonText;
+  const buttonLabel = currentTranslation?.author_name || copy.buttonFallback;
+  const collapsedButtonLabel = variant === 'header' ? copy.buttonCollapsed : buttonLabel;
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className={`flex items-center gap-2 text-sm rounded-full border transition-all ${
+        className={`quiet-controls flex items-center gap-2 text-sm rounded-full border transition-all ${
           variant === 'header'
             ? 'px-3 py-1.5 border-[var(--color-border)] bg-[var(--color-bg)]/80 hover:border-[var(--color-primary)]/40 text-[var(--color-text-secondary)]'
             : 'px-3 py-1.5 border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 text-[var(--color-text-secondary)]'
         }`}
-        aria-label="Change translation"
+        aria-label={copy.changeTranslation}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
         </svg>
-        <span className="max-w-[150px] truncate hidden sm:inline">{displayText}</span>
-        <span className="sm:hidden">Translation</span>
+        <span className="max-w-[170px] truncate">{collapsedButtonLabel}</span>
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 md:pt-20 px-4">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+        <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-12 md:pt-20">
+          <button
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
+            aria-label={copy.closePicker}
           />
-          
-          <div 
-            ref={modalRef}
-            className="relative flex w-full max-w-md max-h-[85vh] flex-col overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="translation-modal-title"
-          >
-            <div className="p-4 border-b border-[var(--color-border)] shrink-0">
-              <div className="flex items-center justify-between mb-3">
+
+          <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+            <div className="border-b border-[var(--color-border)] p-4">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 id="translation-modal-title" className="text-lg font-semibold text-[var(--color-text)]">
-                    Choose a translation
-                  </h2>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                    Keep the setting quiet in the background so the reading can stay central.
-                  </p>
+                  <h2 className="text-lg font-semibold text-[var(--color-text)]">{copy.chooseTitle}</h2>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{copy.chooseSubtitle}</p>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-full hover:bg-[var(--color-border)]/50 transition-colors"
-                  aria-label="Close"
+                  className="rounded-full p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/50"
+                  aria-label={copy.close}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  ref={inputRef}
-                  type="text"
-                    placeholder="Search by language or translator"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] text-sm focus:outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
 
-              <div className="flex gap-1 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-                {LANGUAGE_CATEGORIES.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
-                      activeCategory === cat.id
-                        ? 'bg-[var(--color-primary)] text-white'
-                        : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
+              {currentTranslation && (
+                <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/55 px-3 py-2 text-xs text-[var(--color-text-muted)]">
+                  {copy.current}: <span className="text-[var(--color-text)]">{currentTranslation.author_name}</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="max-h-[70vh] overflow-y-auto p-3">
               {loading ? (
-                <div className="p-8 text-center text-[var(--color-text-muted)]">
-                  <svg className="w-6 h-6 mx-auto animate-spin mb-2" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Loading...
-                </div>
+                <div className="p-8 text-center text-sm text-[var(--color-text-muted)]">{copy.loading}</div>
               ) : (
-                <div className="p-2">
-                  {myTranslations.length > 0 && !search && activeCategory === 'all' && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[var(--color-primary)]">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        Recent choices
-                      </div>
-                      {myTranslations.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => handleSelect(t)}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors ${
-                            t.id === currentTranslation?.id
-                              ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                              : 'hover:bg-[var(--color-bg)] text-[var(--color-text)]'
-                          }`}
-                        >
-                          <div className="flex flex-col items-start">
-                            <span className="text-sm font-medium">{t.author_name}</span>
-                            <span className="text-xs text-[var(--color-text-muted)]">{t.language_name}</span>
-                          </div>
-                          {t.id === currentTranslation?.id && (
-                            <svg className="w-4 h-4 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <>
+                  <div className="mb-3 px-1 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                    {copy.recommended}
+                  </div>
+                  <div className="space-y-1">
+                    {recommendedTranslations.map((t) => (
+                      <button
+                        key={`recommended-${t.id}`}
+                        onClick={() => handleSelect(t)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${
+                          t.id === currentTranslation?.id
+                            ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
+                            : 'text-[var(--color-text)] hover:bg-[var(--color-bg)]'
+                        }`}
+                      >
+                        <span className="text-sm font-medium">{t.author_name}</span>
+                        <span className="text-xs text-[var(--color-text-muted)]">{t.language_name}</span>
+                      </button>
+                    ))}
+                  </div>
 
-                  {Object.keys(groupedTranslations).length === 0 ? (
-                    <div className="p-8 text-center text-[var(--color-text-muted)]">
-                      No translations found
-                    </div>
-                  ) : (
-                    Object.entries(groupedTranslations).map(([language, langTranslations]) => (
-                      <div key={language} className="mb-2">
-                        <div className="sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)]/50 px-3 py-2 text-xs font-medium text-[var(--color-text-muted)]">
-                          {language}
-                        </div>
-                        {langTranslations.map((t) => (
-                          <button
-                            key={t.id}
-                            onClick={() => handleSelect(t)}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors ${
-                              t.id === currentTranslation?.id
-                                ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                                : 'hover:bg-[var(--color-bg)] text-[var(--color-text)]'
-                            }`}
-                          >
-                            <div className="flex flex-col items-start">
+                  <div className="mt-4 border-t border-[var(--color-border)] pt-3">
+                    <button
+                      onClick={() => setShowAll((prev) => !prev)}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
+                    >
+                      <span>{copy.moreTranslations}</span>
+                      <span>{showAll ? copy.hide : copy.show}</span>
+                    </button>
+
+                    {showAll && (
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          placeholder={copy.searchPlaceholder}
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none"
+                        />
+
+                        <div className="mt-2 max-h-[34vh] space-y-1 overflow-y-auto pr-1">
+                          {filteredAllTranslations.map((t) => (
+                            <button
+                              key={`all-${t.id}`}
+                              onClick={() => handleSelect(t)}
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${
+                                t.id === currentTranslation?.id
+                                  ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
+                                  : 'text-[var(--color-text)] hover:bg-[var(--color-bg)]'
+                              }`}
+                            >
                               <span className="text-sm font-medium">{t.author_name}</span>
-                            </div>
-                            {t.id === currentTranslation?.id && (
-                              <svg className="w-4 h-4 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </button>
-                        ))}
+                              <span className="text-xs text-[var(--color-text-muted)]">{t.language_name}</span>
+                            </button>
+                          ))}
+                          {filteredAllTranslations.length === 0 && (
+                            <p className="px-3 py-5 text-center text-sm text-[var(--color-text-muted)]">
+                              {copy.noneFound}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>

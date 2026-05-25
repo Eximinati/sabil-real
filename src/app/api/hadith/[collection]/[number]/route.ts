@@ -1,48 +1,119 @@
 import { NextResponse } from 'next/server';
 
+function pickFirstText(...values: Array<unknown>): string | null {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+}
+
+function decodeBrokenUnicode(value: string): string {
+  const replacementChar = String.fromCharCode(65533);
+  const questionMarkCount = (value.match(/\?/g) || []).length;
+  const hasReplacementChar = value.includes(replacementChar);
+  const hasHeavyCorruption = questionMarkCount > 20 && questionMarkCount / Math.max(1, value.length) > 0.2;
+
+  if (!hasReplacementChar && !hasHeavyCorruption) {
+    return value;
+  }
+
+  try {
+    const bytes = Uint8Array.from(value.split('').map((char) => char.charCodeAt(0) & 0xff));
+    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes).trim();
+
+    if (!decoded) {
+      return value;
+    }
+
+    const hasNonAscii = Array.from(decoded).some((char) => char.charCodeAt(0) > 127);
+    return hasNonAscii ? decoded : value;
+  } catch {
+    return value;
+  }
+}
+
+async function fetchEditionHadith(collection: string, number: string, edition: string) {
+  const url = `https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/${edition}-${collection}/${number}.json`;
+  const response = await fetch(url, { next: { revalidate: 86400 } });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+function resolveSection(metadata: any): string | null {
+  return pickFirstText(
+    ...(metadata?.section ? Object.values(metadata.section) : []),
+    metadata?.section,
+    metadata?.book,
+    metadata?.chapter
+  );
+}
+
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ collection: string; number: string }> }
 ) {
   try {
     const { collection, number } = await params;
     const collectionId = parseInt(number, 10);
-    
+
     if (!collectionId || collectionId < 1) {
       return NextResponse.json({ error: 'Invalid hadith number' }, { status: 400 });
     }
-    
-    const url = `https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/eng-${collection}/${number}.json`;
-    
-    const res = await fetch(url, { next: { revalidate: 86400 } });
-    
-    if (!res.ok) {
+
+    const [englishData, urduData] = await Promise.all([
+      fetchEditionHadith(collection, number, 'eng'),
+      fetchEditionHadith(collection, number, 'urd'),
+    ]);
+
+    if (!englishData && !urduData) {
       return NextResponse.json(
-        { error: `Hadith not found: ${collection} ${number}` }, 
+        { error: `Hadith not found: ${collection} ${number}` },
         { status: 404 }
       );
     }
-    
-    const data = await res.json();
-    
-    const hadithItem = data.hadiths?.[0];
-    
-    const englishText = 
-      hadithItem?.text ?? 
-      hadithItem?.body ?? 
-      hadithItem?.english ?? 
-      hadithItem?.hadith ?? 
-      null;
-    
+
+    const englishItem = englishData?.hadiths?.[0];
+    const urduItem = urduData?.hadiths?.[0];
+    const baseItem = englishItem || urduItem || {};
+    const metadata = englishData?.metadata || urduData?.metadata || {};
+
+    const englishText = pickFirstText(
+      englishItem?.text,
+      englishItem?.body,
+      englishItem?.english,
+      englishItem?.hadith
+    );
+
+    const urduRawText = pickFirstText(
+      urduItem?.text,
+      urduItem?.body,
+      urduItem?.urdu,
+      urduItem?.hadith
+    );
+
+    const urduText = urduRawText ? decodeBrokenUnicode(urduRawText) : null;
+
     return NextResponse.json({
       hadith: {
-        number: hadithItem?.hadithnumber ?? parseInt(number),
-        arabic: hadithItem?.arab ?? null,
+        number: baseItem?.hadithnumber ?? parseInt(number, 10),
+        arabic: pickFirstText(englishItem?.arab, urduItem?.arab),
         english: englishText || null,
-        collection: collection,
-        name: data.metadata?.name ?? getCollectionName(collection),
-        section: Object.values(data.metadata?.section ?? {})[0] ?? null,
-      }
+        urdu: urduText,
+        collection,
+        name: metadata?.name ?? getCollectionName(collection),
+        section: resolveSection(metadata),
+        available_languages: [
+          ...(englishText ? ['english'] : []),
+          ...(urduText ? ['urdu'] : []),
+        ],
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -60,5 +131,6 @@ function getCollectionName(collection: string): string {
     ibnmajah: 'Sunan Ibn Majah',
     malik: 'Muwatta Malik',
   };
+
   return names[collection] ?? collection;
 }

@@ -30,13 +30,13 @@ export function SurahSearch({ chapters }: SurahSearchProps) {
   const showing = filtered.length;
 
   return (
-    <div className="max-w-md mx-auto mb-8">
+    <div className="max-w-md mx-auto mb-8 reading-section">
       <input
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={copy.quran.searchPlaceholder}
-        className="w-full px-4 py-3 md:py-4 border border-[var(--color-border)] rounded-lg focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+        className="w-full px-4 py-3 md:py-4 border border-[var(--color-border)] rounded-xl bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
       />
       <p className="text-center text-[var(--color-text-muted)] text-sm mt-3">
         {interpolate(copy.quran.showingSurahs, { showing, total })}
@@ -47,7 +47,7 @@ export function SurahSearch({ chapters }: SurahSearchProps) {
           <a
             key={chapter.id}
             href={`/quran/${chapter.id}`}
-            className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4 md:p-5 shadow-sm hover:border-[var(--color-primary)] transition-colors card-hover"
+            className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 md:p-5 shadow-sm hover:border-[var(--color-primary)] transition-colors card-hover"
           >
             <div className="flex items-center gap-3 md:gap-4">
               <span className="w-9 h-9 md:w-[36px] md:h-[36px] flex items-center justify-center border border-[var(--color-border)] rounded-full text-[var(--color-text-muted)] text-sm font-mono flex-shrink-0">

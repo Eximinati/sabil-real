@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from '@/lib/i18n/config';
+
+function redirectWithLanguage(targetUrl: string, languageInput?: string | null) {
+  const language = normalizeLanguage(languageInput);
+  const response = NextResponse.redirect(targetUrl);
+  response.cookies.set(LANGUAGE_COOKIE_NAME, language, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+  });
+  return response;
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,6 +27,7 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        const preferredLanguage = normalizeLanguage((user.user_metadata?.preferred_language as string | undefined) ?? null);
         // Check if user_preferences record exists and onboarding status
         const { data: prefs } = await supabase
           .from('user_preferences')
@@ -32,17 +45,17 @@ export async function GET(request: Request) {
               onboarding_completed: false,
             });
           
-          return NextResponse.redirect(`${url.origin}/onboarding`);
+          return redirectWithLanguage(`${url.origin}/onboarding`, preferredLanguage);
         }
         
         // If prefs exists but onboarding not completed, send to onboarding
         if (!prefs.onboarding_completed) {
-          return NextResponse.redirect(`${url.origin}/onboarding`);
+          return redirectWithLanguage(`${url.origin}/onboarding`, preferredLanguage);
         }
+
+        // Use provided next or go to journey
+        return redirectWithLanguage(`${url.origin}${next || '/journey'}`, preferredLanguage);
       }
-      
-      // Use provided next or go to journey
-      return NextResponse.redirect(`${url.origin}${next || '/journey'}`);
     }
   }
 

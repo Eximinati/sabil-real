@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { getLessonByDay, getLessonByDayWithBlocks, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 interface PageProps {
   params: Promise<{ day: string }>;
@@ -15,6 +16,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const { day } = await params;
   const { translation: urlTranslation } = await searchParams;
   const dayNumber = parseInt(day, 10);
+  const { dictionary: copy, language } = await getServerDictionary();
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,16 +25,16 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
     redirect('/login');
   }
 
-  const lessonWithBlocks = await getLessonByDayWithBlocks(dayNumber);
+  const lessonWithBlocks = await getLessonByDayWithBlocks(dayNumber, language);
   
   if (!lessonWithBlocks) {
     return (
       <div className="px-6 pt-12 pb-12 max-w-[740px] mx-auto">
         <EmptyState
           icon="journey"
-          title="Lesson not available"
-          description="This lesson may have been removed or the link is incorrect."
-          actionLabel="Back to Journey"
+          title={copy.common.emptyState.lessonNotAvailable}
+          description={copy.common.emptyState.lessonNotAvailableDescription}
+          actionLabel={copy.common.emptyState.backToJourney}
           actionHref="/journey"
         />
       </div>
@@ -50,7 +52,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const isCompleted = status === 'completed';
   const translationId = urlTranslation ? parseInt(urlTranslation, 10) : preferences.translation_id;
   const tafsirId = preferences.tafsir_id;
-  const nextLesson = await getLessonByDay(dayNumber + 1);
+  const nextLesson = await getLessonByDay(dayNumber + 1, language);
 
   return (
     <StreamingLessonShell

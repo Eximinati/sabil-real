@@ -24,6 +24,7 @@ function setDocumentLanguage(language: LanguageCode) {
   const root = document.documentElement;
   root.lang = language;
   root.setAttribute('data-language', language);
+  root.setAttribute('dir', language === 'ur' ? 'rtl' : 'ltr');
 }
 
 function writeLanguageCookie(language: LanguageCode) {

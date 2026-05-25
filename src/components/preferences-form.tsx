@@ -20,9 +20,18 @@ interface Tafsir {
 interface PreferencesFormProps {
   initialTranslationId: number;
   initialTafsirId: number;
+  initialRemindersEnabled: boolean;
+  initialReminderTime: string;
+  initialReminderLanguage: 'auto' | 'en' | 'ur';
 }
 
-export function PreferencesForm({ initialTranslationId, initialTafsirId }: PreferencesFormProps) {
+export function PreferencesForm({
+  initialTranslationId,
+  initialTafsirId,
+  initialRemindersEnabled,
+  initialReminderTime,
+  initialReminderLanguage,
+}: PreferencesFormProps) {
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [tafsirs, setTafsirs] = useState<Tafsir[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +42,9 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
 
   const [translationId, setTranslationId] = useState(initialTranslationId.toString());
   const [tafsirId, setTafsirId] = useState(initialTafsirId.toString());
+  const [remindersEnabled, setRemindersEnabled] = useState(initialRemindersEnabled);
+  const [reminderTime, setReminderTime] = useState(initialReminderTime);
+  const [reminderLanguage, setReminderLanguage] = useState<'auto' | 'en' | 'ur'>(initialReminderLanguage);
 
   useEffect(() => {
     Promise.all([
@@ -54,6 +66,9 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
         body: JSON.stringify({
           translationId: parseInt(translationId, 10),
           tafsirId: parseInt(tafsirId, 10),
+          remindersEnabled,
+          reminderTime,
+          reminderLanguage,
         }),
       });
       if (res.ok) {
@@ -103,6 +118,52 @@ export function PreferencesForm({ initialTranslationId, initialTafsirId }: Prefe
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-[var(--color-text)]">{copy.settings.reminders}</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">{copy.settings.remindersDescription}</p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-sm text-[var(--color-text)] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={remindersEnabled}
+              onChange={(e) => setRemindersEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]/30"
+            />
+            {copy.settings.reminderEnabled}
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-[var(--color-text-muted)] mb-2">{copy.settings.reminderTime}</label>
+            <input
+              type="time"
+              value={reminderTime}
+              onChange={(e) => setReminderTime(e.target.value)}
+              disabled={!remindersEnabled}
+              className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2.5 bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all disabled:opacity-60"
+            />
+            <p className="text-xs text-[var(--color-text-muted)] mt-2">{copy.settings.reminderTimeHint}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm text-[var(--color-text-muted)] mb-2">{copy.settings.reminderLanguage}</label>
+            <select
+              value={reminderLanguage}
+              onChange={(e) => setReminderLanguage(e.target.value as 'auto' | 'en' | 'ur')}
+              disabled={!remindersEnabled}
+              className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2.5 bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all disabled:opacity-60"
+            >
+              <option value="auto">{copy.settings.reminderLanguageAuto}</option>
+              <option value="en">{copy.settings.reminderLanguageEnglish}</option>
+              <option value="ur">{copy.settings.reminderLanguageUrdu}</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <button

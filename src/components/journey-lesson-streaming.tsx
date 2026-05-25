@@ -19,6 +19,8 @@ import { useFocusMode } from './focus-mode-provider';
 import { AudioPlayer } from './audio-player';
 import { DayOneCanonicalExperience } from './journey-day-one-canonical';
 import { WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
+import type { JourneyLanguageContext } from '@/types/journey-localization';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface LessonData {
   id: string;
@@ -35,6 +37,7 @@ interface LessonData {
   hadith_number: number | null;
   reflection_prompt: string | null;
   estimated_minutes: number;
+  language_context?: JourneyLanguageContext;
 }
 
 interface LessonBlock {
@@ -125,8 +128,8 @@ function JourneyLessonHeader({
   };
 
   return (
-    <div className="mb-8 md:mb-10">
-      <div className="mx-auto max-w-[740px] rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-4 backdrop-blur-sm md:px-5">
+    <div className="mb-6 md:mb-10">
+      <div className="mx-auto max-w-[740px] rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/78 px-4 py-4 backdrop-blur-sm md:px-5">
         <div className="min-w-0">
           <Link href="/journey" className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
             {copy.journey.lesson.backToJourney}
@@ -146,7 +149,7 @@ function JourneyLessonHeader({
           <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
             {copy.journey.lesson.readingSettingsDescription}
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="quiet-controls mt-3 flex flex-wrap items-center gap-2">
             <JourneyTranslationSelector
               currentTranslationId={selectedTranslation}
               variant="header"
@@ -179,17 +182,30 @@ export function StreamingLessonShell({
   const isCanonicalDayOne = lesson.day_number === 1;
   const week = getWeekForDay(lesson.day_number);
   const currentArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === week);
+  const { language } = useLanguage();
+  const shouldShowLanguageFallback =
+    language === 'ur' &&
+    lesson.language_context?.requested === 'ur' &&
+    lesson.language_context?.resolved === 'en';
+  const isUrduTopic = /[\u0600-\u06FF]/.test(lesson.topic || '');
+  const isUrduTitle = /[\u0600-\u06FF]/.test(lesson.title || '');
+  const isUrduSubtitle = /[\u0600-\u06FF]/.test(lesson.subtitle || '');
+  const isUrduDescription = /[\u0600-\u06FF]/.test(lesson.description || '');
+  const scriptDirection = language === 'ur' ? 'rtl' : 'ltr';
 
   const containerClass = isFocusMode ? 'max-w-[860px] mx-auto' : 'max-w-[760px] mx-auto';
 
   return (
-    <div className={`px-4 md:px-6 pt-8 md:pt-12 pb-16 ${containerClass}`}>
+    <div
+      className={`reading-screen px-4 md:px-6 pt-7 md:pt-12 pb-20 md:pb-16 ${containerClass}`}
+      data-script-direction={scriptDirection}
+    >
       <JourneyLessonHeader 
         translationId={translationId}
         urlTranslation={urlTranslation}
       />
 
-      <div className="mb-10">
+      <div className="reading-section">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm text-[var(--color-text-muted)]">{copy.common.labels.minutesAbout} {lesson.estimated_minutes} {copy.common.labels.minutesSuffix}</p>
@@ -206,33 +222,53 @@ export function StreamingLessonShell({
       </div>
 
       {isCanonicalDayOne ? (
-        <DayOneCanonicalExperience
-          lessonId={lesson.id}
-          dayNumber={lesson.day_number}
-          translationId={translationId}
-          tafsirId={tafsirId}
-          initialReflection={initialReflection}
-          isCompleted={isCompleted}
-          hasNextDay={hasNextDay}
-        />
+        <>
+          {shouldShowLanguageFallback && (
+            <div className="mb-10 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
+              <p className="text-sm text-[var(--color-text)]">{copy.journey.lesson.translationFallbackTitle}</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{copy.journey.lesson.translationFallbackDescription}</p>
+            </div>
+          )}
+          <DayOneCanonicalExperience
+            lessonId={lesson.id}
+            dayNumber={lesson.day_number}
+            translationId={translationId}
+            tafsirId={tafsirId}
+            initialReflection={initialReflection}
+            isCompleted={isCompleted}
+            hasNextDay={hasNextDay}
+          />
+        </>
       ) : (
         <>
-          <div className="mb-10">
+          <div className="reading-section">
             <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
               <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-white">
                 {copy.journey.lesson.dayLabel} {lesson.day_number}
               </span>
             </div>
 
-            <div className="mt-6">
-              <span className="inline-block rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs text-[var(--color-primary)]">
+            <div className="mt-5 md:mt-6">
+              <span
+                className={`inline-block rounded-full bg-[var(--color-bg)] px-3 py-1 text-[var(--color-primary)] ${isUrduTopic ? 'font-urdu text-sm' : 'text-xs'}`}
+                dir={isUrduTopic ? 'rtl' : 'ltr'}
+                data-script-direction={isUrduTopic ? 'rtl' : 'ltr'}
+              >
                 {lesson.topic}
               </span>
-              <h1 className="mt-4 text-[30px] md:text-[42px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--color-text)]">
+              <h1
+                className={`mt-4 font-semibold tracking-[-0.02em] text-[var(--color-text)] ${isUrduTitle ? 'font-urdu text-[30px] md:text-[48px] leading-[1.95]' : 'text-[29px] md:text-[42px] leading-[1.22]'}`}
+                dir={isUrduTitle ? 'rtl' : 'ltr'}
+                data-script-direction={isUrduTitle ? 'rtl' : 'ltr'}
+              >
                 {lesson.title}
               </h1>
               {lesson.subtitle && (
-                <p className="mt-3 max-w-2xl text-[16px] md:text-[18px] leading-[1.9] text-[var(--color-text-muted)]">
+                <p
+                  className={`mt-3 max-w-2xl text-[var(--color-text-muted)] ${isUrduSubtitle ? 'font-urdu text-[17px] md:text-[20px] leading-[2.2]' : 'text-[16px] md:text-[18px] leading-[1.95]'}`}
+                  dir={isUrduSubtitle ? 'rtl' : 'ltr'}
+                  data-script-direction={isUrduSubtitle ? 'rtl' : 'ltr'}
+                >
                   {lesson.subtitle}
                 </p>
               )}
@@ -242,9 +278,22 @@ export function StreamingLessonShell({
           </div>
 
           {lesson.description && (
-            <div className="mb-10">
+            <div className="reading-section">
               <h2 className="section-heading">{copy.journey.lesson.beforeYouBegin}</h2>
-              <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">{lesson.description}</p>
+              <p
+                className={`text-[var(--color-text)] ${isUrduDescription ? 'reading-prose-urdu' : 'reading-prose'}`}
+                dir={isUrduDescription ? 'rtl' : 'ltr'}
+                data-script-direction={isUrduDescription ? 'rtl' : 'ltr'}
+              >
+                {lesson.description}
+              </p>
+            </div>
+          )}
+
+          {shouldShowLanguageFallback && (
+            <div className="mb-10 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
+              <p className="text-sm text-[var(--color-text)]">{copy.journey.lesson.translationFallbackTitle}</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{copy.journey.lesson.translationFallbackDescription}</p>
             </div>
           )}
 
@@ -374,7 +423,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
   if (!blocks || blocks.length === 0) return null;
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 md:space-y-8">
       {blocks.map((block, index) => {
         const content = block.content as Record<string, unknown>;
         
@@ -382,24 +431,29 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
           case 'heading':
             const level = content.level as number || 2;
             const HeadingTag = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
-            const headingClass = level === 1 ? 'mt-10 mb-4 text-2xl font-semibold leading-tight text-[var(--color-text)]'
-              : level === 2 ? 'mt-8 mb-3 text-xl font-medium leading-tight text-[var(--color-text)]'
-              : 'mt-6 mb-2 text-lg font-medium leading-tight text-[var(--color-text)]';
+             const headingClass = level === 1 ? 'mt-9 mb-4 text-2xl font-semibold leading-[1.3] text-[var(--color-text)]'
+              : level === 2 ? 'mt-8 mb-3 text-xl font-medium leading-[1.35] text-[var(--color-text)]'
+              : 'mt-6 mb-2 text-lg font-medium leading-[1.4] text-[var(--color-text)]';
             return <HeadingTag key={index} className={headingClass}>{content.text as string}</HeadingTag>;
             
           case 'paragraph':
             const text = content.text as string || '';
             const withBold = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             const withItalic = withBold.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            const isUrduParagraph = /[\u0600-\u06FF]/.test(text);
             return (
-              <p key={index} className="text-[16px] leading-[1.95] text-[var(--color-text)]"
+              <p
+                key={index}
+                className={`text-[var(--color-text)] ${isUrduParagraph ? 'reading-prose-urdu' : 'reading-prose'}`}
+                dir={isUrduParagraph ? 'rtl' : 'ltr'}
+                data-script-direction={isUrduParagraph ? 'rtl' : 'ltr'}
                 dangerouslySetInnerHTML={{ __html: withItalic }}
               />
             );
             
           case 'arabic':
             return (
-              <p key={index} className="font-arabic text-[24px] md:text-[28px] text-right text-[var(--color-text)] leading-[2] my-4" dir="rtl">
+              <p key={index} className="reading-arabic font-arabic text-[24px] md:text-[28px] text-right text-[var(--color-text)] my-4" dir="rtl">
                 {content.text as string}
               </p>
             );
@@ -408,9 +462,9 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const transText = content.text as string | undefined;
             const transTranslation = content.translation as string | undefined;
             return (
-              <div key={index} className="my-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+              <div key={index} className="my-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/80 p-5">
                 {transText && (
-                  <p className="text-[16px] italic text-[var(--color-text)] leading-relaxed mb-3">
+                  <p className="text-[16px] italic text-[var(--color-text)] leading-[1.95] mb-3">
                     {transText}
                   </p>
                 )}
@@ -428,7 +482,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const verseData = verseKey ? verseDataMap[verseKey] : null;
             
             return (
-              <div key={index} className="my-5 rounded-2xl border border-[var(--color-primary)]/18 bg-[var(--color-primary)]/5 p-5">
+              <div key={index} className="my-6 rounded-2xl border border-[var(--color-primary)]/18 bg-[var(--color-primary)]/5 p-5">
                 {verseKey && (
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[var(--color-primary)] text-sm">✦</span>
@@ -439,13 +493,13 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
                 )}
                 
                 {verseData?.text_uthmani && (
-                  <p className="font-arabic text-[20px] text-right text-[var(--color-text)] my-3 leading-[2]" dir="rtl">
+                  <p className="reading-arabic font-arabic text-[20px] text-right text-[var(--color-text)] my-3" dir="rtl">
                     {verseData.text_uthmani}
                   </p>
                 )}
                 
                 {verseData?.translations?.length ? (
-                  <p className="text-[14px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+                  <p className="text-[15px] text-[var(--color-text-muted)] mt-2 leading-[1.9]">
                     {verseData.translations[0].text}
                   </p>
                 ) : loadingVerses ? (
@@ -462,7 +516,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
                 <span className="font-arabic text-[48px] text-[var(--color-accent)] absolute top-0 left-0 opacity-30" dir="rtl">"</span>
                 <blockquote className="pl-8 pr-4 py-2">
                   {quoteText && (
-                    <p className="text-[15px] italic leading-relaxed text-[var(--color-text)]">
+                    <p className="text-[15px] italic leading-[1.9] text-[var(--color-text)]">
                       {quoteText}
                     </p>
                   )}
@@ -489,14 +543,22 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
                   <h3 className="text-lg font-medium text-[var(--color-accent)]">{copy.journey.lesson.pauseReflect}</h3>
                 </div>
                 <div className="space-y-3">
-                  {prompts.filter(Boolean).map((prompt, idx) => (
+                  {prompts.filter(Boolean).map((prompt, idx) => {
+                    const isUrduPrompt = /[\u0600-\u06FF]/.test(prompt);
+                    return (
                     <div key={idx} className="flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                       <span className="w-6 h-6 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium text-sm flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
-                      <p className="text-[15px] text-[var(--color-text)] leading-relaxed">{prompt}</p>
+                      <p
+                        className={`text-[15px] text-[var(--color-text)] ${isUrduPrompt ? 'font-urdu text-[17px] leading-[2.15]' : 'leading-relaxed'}`}
+                        dir={isUrduPrompt ? 'rtl' : 'ltr'}
+                      >
+                        {prompt}
+                      </p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -505,11 +567,11 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
             const listItems = content.items as string[] | undefined;
             if (!listItems || listItems.length === 0) return null;
             return (
-              <ul key={index} className="my-4 space-y-2">
+              <ul key={index} className="my-5 space-y-3">
                 {listItems.filter(Boolean).map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-[15px] text-[var(--color-text)]">
+                  <li key={idx} className="flex items-start gap-2 text-[16px] text-[var(--color-text)] leading-[1.9]">
                     <span className="text-[var(--color-accent)] mt-1">•</span>
-                    <span className="leading-relaxed">{item}</span>
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>

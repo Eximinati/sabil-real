@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useCopy } from '@/hooks/use-copy';
 
 interface LessonData {
   id: string;
@@ -27,6 +28,7 @@ interface ReflectionContentInnerProps {
 export function ReflectionContentInner({ lesson, initialReflection }: ReflectionContentInnerProps) {
   const [ReflectionInput, setReflectionInput] = useState<any>(null);
   const [mountKey, setMountKey] = useState(0);
+  const copy = useCopy();
 
   useEffect(() => {
     setMountKey(k => k + 1);
@@ -40,6 +42,8 @@ export function ReflectionContentInner({ lesson, initialReflection }: Reflection
   }, [mountKey]);
 
   if (!lesson.reflection_prompt) return null;
+
+  const isUrduPrompt = /[\u0600-\u06FF]/.test(lesson.reflection_prompt);
 
   if (!ReflectionInput) {
     return (
@@ -55,12 +59,18 @@ export function ReflectionContentInner({ lesson, initialReflection }: Reflection
   }
 
   return (
-    <div className="mb-10">
-      <h2 className="section-heading">Reflection for the heart</h2>
-      <div className="rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-bg)] p-5 md:p-6">
-        <p className="text-[16px] leading-[1.9] text-[var(--color-text)]">{lesson.reflection_prompt}</p>
+    <div className="reading-section">
+      <h2 className="section-heading">{copy.journey.lesson.reflectionTitle}</h2>
+      <div className="rounded-[28px] border border-[var(--color-primary)]/20 bg-[var(--color-bg)]/85 p-5 md:p-6">
+        <p
+          className={`text-[var(--color-text)] ${isUrduPrompt ? 'reading-prose-urdu' : 'reading-prose'} `}
+          dir={isUrduPrompt ? 'rtl' : 'ltr'}
+          data-script-direction={isUrduPrompt ? 'rtl' : 'ltr'}
+        >
+          {lesson.reflection_prompt}
+        </p>
       </div>
-      <div className="mt-4">
+      <div className="mt-5 md:mt-6">
         <ReflectionInput
           lessonId={lesson.id}
           dayNumber={lesson.day_number}
