@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
+  CanonicalAdminSacredDraft,
+  CanonicalAdminSectionDraft,
   JourneyLessonMetadata, 
   LessonBlock, 
   BlockType,
@@ -10,6 +12,8 @@ import {
   createEmptyBlock 
 } from '@/types/admin-journey';
 import { LessonRenderer } from './lesson-renderer';
+import { CanonicalAuthoringPanel } from './canonical-authoring-panel';
+import { DayOneCanonicalExperience } from '@/components/journey-day-one-canonical';
 import { saveLesson } from '@/lib/admin-journey-actions';
 import { useToast } from '@/hooks/use-toast';
 import { MarkdownImporter } from './markdown-importer';
@@ -41,7 +45,23 @@ import {
   PUBLISHING_SAFETY_CHECKS,
   toEditorialStage,
 } from '@/lib/journey-editorial';
-import type { JourneyEditorialStage } from '@/types/journey-localization';
+import { analyzeCanonicalJourneyDraft } from '@/lib/journey-canonical-qa';
+import {
+  buildVerseKeysFromQuranRange,
+  canonicalHadithSourceLabel,
+  DEFAULT_HADITH_COLLECTION,
+  DEFAULT_HADITH_NUMBER,
+  DEFAULT_QURAN_RANGE,
+  inferQuranRangeFromVerseKeys,
+  normalizeCanonicalTafsirSettings,
+  sanitizeQuranRange,
+  sanitizeVerseKeys,
+  toCanonicalVerseReferenceLabel,
+} from '@/lib/canonical-sacred';
+import type {
+  CanonicalJourneySectionId,
+  JourneyEditorialStage,
+} from '@/types/journey-localization';
 
 interface LessonEditorProps {
   initialData?: {
@@ -54,6 +74,366 @@ interface LessonEditorProps {
 const BLOCK_TYPES: BlockType[] = [
   'heading', 'paragraph', 'arabic', 'transliteration', 'verse', 'quote', 'reflection', 'list'
 ];
+
+const CANONICAL_SECTION_DEFAULTS: CanonicalAdminSectionDraft[] = [
+  {
+    id: 'opening-reflection',
+    heading: 'Opening reflection',
+    emotional_goal: 'Open heart with gentle emotional entry.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'seerah-moment',
+    heading: 'Seerah moment',
+    emotional_goal: 'Offer human Prophetic companionship.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'quran-reflection',
+    heading: 'Quran reflection',
+    emotional_goal: 'Center day on revealed guidance.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'tafsir-insight',
+    heading: 'Tafsir insight',
+    emotional_goal: 'Optional one-line bridge into scholar context.',
+    required: false,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'hadith-connection',
+    heading: 'Hadith connection',
+    emotional_goal: 'Reinforce Quran guidance with Prophetic wisdom.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'reflection-prompt',
+    heading: 'Reflection prompt',
+    emotional_goal: 'Invite private sincerity and internalization.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'tiny-action',
+    heading: 'Tiny action',
+    emotional_goal: 'Translate meaning into one gentle lived step.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+  {
+    id: 'closing-dua',
+    heading: 'Closing dua',
+    emotional_goal: 'End with spiritual closure and calm return cue.',
+    required: true,
+    content_en: '',
+    content_ur: '',
+  },
+];
+
+function normalizeCanonicalText(value: unknown): string {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function buildCanonicalSectionDrafts(metadata: JourneyLessonMetadata): CanonicalAdminSectionDraft[] {
+  const canonical = metadata.shared_metadata?.canonical_journey;
+
+  return CANONICAL_SECTION_DEFAULTS.map((defaults) => {
+    const existing = canonical?.sections?.[defaults.id];
+    return {
+      ...defaults,
+      heading: normalizeCanonicalText(existing?.heading || defaults.heading),
+      emotional_goal: normalizeCanonicalText(existing?.emotional_goal || defaults.emotional_goal),
+      required: existing?.required ?? defaults.required,
+      content_en: normalizeCanonicalText(existing?.content?.en || ''),
+      content_ur: normalizeCanonicalText(existing?.content?.ur || ''),
+    };
+  });
+}
+
+function toCanonicalSectionsState(
+  previousMetadata: JourneyLessonMetadata,
+  drafts: CanonicalAdminSectionDraft[]
+): NonNullable<
+  NonNullable<
+    NonNullable<JourneyLessonMetadata['shared_metadata']>['canonical_journey']
+  >['sections']
+> {
+  const existingSections = previousMetadata.shared_metadata?.canonical_journey?.sections || {};
+
+  return Object.fromEntries(
+    drafts.map((draft) => {
+      const existing = existingSections[draft.id] || {};
+
+      return [
+        draft.id,
+        {
+          ...existing,
+          heading: draft.heading,
+          emotional_goal: draft.emotional_goal,
+          required: draft.required,
+          content: {
+            ...(existing.content || {}),
+            en: draft.content_en,
+            ur: draft.content_ur,
+          },
+        },
+      ];
+    })
+  );
+}
+
+function slugFromTitle(value: string): string {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .trim();
+
+  return normalized || 'journey-day';
+}
+
+function buildCanonicalMarkdown(
+  dayNumber: number,
+  title: string,
+  sections: CanonicalAdminSectionDraft[],
+  language: 'en' | 'ur'
+): string {
+  const dayLabel = language === 'ur' ? 'دن' : 'Day';
+  const displayTitle = normalizeCanonicalText(title) || `${dayLabel} ${dayNumber}`;
+
+  const lines: string[] = [`# ${dayLabel} ${dayNumber} - ${displayTitle}`, ''];
+
+  const titleMapUrdu: Record<CanonicalJourneySectionId, string> = {
+    'opening-reflection': 'ابتدائی تامل',
+    'seerah-moment': 'سیرت کا لمحہ',
+    'quran-reflection': 'قرآنی تامل',
+    'tafsir-insight': 'تفسیری بصیرت',
+    'hadith-connection': 'حدیثی ربط',
+    'reflection-prompt': 'تاملی سوال',
+    'tiny-action': 'چھوٹا عمل',
+    'closing-dua': 'اختتامی دعا',
+  };
+
+  for (const section of sections) {
+    const heading =
+      language === 'ur'
+        ? titleMapUrdu[section.id]
+        : section.heading;
+    const body = language === 'ur' ? section.content_ur : section.content_en;
+
+    lines.push(`## ${heading}`);
+    lines.push('');
+    lines.push(body || (language === 'ur' ? '—' : '—'));
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+const CANONICAL_SECTION_TEMPLATES: Record<CanonicalJourneySectionId, { en: string; ur: string }> = {
+  'opening-reflection': {
+    en: 'Write a short emotional opening that helps the reader feel safe and seen before guidance begins.',
+    ur: 'ایک مختصر ابتدائی تامل لکھیں جو قاری کو محسوس کرائے کہ وہ محفوظ اور دیکھا گیا ہے۔',
+  },
+  'seerah-moment': {
+    en: 'Share one small moment from the Prophet\'s life that mirrors the reader\'s emotional state.',
+    ur: 'سیرت کا ایک مختصر لمحہ لکھیں جو قاری کی موجودہ کیفیت سے جڑ سکے۔',
+  },
+  'quran-reflection': {
+    en: 'Frame the Quran verses with one gentle sentence before the verses are rendered from API.',
+    ur: 'قرآنی آیات دکھنے سے پہلے ایک نرم جملے میں ان کے ساتھ بیٹھنے کی دعوت دیں۔',
+  },
+  'tafsir-insight': {
+    en: 'Optional: write one short bridge line before tafsir reveal. Do not paste scholar tafsir text.',
+    ur: 'اختیاری: تفسیر کھلنے سے پہلے ایک مختصر ربطی جملہ لکھیں۔ تفسیری متن پیسٹ نہ کریں۔',
+  },
+  'hadith-connection': {
+    en: 'Add one line that transitions into hadith source text rendered from API.',
+    ur: 'حدیث کے API ماخذ سے پہلے ایک مختصر ربطی جملہ لکھیں۔',
+  },
+  'reflection-prompt': {
+    en: 'Ask one sincere, emotionally safe question for private reflection.',
+    ur: 'نجی تامل کے لیے ایک مخلص اور جذباتی طور پر محفوظ سوال لکھیں۔',
+  },
+  'tiny-action': {
+    en: 'Offer one realistic tiny action for today or tonight.',
+    ur: 'آج یا رات کے لیے ایک حقیقی اور چھوٹا عمل تجویز کریں۔',
+  },
+  'closing-dua': {
+    en: 'Close with a short dua-style line and gentle return cue.',
+    ur: 'اختتام پر دعا نما مختصر جملہ اور نرمی سے واپسی کا اشارہ دیں۔',
+  },
+};
+
+function toPositiveInt(value: unknown): number | null {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function toCanonicalSacredDraft(metadata: JourneyLessonMetadata): CanonicalAdminSacredDraft {
+  const canonical = metadata.shared_metadata?.canonical_journey;
+  const refs = canonical?.sacred_source_refs || {};
+  const sectionRefs = canonical?.sections?.['quran-reflection']?.sacred_refs;
+  const hadithSectionRefs = canonical?.sections?.['hadith-connection']?.sacred_refs;
+
+  const existingVerseKeys = sanitizeVerseKeys(
+    sectionRefs?.verse_keys || refs.verse_keys || []
+  );
+
+  const inferredRange =
+    sanitizeQuranRange(sectionRefs?.quran_range || refs.quran_range) ||
+    inferQuranRangeFromVerseKeys(existingVerseKeys) ||
+    DEFAULT_QURAN_RANGE;
+
+  const normalizedTafsir = normalizeCanonicalTafsirSettings({
+    settings: canonical?.tafsir,
+    legacyDefaultTafsirId: canonical?.default_tafsir_id,
+  });
+
+  const hadithCollection =
+    (hadithSectionRefs?.hadith_collection || refs.hadith_collection || DEFAULT_HADITH_COLLECTION).trim();
+  const hadithNumber =
+    toPositiveInt(hadithSectionRefs?.hadith_number || refs.hadith_number) || DEFAULT_HADITH_NUMBER;
+  const hadithSource =
+    (hadithSectionRefs?.hadith_source || refs.hadith_source || '').trim() ||
+    canonicalHadithSourceLabel(hadithCollection, hadithNumber) ||
+    '';
+
+  return {
+    quran_range_surah_id: inferredRange.surah_id || DEFAULT_QURAN_RANGE.surah_id,
+    quran_range_ayah_start: inferredRange.ayah_start || DEFAULT_QURAN_RANGE.ayah_start,
+    quran_range_ayah_end: inferredRange.ayah_end || DEFAULT_QURAN_RANGE.ayah_end,
+    hadith_collection: hadithCollection,
+    hadith_number: hadithNumber,
+    hadith_source: hadithSource,
+    tafsir_enabled: normalizedTafsir.enabled,
+    tafsir_default_id: normalizedTafsir.default_tafsir_id,
+    tafsir_scholar_ids: normalizedTafsir.scholar_ids,
+    tafsir_fallback_behavior: normalizedTafsir.fallback_behavior,
+    tafsir_reveal_mode: normalizedTafsir.reveal_mode,
+  };
+}
+
+const DEFAULT_CANONICAL_VERSE_KEYS = buildVerseKeysFromQuranRange(DEFAULT_QURAN_RANGE);
+const DEFAULT_CANONICAL_HADITH_COLLECTION = DEFAULT_HADITH_COLLECTION;
+const DEFAULT_CANONICAL_HADITH_NUMBER = DEFAULT_HADITH_NUMBER;
+const DEFAULT_CANONICAL_HADITH_SOURCE =
+  canonicalHadithSourceLabel(DEFAULT_HADITH_COLLECTION, DEFAULT_HADITH_NUMBER) ||
+  'Sahih al-Bukhari 7405';
+
+function withCanonicalDrafts(
+  metadata: JourneyLessonMetadata,
+  drafts: CanonicalAdminSectionDraft[],
+  sacredDraft: CanonicalAdminSacredDraft
+): JourneyLessonMetadata {
+  const existingShared = metadata.shared_metadata || {};
+  const existingCanonical = existingShared.canonical_journey || {};
+  const existingRefs = existingCanonical.sacred_source_refs || {};
+
+  const normalizedRange =
+    sanitizeQuranRange({
+      surah_id: sacredDraft.quran_range_surah_id,
+      ayah_start: sacredDraft.quran_range_ayah_start,
+      ayah_end: sacredDraft.quran_range_ayah_end,
+    }) || DEFAULT_QURAN_RANGE;
+
+  const derivedVerseKeys = buildVerseKeysFromQuranRange(normalizedRange);
+
+  const hadithCollection = sacredDraft.hadith_collection.trim() || DEFAULT_CANONICAL_HADITH_COLLECTION;
+  const hadithNumber = toPositiveInt(sacredDraft.hadith_number) || DEFAULT_CANONICAL_HADITH_NUMBER;
+  const hadithSource =
+    sacredDraft.hadith_source.trim() ||
+    canonicalHadithSourceLabel(hadithCollection, hadithNumber) ||
+    DEFAULT_CANONICAL_HADITH_SOURCE;
+
+  const normalizedTafsir = normalizeCanonicalTafsirSettings({
+    settings: {
+      enabled: sacredDraft.tafsir_enabled,
+      default_tafsir_id: sacredDraft.tafsir_default_id,
+      scholar_ids: sacredDraft.tafsir_scholar_ids,
+      fallback_behavior: sacredDraft.tafsir_fallback_behavior,
+      reveal_mode: sacredDraft.tafsir_reveal_mode,
+    },
+    legacyDefaultTafsirId: existingCanonical.default_tafsir_id,
+  });
+
+  const canonicalSections = toCanonicalSectionsState(metadata, drafts);
+  const quranSection = canonicalSections['quran-reflection'];
+  const hadithSection = canonicalSections['hadith-connection'];
+
+  if (quranSection) {
+    quranSection.sacred_refs = {
+      ...(quranSection.sacred_refs || {}),
+      quran_range: normalizedRange,
+      verse_keys: derivedVerseKeys,
+    };
+  }
+
+  if (hadithSection) {
+    hadithSection.sacred_refs = {
+      ...(hadithSection.sacred_refs || {}),
+      hadith_collection: hadithCollection,
+      hadith_number: hadithNumber,
+      hadith_source: hadithSource,
+    };
+  }
+
+  return {
+    ...metadata,
+    shared_metadata: {
+      ...existingShared,
+      canonical_journey: {
+        ...existingCanonical,
+        structure_version: existingCanonical.structure_version || 1,
+        week_identity:
+          existingCanonical.week_identity ||
+          existingShared.arc_identity ||
+          `week-${getWeekForDay(metadata.day_number)}`,
+        emotional_note: existingCanonical.emotional_note || existingShared.emotional_note,
+        publishing_state:
+          existingCanonical.publishing_state ||
+          (metadata.is_published ? 'published' : 'review'),
+        default_tafsir_id: normalizedTafsir.default_tafsir_id,
+        tafsir: {
+          enabled: normalizedTafsir.enabled,
+          default_tafsir_id: normalizedTafsir.default_tafsir_id,
+          scholar_ids: normalizedTafsir.scholar_ids,
+          fallback_behavior: normalizedTafsir.fallback_behavior,
+          reveal_mode: normalizedTafsir.reveal_mode,
+        },
+        sacred_source_refs: {
+          ...existingRefs,
+          quran_range: normalizedRange,
+          verse_keys: derivedVerseKeys.length > 0 ? derivedVerseKeys : DEFAULT_CANONICAL_VERSE_KEYS,
+          hadith_collection: hadithCollection,
+          hadith_number: hadithNumber,
+          hadith_source: hadithSource,
+        },
+        sections: canonicalSections,
+      },
+    },
+  };
+}
 
 export function LessonEditor({ initialData, userId }: LessonEditorProps) {
   const router = useRouter();
@@ -84,9 +464,34 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
   const [blocks, setBlocks] = useState<LessonBlock[]>(
     initialData?.blocks || []
   );
+  const [canonicalDrafts, setCanonicalDrafts] = useState<CanonicalAdminSectionDraft[]>(
+    buildCanonicalSectionDrafts(initialData?.metadata || {
+      day_number: 1,
+      title: '',
+      subtitle: '',
+      topic: '',
+      description: '',
+      estimated_minutes: 10,
+      is_published: false,
+    })
+  );
+  const [canonicalSacredDraft, setCanonicalSacredDraft] = useState<CanonicalAdminSacredDraft>(
+    toCanonicalSacredDraft(
+      initialData?.metadata || {
+        day_number: 1,
+        title: '',
+        subtitle: '',
+        topic: '',
+        description: '',
+        estimated_minutes: 10,
+        is_published: false,
+      }
+    )
+  );
 
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
+  const [canonicalPreviewLanguage, setCanonicalPreviewLanguage] = useState<'en' | 'ur'>('en');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -107,6 +512,7 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
 
   const editorial = metadata.shared_metadata?.editorial || {};
   const urEditorialState = editorial.language_states?.ur || {};
+  const canonicalRequiredForDay = metadata.day_number <= 5;
 
   const urStage = toEditorialStage(normalizedStatusForUi.ur);
 
@@ -129,6 +535,12 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
     ...getDefaultChecklistMap(PUBLISHING_SAFETY_CHECKS),
     ...(editorial.publishing_safety_checks || {}),
   };
+
+  const metadataWithCanonicalDrafts = withCanonicalDrafts(
+    metadata,
+    canonicalDrafts,
+    canonicalSacredDraft
+  );
 
   useEffect(() => {
     const week = getWeekForDay(metadata.day_number);
@@ -206,9 +618,20 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
     }
 
     const updatedMetadata: JourneyLessonMetadata = {
-      ...metadata,
+      ...metadataWithCanonicalDrafts,
       is_published: publish,
       translation_status: normalizedStatusForUi,
+      shared_metadata: {
+        ...(metadataWithCanonicalDrafts.shared_metadata || {}),
+        canonical_journey: {
+          ...(metadataWithCanonicalDrafts.shared_metadata?.canonical_journey || {}),
+          publishing_state:
+            publish
+              ? 'published'
+              : metadataWithCanonicalDrafts.shared_metadata?.canonical_journey?.publishing_state ||
+                'review',
+        },
+      },
     };
 
     if (publish) {
@@ -222,6 +645,32 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
       if (!templateValidation.valid && templateValidation.required) {
         toast.error(`Day template missing: ${templateValidation.missingSections[0].title}`);
         return;
+      }
+
+      if (updatedMetadata.day_number <= 5) {
+        const publishCanonicalQa = analyzeCanonicalJourneyDraft({
+          canonical: updatedMetadata.shared_metadata?.canonical_journey,
+          translationStatus: normalizedStatusForUi,
+          enforceUrduReadiness: true,
+        });
+
+        const criticalIssue = publishCanonicalQa.issues.find(
+          (issue) => issue.severity === 'critical'
+        );
+
+        const warningIssue = publishCanonicalQa.issues.find(
+          (issue) => issue.severity === 'warning'
+        );
+
+        if (criticalIssue) {
+          toast.error(`Canonical publish check: ${criticalIssue.title}`);
+          return;
+        }
+
+        if (warningIssue) {
+          toast.error(`Canonical publish check: ${warningIssue.title}`);
+          return;
+        }
       }
     }
 
@@ -429,6 +878,177 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
   const missingPublishingSafetyChecks = PUBLISHING_SAFETY_CHECKS.filter(
     (item) => !publishingSafetyChecks[item.id]
   );
+
+  const canonicalQa = analyzeCanonicalJourneyDraft({
+    canonical: metadataWithCanonicalDrafts.shared_metadata?.canonical_journey,
+    translationStatus: normalizedStatusForUi,
+    enforceUrduReadiness: metadata.day_number <= 5,
+  });
+
+  const canonicalSectionMap = Object.fromEntries(
+    canonicalDrafts.map((section) => [section.id, section])
+  ) as Record<CanonicalJourneySectionId, CanonicalAdminSectionDraft>;
+
+  const canonicalSectionTitles = Object.fromEntries(
+    canonicalDrafts.map((section) => [section.id, section.heading])
+  ) as Partial<Record<CanonicalJourneySectionId, string>>;
+
+  const canonicalRangeForPreview =
+    sanitizeQuranRange({
+      surah_id: canonicalSacredDraft.quran_range_surah_id,
+      ayah_start: canonicalSacredDraft.quran_range_ayah_start,
+      ayah_end: canonicalSacredDraft.quran_range_ayah_end,
+    }) || DEFAULT_QURAN_RANGE;
+
+  const canonicalPreviewVerseKeys = buildVerseKeysFromQuranRange(canonicalRangeForPreview);
+
+  const canonicalPreviewHadithSource =
+    canonicalSacredDraft.hadith_source.trim() ||
+    canonicalHadithSourceLabel(
+      canonicalSacredDraft.hadith_collection,
+      canonicalSacredDraft.hadith_number
+    ) ||
+    DEFAULT_CANONICAL_HADITH_SOURCE;
+
+  const canonicalSectionTextForPreview = (sectionId: CanonicalJourneySectionId): string | undefined => {
+    const draft = canonicalSectionMap[sectionId];
+    if (!draft) {
+      return undefined;
+    }
+
+    const preferred =
+      canonicalPreviewLanguage === 'ur' ? draft.content_ur.trim() : draft.content_en.trim();
+    const fallback =
+      canonicalPreviewLanguage === 'ur' ? draft.content_en.trim() : draft.content_ur.trim();
+
+    return preferred || fallback || undefined;
+  };
+
+  const hasCanonicalAuthoredContent = canonicalDrafts.some(
+    (section) => section.content_en.trim().length > 0 || section.content_ur.trim().length > 0
+  );
+  const previewUsesCanonical = canonicalRequiredForDay || hasCanonicalAuthoredContent;
+  const canonicalPreviewTranslationId = canonicalPreviewLanguage === 'ur' ? 131 : 203;
+
+  const hasCriticalCanonicalIssue = canonicalQa.issues.some((issue) => issue.severity === 'critical');
+
+  const applyCanonicalDrafts = (
+    transform: (drafts: CanonicalAdminSectionDraft[]) => CanonicalAdminSectionDraft[],
+    options?: { successToast?: string }
+  ) => {
+    setCanonicalDrafts((prevDrafts) => {
+      const nextDrafts = transform(prevDrafts);
+      setMetadata((prevMetadata) =>
+        withCanonicalDrafts(prevMetadata, nextDrafts, canonicalSacredDraft)
+      );
+      return nextDrafts;
+    });
+
+    if (options?.successToast) {
+      toast.success(options.successToast);
+    }
+  };
+
+  const updateCanonicalSacredDraft = (
+    field: keyof CanonicalAdminSacredDraft,
+    value: string | number | boolean | number[]
+  ) => {
+    setCanonicalSacredDraft((prevDraft) => {
+      const nextDraft = {
+        ...prevDraft,
+        [field]: value,
+      } as CanonicalAdminSacredDraft;
+
+      setMetadata((prevMetadata) => withCanonicalDrafts(prevMetadata, canonicalDrafts, nextDraft));
+      return nextDraft;
+    });
+  };
+
+  const updateCanonicalSection = (
+    sectionId: CanonicalJourneySectionId,
+    field: 'heading' | 'emotional_goal' | 'content_en' | 'content_ur',
+    value: string
+  ) => {
+    applyCanonicalDrafts((prevDrafts) =>
+      prevDrafts.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              [field]: value,
+            }
+          : section
+      )
+    );
+  };
+
+  const loadCanonicalTemplate = () => {
+    applyCanonicalDrafts(
+      (prevDrafts) =>
+        prevDrafts.map((section) => ({
+          ...section,
+          content_en:
+            section.content_en.trim().length > 0
+              ? section.content_en
+              : CANONICAL_SECTION_TEMPLATES[section.id].en,
+          content_ur:
+            section.content_ur.trim().length > 0
+              ? section.content_ur
+              : CANONICAL_SECTION_TEMPLATES[section.id].ur,
+        })),
+      {
+        successToast: 'Canonical section template loaded. Refine wording before publish.',
+      }
+    );
+  };
+
+  const exportCanonicalMarkdown = () => {
+    const dayFolder = `day-${String(metadata.day_number).padStart(2, '0')}`;
+    const titleSlug = slugFromTitle(metadata.title || `day-${metadata.day_number}`);
+    const basePath = `content/journey/days/${dayFolder}`;
+
+    try {
+      const enMarkdown = buildCanonicalMarkdown(metadata.day_number, metadata.title, canonicalDrafts, 'en');
+      const urMarkdown = buildCanonicalMarkdown(metadata.day_number, metadata.title, canonicalDrafts, 'ur');
+      const quranRangeLabel = toCanonicalVerseReferenceLabel(
+        sanitizeQuranRange({
+          surah_id: canonicalSacredDraft.quran_range_surah_id,
+          ayah_start: canonicalSacredDraft.quran_range_ayah_start,
+          ayah_end: canonicalSacredDraft.quran_range_ayah_end,
+        })
+      );
+      const sacredSummaryLines = [
+        '# Sacred Source References',
+        '',
+        `- Quran range: ${quranRangeLabel}`,
+        `- Hadith: ${canonicalSacredDraft.hadith_collection} ${canonicalSacredDraft.hadith_number}`,
+        `- Hadith label: ${canonicalSacredDraft.hadith_source || '(auto)'}`,
+        `- Tafsir enabled: ${canonicalSacredDraft.tafsir_enabled ? 'yes' : 'no'}`,
+        `- Tafsir default id: ${canonicalSacredDraft.tafsir_default_id}`,
+        `- Tafsir scholar ids: ${canonicalSacredDraft.tafsir_scholar_ids.join(', ')}`,
+        `- Tafsir fallback: ${canonicalSacredDraft.tafsir_fallback_behavior}`,
+        `- Tafsir reveal: ${canonicalSacredDraft.tafsir_reveal_mode}`,
+        '',
+      ].join('\n');
+
+      const download = (filename: string, content: string) => {
+        const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      };
+
+      download(`${dayFolder}-${titleSlug}-en.md`, enMarkdown);
+      download(`${dayFolder}-${titleSlug}-ur.md`, urMarkdown);
+      download(`${dayFolder}-${titleSlug}-sacred.md`, sacredSummaryLines);
+
+      toast.success(`Canonical markdown exported for ${basePath}.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not export canonical markdown.');
+    }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -761,6 +1381,103 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
           </details>
         </div>
 
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-medium text-[var(--color-text)]">Canonical rhythm authoring</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                {canonicalRequiredForDay
+                  ? 'Required for Days 1-5 to preserve the authored 8-section spiritual rhythm.'
+                  : 'Optional for this day; still useful for preserving coherent bilingual narrative flow.'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2">
+              <p className="text-xs text-[var(--color-text-muted)]">Canonical QA score</p>
+              <p
+                className={`mt-1 text-base font-medium ${
+                  hasCriticalCanonicalIssue ? 'text-rose-700' : 'text-emerald-700'
+                }`}
+              >
+                {canonicalQa.score}/100
+              </p>
+            </div>
+          </div>
+
+          {canonicalQa.issues.length > 0 ? (
+            <div className="mt-4 grid gap-2">
+              {canonicalQa.issues.slice(0, 3).map((issue) => (
+                <div
+                  key={issue.id}
+                  className={`rounded-lg border px-3 py-2 ${
+                    issue.severity === 'critical'
+                      ? 'border-rose-200 bg-rose-50 text-rose-800'
+                      : issue.severity === 'warning'
+                        ? 'border-amber-200 bg-amber-50 text-amber-800'
+                        : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)]'
+                  }`}
+                >
+                  <p className="text-sm font-medium">{issue.title}</p>
+                  <p className="mt-1 text-xs">{issue.detail}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-emerald-700">
+              Canonical journey checks look healthy for this draft.
+            </p>
+          )}
+
+          <div className="mt-5">
+            <CanonicalAuthoringPanel
+              metadata={metadata}
+              sections={canonicalDrafts}
+              sacredDraft={canonicalSacredDraft}
+              onSectionChange={updateCanonicalSection}
+              onSacredDraftChange={updateCanonicalSacredDraft}
+              onLoadCanonicalTemplate={loadCanonicalTemplate}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {canonicalRequiredForDay && hasCriticalCanonicalIssue
+                ? 'Resolve critical canonical issues before publishing this day.'
+                : 'Export bilingual markdown snapshots when editorial review needs static copy.'}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCanonicalPreviewLanguage('en')}
+                className={`px-2.5 py-1 rounded text-xs border ${
+                  canonicalPreviewLanguage === 'en'
+                    ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'border-[var(--color-border)] text-[var(--color-text-muted)]'
+                }`}
+              >
+                Preview EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setCanonicalPreviewLanguage('ur')}
+                className={`px-2.5 py-1 rounded text-xs border ${
+                  canonicalPreviewLanguage === 'ur'
+                    ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'border-[var(--color-border)] text-[var(--color-text-muted)]'
+                }`}
+              >
+                Preview UR
+              </button>
+              <button
+                type="button"
+                onClick={exportCanonicalMarkdown}
+                className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text)] text-sm rounded-lg hover:bg-[var(--color-surface)]"
+              >
+                Export canonical markdown
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Blocks Section */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -1008,7 +1725,7 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
             </button>
             <button
               onClick={() => handleSave(true)}
-              disabled={saving}
+              disabled={saving || (canonicalRequiredForDay && hasCriticalCanonicalIssue)}
               className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
             >
               {saving ? 'Publishing...' : 'Publish'}
@@ -1030,8 +1747,53 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
                 Hide
               </button>
             </div>
+            <div className="mb-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-xs text-[var(--color-text-muted)]">
+              {previewUsesCanonical
+                ? `Canonical preview in ${canonicalPreviewLanguage.toUpperCase()} mode with sacred-source references.`
+                : 'Legacy block preview mode.'}
+            </div>
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden max-h-[calc(100vh-200px)] overflow-y-auto">
-              <LessonRenderer metadata={metadata} blocks={blocks} />
+              {previewUsesCanonical ? (
+                <div className="p-4">
+                  <DayOneCanonicalExperience
+                    lessonId={metadata.id || 'preview-lesson'}
+                    dayNumber={metadata.day_number}
+                    lessonTitle={
+                      canonicalPreviewLanguage === 'ur'
+                        ? metadata.localized_content?.ur?.title || metadata.title
+                        : metadata.title
+                    }
+                    lessonSubtitle={metadata.subtitle || null}
+                    translationId={canonicalPreviewTranslationId}
+                    tafsirId={canonicalSacredDraft.tafsir_default_id}
+                    canonicalVerseKeys={canonicalPreviewVerseKeys}
+                    quranRangeLabel={toCanonicalVerseReferenceLabel(canonicalRangeForPreview)}
+                    quranIntroText={canonicalSectionTextForPreview('quran-reflection')}
+                    openingReflectionText={canonicalSectionTextForPreview('opening-reflection')}
+                    seerahMomentText={canonicalSectionTextForPreview('seerah-moment')}
+                    tafsirInsightText={canonicalSectionTextForPreview('tafsir-insight')}
+                    reflectionPromptText={canonicalSectionTextForPreview('reflection-prompt')}
+                    tinyActionText={canonicalSectionTextForPreview('tiny-action')}
+                    closingDuaText={canonicalSectionTextForPreview('closing-dua')}
+                    hadithCollection={canonicalSacredDraft.hadith_collection}
+                    hadithNumber={canonicalSacredDraft.hadith_number}
+                    hadithText={canonicalSectionTextForPreview('hadith-connection') || null}
+                    hadithSource={canonicalPreviewHadithSource}
+                    hadithLanguage={canonicalPreviewLanguage === 'ur' ? 'urdu' : 'english'}
+                    tafsirEnabled={canonicalSacredDraft.tafsir_enabled}
+                    tafsirRevealMode={canonicalSacredDraft.tafsir_reveal_mode}
+                    tafsirFallbackUsed={false}
+                    sectionTitles={canonicalSectionTitles}
+                    initialReflection=""
+                    isCompleted={false}
+                    hasNextDay={true}
+                    previewOnly
+                    languageOverride={canonicalPreviewLanguage}
+                  />
+                </div>
+              ) : (
+                <LessonRenderer metadata={metadata} blocks={blocks} />
+              )}
             </div>
           </div>
         </div>

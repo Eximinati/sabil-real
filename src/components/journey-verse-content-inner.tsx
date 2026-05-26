@@ -30,6 +30,7 @@ interface JourneyVerseContentInnerProps {
   translationId: number;
   title?: string;
   intro?: string;
+  referenceLabel?: string;
 }
 
 function resolveAudioUrl(url: string): string {
@@ -46,7 +47,13 @@ function logPerformance(metric: string, value: number) {
   }
 }
 
-export function JourneyVerseContentInner({ verseKeys, translationId, title, intro }: JourneyVerseContentInnerProps) {
+export function JourneyVerseContentInner({
+  verseKeys,
+  translationId,
+  title,
+  intro,
+  referenceLabel,
+}: JourneyVerseContentInnerProps) {
   const router = useSearchParams();
   const { language } = useLanguage();
   const isUrdu = language === 'ur';
@@ -230,6 +237,11 @@ export function JourneyVerseContentInner({ verseKeys, translationId, title, intr
   return (
     <div className="reading-section">
       <h2 className="section-heading mb-4">{sectionTitle}</h2>
+      {referenceLabel && (
+        <p className="mb-3 text-xs uppercase tracking-[0.05em] text-[var(--color-text-muted)]">
+          {isUrdu ? 'قرآنی ماخذ' : 'Quran reference'}: {referenceLabel}
+        </p>
+      )}
       {intro && (
         <p
           className={`mb-6 max-w-3xl text-[var(--color-text-muted)] ${

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { supabaseServer } from './supabase-server';
 import type { LessonWithBlocks, JourneyLessonMetadata, LessonBlock } from '@/types/admin-journey';
 import { EMOTIONAL_QA_CHECKLIST, validateDayTemplateContract } from './journey-day-template';
+import { analyzeCanonicalJourneyDraft } from './journey-canonical-qa';
 import {
   CROSS_LANGUAGE_CONSISTENCY_CHECKS,
   EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST,
@@ -25,6 +26,10 @@ import type {
   JourneySharedMetadata,
   JourneyTranslationStatusMap,
 } from '@/types/journey-localization';
+
+function isCanonicalAuthoringDay(dayNumber: number): boolean {
+  return dayNumber >= 1 && dayNumber <= 5;
+}
 
 function hashLessonSource(metadata: JourneyLessonMetadata, blocks: LessonBlock[]): string {
   const payload = JSON.stringify({
@@ -270,13 +275,36 @@ export async function saveLesson(
         };
       }
 
-      const templateValidation = validateDayTemplateContract(metadata.day_number, blocks);
-      if (!templateValidation.valid && templateValidation.required) {
-        const firstMissing = templateValidation.missingSections[0];
-        return {
-          success: false,
-          error: `Day template missing section: ${firstMissing.title}`,
-        };
+      if (!isCanonicalAuthoringDay(metadata.day_number)) {
+        const templateValidation = validateDayTemplateContract(metadata.day_number, blocks);
+        if (!templateValidation.valid && templateValidation.required) {
+          const firstMissing = templateValidation.missingSections[0];
+          return {
+            success: false,
+            error: `Day template missing section: ${firstMissing.title}`,
+          };
+        }
+      } else {
+        const canonicalQa = analyzeCanonicalJourneyDraft({
+          canonical: metadata.shared_metadata?.canonical_journey,
+          translationStatus: normalizedStatus,
+          enforceUrduReadiness: true,
+        });
+        const critical = canonicalQa.issues.find((issue) => issue.severity === 'critical');
+        const warning = canonicalQa.issues.find((issue) => issue.severity === 'warning');
+        if (critical) {
+          return {
+            success: false,
+            error: `Canonical publish check: ${critical.title}`,
+          };
+        }
+
+        if (warning) {
+          return {
+            success: false,
+            error: `Canonical publish check: ${warning.title}`,
+          };
+        }
       }
 
       const publishingSafetyError = getPublishedSafetyError(

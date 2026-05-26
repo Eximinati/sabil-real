@@ -2,8 +2,26 @@ import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 
 type ReminderLanguage = 'auto' | 'en' | 'ur';
+type HadithLanguage = 'auto' | 'english' | 'urdu';
+type UiLanguage = 'auto' | 'en' | 'ur';
 
 function parseReminderLanguage(value: unknown): ReminderLanguage {
+  if (value === 'en' || value === 'ur') {
+    return value;
+  }
+
+  return 'auto';
+}
+
+function parseHadithLanguage(value: unknown): HadithLanguage {
+  if (value === 'english' || value === 'urdu') {
+    return value;
+  }
+
+  return 'auto';
+}
+
+function parseUiLanguage(value: unknown): UiLanguage {
   if (value === 'en' || value === 'ur') {
     return value;
   }
@@ -38,7 +56,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { translationId, tafsirId, remindersEnabled, reminderTime, reminderLanguage } = body;
+    const {
+      translationId,
+      tafsirId,
+      hadithLanguage,
+      uiLanguage,
+      remindersEnabled,
+      reminderTime,
+      reminderLanguage,
+    } = body;
 
     if (!translationId || !tafsirId) {
       return NextResponse.json({ error: 'Missing translationId or tafsirId' }, { status: 400 });
@@ -48,6 +74,8 @@ export async function POST(request: Request) {
       user_id: user.id,
       translation_id: translationId,
       tafsir_id: tafsirId,
+      hadith_language: parseHadithLanguage(hadithLanguage),
+      ui_language: parseUiLanguage(uiLanguage),
       reminders_enabled: remindersEnabled === true,
       reminder_time: parseReminderTime(reminderTime),
       reminder_language: parseReminderLanguage(reminderLanguage),

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface Translation {
   id: number;
@@ -20,6 +21,8 @@ interface Tafsir {
 interface PreferencesFormProps {
   initialTranslationId: number;
   initialTafsirId: number;
+  initialHadithLanguage: 'auto' | 'english' | 'urdu';
+  initialUiLanguage: 'auto' | 'en' | 'ur';
   initialRemindersEnabled: boolean;
   initialReminderTime: string;
   initialReminderLanguage: 'auto' | 'en' | 'ur';
@@ -28,6 +31,8 @@ interface PreferencesFormProps {
 export function PreferencesForm({
   initialTranslationId,
   initialTafsirId,
+  initialHadithLanguage,
+  initialUiLanguage,
   initialRemindersEnabled,
   initialReminderTime,
   initialReminderLanguage,
@@ -39,9 +44,12 @@ export function PreferencesForm({
   const [saved, setSaved] = useState(false);
   const toast = useToast();
   const copy = useCopy();
+  const { language, setLanguage } = useLanguage();
 
   const [translationId, setTranslationId] = useState(initialTranslationId.toString());
   const [tafsirId, setTafsirId] = useState(initialTafsirId.toString());
+  const [hadithLanguage, setHadithLanguage] = useState<'auto' | 'english' | 'urdu'>(initialHadithLanguage);
+  const [uiLanguage, setUiLanguage] = useState<'auto' | 'en' | 'ur'>(initialUiLanguage);
   const [remindersEnabled, setRemindersEnabled] = useState(initialRemindersEnabled);
   const [reminderTime, setReminderTime] = useState(initialReminderTime);
   const [reminderLanguage, setReminderLanguage] = useState<'auto' | 'en' | 'ur'>(initialReminderLanguage);
@@ -66,19 +74,24 @@ export function PreferencesForm({
         body: JSON.stringify({
           translationId: parseInt(translationId, 10),
           tafsirId: parseInt(tafsirId, 10),
+          hadithLanguage,
+          uiLanguage,
           remindersEnabled,
           reminderTime,
           reminderLanguage,
         }),
       });
       if (res.ok) {
+        if ((uiLanguage === 'en' || uiLanguage === 'ur') && uiLanguage !== language) {
+          setLanguage(uiLanguage);
+        }
         setSaved(true);
         toast.success(copy.common.toasts.preferencesUpdated);
         setTimeout(() => setSaved(false), 2000);
       } else {
         toast.error(copy.common.toasts.somethingWentWrong);
       }
-    } catch (e) {
+    } catch {
       toast.error(copy.common.toasts.somethingWentWrong);
     }
     setSaving(false);
@@ -118,6 +131,36 @@ export function PreferencesForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 space-y-4">
+        <div>
+          <label className="block text-sm text-[var(--color-text)] mb-1">{copy.settings.hadithLanguage}</label>
+          <p className="text-xs text-[var(--color-text-muted)] mb-2">{copy.settings.hadithLanguageDescription}</p>
+          <select
+            value={hadithLanguage}
+            onChange={(e) => setHadithLanguage(e.target.value as 'auto' | 'english' | 'urdu')}
+            className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2.5 bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+          >
+            <option value="auto">{copy.settings.hadithLanguageAuto}</option>
+            <option value="english">{copy.settings.hadithLanguageEnglish}</option>
+            <option value="urdu">{copy.settings.hadithLanguageUrdu}</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm text-[var(--color-text)] mb-1">{copy.settings.uiLanguage}</label>
+          <p className="text-xs text-[var(--color-text-muted)] mb-2">{copy.settings.uiLanguageDescription}</p>
+          <select
+            value={uiLanguage}
+            onChange={(e) => setUiLanguage(e.target.value as 'auto' | 'en' | 'ur')}
+            className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2.5 bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+          >
+            <option value="auto">{copy.settings.uiLanguageAuto}</option>
+            <option value="en">{copy.settings.uiLanguageEnglish}</option>
+            <option value="ur">{copy.settings.uiLanguageUrdu}</option>
+          </select>
+        </div>
       </div>
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 space-y-4">

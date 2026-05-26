@@ -6,6 +6,81 @@ const DEFAULT_EN_TRANSLATION_ID = 203;
 const DEFAULT_UR_TRANSLATION_ID = 131;
 const DEFAULT_TAFSIR_ID = 169;
 
+function isMissingColumnError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const maybeError = error as { code?: string; message?: string };
+  const message = (maybeError.message || '').toLowerCase();
+
+  if (maybeError.code === 'PGRST204' || maybeError.code === '42703') {
+    return true;
+  }
+
+  return (
+    (message.includes('column') && message.includes('does not exist')) ||
+    message.includes('schema cache')
+  );
+}
+
+async function upsertPreferencesWithCompat(
+  supabase: Awaited<ReturnType<typeof supabaseServer>>,
+  params: {
+    userId: string;
+    translationId: number;
+    tafsirId: number;
+    language: 'en' | 'ur';
+    completed: boolean;
+  }
+) {
+  const basePayload = {
+    user_id: params.userId,
+    translation_id: params.translationId,
+    tafsir_id: params.tafsirId,
+    updated_at: new Date().toISOString(),
+  };
+
+  const payloads = [
+    {
+      ...basePayload,
+      ui_language: params.language,
+      onboarding_completed: params.completed,
+    },
+    {
+      ...basePayload,
+      onboarding_completed: params.completed,
+    },
+    {
+      ...basePayload,
+      ui_language: params.language,
+    },
+    basePayload,
+  ];
+
+  let lastError: unknown = null;
+
+  for (const payload of payloads) {
+    const { error } = await supabase
+      .from('user_preferences')
+      .upsert(payload, { onConflict: 'user_id' });
+
+    if (!error) {
+      return;
+    }
+
+    lastError = error;
+
+    if (!isMissingColumnError(error)) {
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await supabaseServer();
@@ -15,15 +90,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { completed, languageCode } = body;
+    const body = await request.json().catch(() => ({}));
+    const { completed, languageCode } = body as {
+      completed?: unknown;
+      languageCode?: string | null;
+    };
     const language = normalizeLanguage(languageCode);
 
-    const { data: existingPreferences } = await supabase
+    const { data: existingPreferences, error: existingPreferencesError } = await supabase
       .from('user_preferences')
       .select('translation_id, tafsir_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (existingPreferencesError) {
+      throw existingPreferencesError;
+    }
 
     const fallbackTranslationId = language === 'ur' ? DEFAULT_UR_TRANSLATION_ID : DEFAULT_EN_TRANSLATION_ID;
     const translationId = existingPreferences?.translation_id ?? fallbackTranslationId;
@@ -35,18 +117,13 @@ export async function POST(request: Request) {
       },
     }).catch(() => {});
 
-    // Upsert user preferences with onboarding completed
-    const { error } = await supabase.from('user_preferences').upsert({
-      user_id: user.id,
-      translation_id: translationId,
-      tafsir_id: tafsirId,
-      onboarding_completed: completed === true,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
-
-    if (error) {
-      throw error;
-    }
+    await upsertPreferencesWithCompat(supabase, {
+      userId: user.id,
+      translationId,
+      tafsirId,
+      language,
+      completed: completed === true,
+    });
 
     const response = NextResponse.json({ success: true });
     response.cookies.set(LANGUAGE_COOKIE_NAME, language, {

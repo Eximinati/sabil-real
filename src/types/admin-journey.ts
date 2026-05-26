@@ -1,5 +1,6 @@
 import type { LanguageCode } from '@/lib/i18n/config';
 import type {
+  CanonicalJourneySectionId,
   JourneyLocalizedContentMap,
   JourneySharedMetadata,
   JourneyTranslationStatusMap,
@@ -56,6 +57,29 @@ export interface JourneyLessonMetadata {
   localized_content?: JourneyLocalizedContentMap;
   translation_status?: JourneyTranslationStatusMap;
   shared_metadata?: JourneySharedMetadata;
+}
+
+export interface CanonicalAdminSectionDraft {
+  id: CanonicalJourneySectionId;
+  heading: string;
+  emotional_goal: string;
+  required: boolean;
+  content_en: string;
+  content_ur: string;
+}
+
+export interface CanonicalAdminSacredDraft {
+  quran_range_surah_id: number;
+  quran_range_ayah_start: number;
+  quran_range_ayah_end: number;
+  hadith_collection: string;
+  hadith_number: number;
+  hadith_source: string;
+  tafsir_enabled: boolean;
+  tafsir_default_id: number;
+  tafsir_scholar_ids: number[];
+  tafsir_fallback_behavior: 'user-preferred' | 'default-only' | 'hide-if-unavailable';
+  tafsir_reveal_mode: 'condensed' | 'full';
 }
 
 export interface LessonWithBlocks {

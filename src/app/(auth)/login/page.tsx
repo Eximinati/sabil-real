@@ -40,11 +40,16 @@ export default function LoginPage() {
       if (user) {
         const { data: prefs } = await supabaseBrowser
           .from('user_preferences')
-          .select('onboarding_completed')
+          .select('onboarding_completed, ui_language')
           .eq('user_id', user.id)
           .single();
 
-        setLanguage(language);
+        const preferredLanguage =
+          prefs?.ui_language === 'en' || prefs?.ui_language === 'ur'
+            ? prefs.ui_language
+            : language;
+
+        setLanguage(preferredLanguage);
         
         // Redirect based on onboarding status
         if (!prefs?.onboarding_completed) {

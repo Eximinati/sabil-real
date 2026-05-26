@@ -21,6 +21,7 @@ import { DayOneCanonicalExperience } from './journey-day-one-canonical';
 import { WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 import type { JourneyLanguageContext } from '@/types/journey-localization';
 import { useLanguage } from '@/lib/i18n/context';
+import type { CanonicalJourneyPlan } from '@/lib/journey-canonical';
 
 interface LessonData {
   id: string;
@@ -51,12 +52,55 @@ interface LessonBlock {
 interface StreamingLessonClientProps {
   lesson: LessonData;
   blocks?: LessonBlock[];
+  canonicalPlan?: CanonicalJourneyPlan;
   initialReflection: string;
   isCompleted: boolean;
   translationId: number;
   tafsirId?: number;
+  hadithLanguage?: 'auto' | 'english' | 'urdu';
   urlTranslation?: string | null;
   hasNextDay?: boolean;
+}
+
+const REQUIRED_CANONICAL_SECTION_ORDER: Array<CanonicalJourneyPlan['sections'][number]['id']> = [
+  'opening-reflection',
+  'seerah-moment',
+  'quran-reflection',
+  'hadith-connection',
+  'reflection-prompt',
+  'tiny-action',
+  'closing-dua',
+];
+
+function buildSectionTitleMap(canonicalPlan?: CanonicalJourneyPlan) {
+  if (!canonicalPlan) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    canonicalPlan.sections.map((section) => [section.id, section.title])
+  ) as Record<string, string>;
+}
+
+function resolveCanonicalTextBySectionId(
+  canonicalPlan: CanonicalJourneyPlan | undefined,
+  sectionId: CanonicalJourneyPlan['sections'][number]['id']
+): string | undefined {
+  return canonicalPlan?.sections.find((section) => section.id === sectionId)?.bodyText;
+}
+
+function isCanonicalPlanComplete(canonicalPlan?: CanonicalJourneyPlan): boolean {
+  if (!canonicalPlan || !canonicalPlan.isCanonical) {
+    return false;
+  }
+
+  const available = new Set(
+    canonicalPlan.sections
+      .filter((section) => typeof section.bodyText === 'string' && section.bodyText.trim().length > 0)
+      .map((section) => section.id)
+  );
+
+  return REQUIRED_CANONICAL_SECTION_ORDER.every((sectionId) => available.has(sectionId));
 }
 
 function StreamSectionLogger({ name, children }: { name: string; children: React.ReactNode }) {
@@ -169,17 +213,22 @@ function JourneyLessonHeader({
 export function StreamingLessonShell({ 
   lesson, 
   blocks,
+  canonicalPlan,
   initialReflection, 
   isCompleted, 
   translationId,
   tafsirId,
+  hadithLanguage,
   urlTranslation,
   hasNextDay
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
   const copy = useCopy();
   const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
-  const isCanonicalDayOne = lesson.day_number === 1;
+  const canUseCanonicalExperience =
+    lesson.day_number >= 1 && lesson.day_number <= 5 && isCanonicalPlanComplete(canonicalPlan);
+  const shouldShowCanonicalIncompleteWarning =
+    lesson.day_number >= 1 && lesson.day_number <= 5 && !isCanonicalPlanComplete(canonicalPlan);
   const week = getWeekForDay(lesson.day_number);
   const currentArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === week);
   const { language } = useLanguage();
@@ -221,7 +270,7 @@ export function StreamingLessonShell({
         </div>
       </div>
 
-      {isCanonicalDayOne ? (
+      {canUseCanonicalExperience ? (
         <>
           {shouldShowLanguageFallback && (
             <div className="mb-10 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
@@ -232,8 +281,35 @@ export function StreamingLessonShell({
           <DayOneCanonicalExperience
             lessonId={lesson.id}
             dayNumber={lesson.day_number}
+            lessonTitle={lesson.title}
+            lessonSubtitle={lesson.subtitle}
             translationId={translationId}
-            tafsirId={tafsirId}
+            tafsirId={canonicalPlan?.resolvedTafsirId || tafsirId || canonicalPlan?.defaultTafsirId}
+            canonicalVerseKeys={canonicalPlan?.verseKeys}
+            quranRangeLabel={canonicalPlan?.quranRangeLabel}
+            quranIntroText={resolveCanonicalTextBySectionId(canonicalPlan, 'quran-reflection')}
+            openingReflectionText={resolveCanonicalTextBySectionId(canonicalPlan, 'opening-reflection')}
+            seerahMomentText={resolveCanonicalTextBySectionId(canonicalPlan, 'seerah-moment')}
+            tafsirInsightText={resolveCanonicalTextBySectionId(canonicalPlan, 'tafsir-insight')}
+            reflectionPromptText={
+              resolveCanonicalTextBySectionId(canonicalPlan, 'reflection-prompt') ||
+              lesson.reflection_prompt ||
+              null
+            }
+            tinyActionText={resolveCanonicalTextBySectionId(canonicalPlan, 'tiny-action')}
+            closingDuaText={resolveCanonicalTextBySectionId(canonicalPlan, 'closing-dua')}
+            hadithCollection={canonicalPlan?.hadithCollection || lesson.hadith_collection}
+            hadithNumber={canonicalPlan?.hadithNumber || lesson.hadith_number}
+            hadithText={
+              resolveCanonicalTextBySectionId(canonicalPlan, 'hadith-connection') ||
+              lesson.hadith_text
+            }
+            hadithSource={canonicalPlan?.hadithSource || lesson.hadith_source}
+            hadithLanguage={hadithLanguage}
+            tafsirEnabled={canonicalPlan?.tafsir?.enabled !== false}
+            tafsirRevealMode={canonicalPlan?.tafsir?.revealMode || 'condensed'}
+            tafsirFallbackUsed={canonicalPlan?.tafsir?.fallbackUsed || false}
+            sectionTitles={buildSectionTitleMap(canonicalPlan)}
             initialReflection={initialReflection}
             isCompleted={isCompleted}
             hasNextDay={hasNextDay}
@@ -241,6 +317,11 @@ export function StreamingLessonShell({
         </>
       ) : (
         <>
+          {shouldShowCanonicalIncompleteWarning && (
+            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+              Canonical journey metadata is incomplete for this day. Showing legacy fallback flow.
+            </div>
+          )}
           <div className="reading-section">
             <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
               <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-white">
@@ -329,6 +410,7 @@ export function StreamingLessonShell({
             <StreamSectionLogger name="HadithContent">
               <HadithContent 
                 lesson={lesson}
+                hadithLanguage={hadithLanguage}
               />
             </StreamSectionLogger>
           </Suspense>
@@ -585,9 +667,15 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
   );
 }
 
-function HadithContent({ lesson }: { lesson: LessonData }) {
+function HadithContent({
+  lesson,
+  hadithLanguage,
+}: {
+  lesson: LessonData;
+  hadithLanguage?: 'auto' | 'english' | 'urdu';
+}) {
   const { HadithContentInner } = require('./journey-hadith-inner');
-  return <HadithContentInner lesson={lesson} />;
+  return <HadithContentInner lesson={lesson} preferredLanguage={hadithLanguage} />;
 }
 
 function ReflectionContent({ lesson, initialReflection }: { lesson: LessonData; initialReflection: string }) {

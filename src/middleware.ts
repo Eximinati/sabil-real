@@ -34,28 +34,30 @@ function resolveRequestLanguage(request: NextRequest) {
   return DEFAULT_LANGUAGE;
 }
 
+function setLanguageCookie(response: NextResponse, language: string) {
+  response.cookies.set(LANGUAGE_COOKIE_NAME, language, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+  });
+}
+
 export async function middleware(request: NextRequest) {
-  const requestLanguage = normalizeLanguage(resolveRequestLanguage(request));
+  let requestLanguage = normalizeLanguage(resolveRequestLanguage(request));
+
+  request.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage);
 
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  supabaseResponse.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage, {
-    path: '/',
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: 'lax',
-  });
+  setLanguageCookie(supabaseResponse, requestLanguage);
 
   if (request.nextUrl.searchParams.has('lang')) {
     const redirectedUrl = request.nextUrl.clone();
     redirectedUrl.searchParams.delete('lang');
     const redirectResponse = NextResponse.redirect(redirectedUrl);
-    redirectResponse.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: 'lax',
-    });
+    setLanguageCookie(redirectResponse, requestLanguage);
     return redirectResponse;
   }
 
@@ -74,11 +76,7 @@ export async function middleware(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           });
-          supabaseResponse.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage, {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 365,
-            sameSite: 'lax',
-          });
+          setLanguageCookie(supabaseResponse, requestLanguage);
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options);
           });
@@ -88,6 +86,20 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: preferences } = await supabase
+      .from('user_preferences')
+      .select('ui_language')
+      .eq('user_id', user.id)
+      .single();
+
+    if (isSupportedLanguage(preferences?.ui_language) && preferences.ui_language !== requestLanguage) {
+      requestLanguage = preferences.ui_language;
+      request.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage);
+      setLanguageCookie(supabaseResponse, requestLanguage);
+    }
+  }
 
   if (!user) {
     const { pathname } = request.nextUrl;

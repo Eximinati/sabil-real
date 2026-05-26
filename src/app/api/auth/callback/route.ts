@@ -27,13 +27,18 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const preferredLanguage = normalizeLanguage((user.user_metadata?.preferred_language as string | undefined) ?? null);
+        const metadataLanguage = normalizeLanguage((user.user_metadata?.preferred_language as string | undefined) ?? null);
         // Check if user_preferences record exists and onboarding status
         const { data: prefs } = await supabase
           .from('user_preferences')
-          .select('onboarding_completed')
+          .select('onboarding_completed, ui_language')
           .eq('user_id', user.id)
           .single();
+
+        const preferredLanguage =
+          prefs?.ui_language === 'en' || prefs?.ui_language === 'ur'
+            ? prefs.ui_language
+            : metadataLanguage;
         
         // If no prefs record exists, create one and send to onboarding
         if (!prefs) {

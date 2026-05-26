@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getVerses, getChapterRecitationAudio } from '@/lib/qf-api';
+import {
+  normalizeApiErrorMessage,
+  shouldFallbackFromError,
+} from '@/lib/qf-fallbacks';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -7,7 +11,9 @@ export const revalidate = 0;
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const verseKeys = searchParams.get('verse_keys')?.split(',') || [];
+    const verseKeys = (searchParams.get('verse_keys')?.split(',') || [])
+      .map((value) => value.trim())
+      .filter(Boolean);
     const translationId = parseInt(searchParams.get('translation') || '203', 10);
     const reciterId = parseInt(searchParams.get('reciter') || '5', 10);
 
@@ -15,15 +21,33 @@ export async function GET(request: Request) {
       return NextResponse.json({ verses: [] });
     }
 
+    if (!Number.isFinite(translationId) || translationId <= 0) {
+      return NextResponse.json({ error: 'Invalid translation id', verses: [] }, { status: 400 });
+    }
+
+    if (!Number.isFinite(reciterId) || reciterId <= 0) {
+      return NextResponse.json({ error: 'Invalid reciter id', verses: [] }, { status: 400 });
+    }
+
     const chapterGroups = new Map<number, string[]>();
     
     for (const vk of verseKeys) {
-      const [chapterId] = vk.split(':');
+      const [chapterId, verseNumber] = vk.split(':');
       const chId = parseInt(chapterId, 10);
+      const parsedVerseNumber = parseInt(verseNumber, 10);
+
+      if (!Number.isFinite(chId) || !Number.isFinite(parsedVerseNumber)) {
+        continue;
+      }
+
       if (!chapterGroups.has(chId)) {
         chapterGroups.set(chId, []);
       }
       chapterGroups.get(chId)!.push(vk);
+    }
+
+    if (chapterGroups.size === 0) {
+      return NextResponse.json({ verses: [] });
     }
 
     const versesResult: any[] = [];
@@ -86,8 +110,20 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ verses: versesResult });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    const message = normalizeApiErrorMessage(error);
     console.error('Error fetching verses:', message);
+
+    if (shouldFallbackFromError(error)) {
+      return NextResponse.json(
+        {
+          verses: [],
+          fallbackUsed: true,
+          warning: message,
+        },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json({ error: message, verses: [] }, { status: 500 });
   }
 }

@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getVerses } from '@/lib/qf-api';
+import {
+  normalizeApiErrorMessage,
+  shouldFallbackFromError,
+} from '@/lib/qf-fallbacks';
 
 export async function GET(
   request: Request,
@@ -9,13 +13,17 @@ export async function GET(
     const { verseKey } = await params;
     const { searchParams } = new URL(request.url);
     const translationId = parseInt(searchParams.get('translation') || '203', 10);
+
+    if (!Number.isFinite(translationId) || translationId <= 0) {
+      return NextResponse.json({ error: 'Invalid translation id', verse: null }, { status: 400 });
+    }
     
     const [chapterIdStr, verseNumberStr] = verseKey.split(':');
     const chapterId = parseInt(chapterIdStr, 10);
     const verseNumber = parseInt(verseNumberStr, 10);
     
     if (!chapterId || !verseNumber) {
-      return NextResponse.json({ error: 'Invalid verse key' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid verse key', verse: null }, { status: 400 });
     }
     
     const page = Math.ceil(verseNumber / 50);
@@ -37,7 +45,7 @@ export async function GET(
       const verseFromPage1 = page1Data.verses?.find(v => v.verse_key === verseKey);
       
       if (!verseFromPage1) {
-        return NextResponse.json({ error: 'Verse not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Verse not found', verse: null }, { status: 404 });
       }
       
       return NextResponse.json({ verse: verseFromPage1 });
@@ -45,8 +53,20 @@ export async function GET(
     
     return NextResponse.json({ verse });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    const message = normalizeApiErrorMessage(error);
     console.error('Error fetching verse by key:', message);
+
+    if (shouldFallbackFromError(error)) {
+      return NextResponse.json(
+        {
+          verse: null,
+          fallbackUsed: true,
+          warning: message,
+        },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

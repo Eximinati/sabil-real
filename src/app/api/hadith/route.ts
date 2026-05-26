@@ -1,24 +1,60 @@
 import { NextResponse } from 'next/server';
-import { fetchCachedHadith } from '@/lib/content-cache';
+import { fetchCachedHadith, fetchCachedHadithByLanguage } from '@/lib/content-cache';
+import { normalizeApiErrorMessage } from '@/lib/qf-fallbacks';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const collection = searchParams.get('collection');
+    const collection = searchParams.get('collection')?.trim().toLowerCase();
     const number = searchParams.get('number');
+    const language = searchParams.get('lang');
 
     if (!collection || !number) {
       return NextResponse.json({ error: 'Missing collection or number' }, { status: 400 });
     }
 
-    const hadithData = await fetchCachedHadith(collection, parseInt(number, 10));
+    const parsedNumber = parseInt(number, 10);
+    if (!Number.isFinite(parsedNumber) || parsedNumber <= 0) {
+      return NextResponse.json({ error: 'Invalid hadith number' }, { status: 400 });
+    }
 
-    return NextResponse.json({ hadith: hadithData.hadith || null });
+    const hadithData =
+      language === 'english' || language === 'urdu'
+        ? await fetchCachedHadithByLanguage(collection, parsedNumber, language)
+        : await fetchCachedHadith(collection, parsedNumber);
+
+    if (!hadithData?.hadith) {
+      return NextResponse.json(
+        {
+          hadith: null,
+          fallback: {
+            collection,
+            number: parsedNumber,
+            requested_language:
+              language === 'english' || language === 'urdu' ? language : null,
+          },
+        },
+        { status: 200 }
+      );
+    }
+
+    return NextResponse.json({
+      hadith: hadithData.hadith,
+      fallback: {
+        collection,
+        number: parsedNumber,
+        requested_language:
+          language === 'english' || language === 'urdu' ? language : null,
+      },
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    const message = normalizeApiErrorMessage(error);
     console.error('Error fetching hadith:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      error: message,
+      hadith: null,
+    }, { status: 500 });
   }
 }

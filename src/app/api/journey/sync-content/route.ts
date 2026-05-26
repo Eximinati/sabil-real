@@ -91,7 +91,11 @@ function parseLocalizedTitle(markdown: string): string | null {
   return heading.trim();
 }
 
-function extractSectionText(markdown: string, heading: string | string[]): string {
+function extractSectionText(
+  markdown: string,
+  heading: string | string[],
+  options: { skipQuotedParagraph?: boolean } = {}
+): string {
   const headingCandidates = Array.isArray(heading) ? heading : [heading];
   const normalized = markdown.replace(/\r\n/g, '\n');
   let sectionBody = '';
@@ -111,10 +115,12 @@ function extractSectionText(markdown: string, heading: string | string[]): strin
 
   if (!sectionBody) return '';
 
+  const skipQuotedParagraph = options.skipQuotedParagraph !== false;
+
   const firstParagraph = sectionBody
     .split('\n\n')
     .map((block) => block.trim())
-    .find((block) => block.length > 0 && !block.startsWith('"'));
+    .find((block) => block.length > 0 && (!skipQuotedParagraph || !block.startsWith('"')));
 
   return (firstParagraph || sectionBody)
     .replace(/\n+/g, ' ')
@@ -230,12 +236,28 @@ export async function POST() {
         );
 
         const parsedEn = await parseMarkdownToBlocks(englishMarkdown, false);
-        const reflectionPrompt = extractSectionText(englishMarkdown, ['Private reflection', 'Reflection for the heart']);
-        const openingSummary = extractSectionText(englishMarkdown, 'Opening reflection');
+        const reflectionPrompt = dayBundle.reflectionPrompt || extractSectionText(englishMarkdown, ['Private reflection', 'Reflection for the heart']);
+        const openingSummary = dayBundle.description || extractSectionText(englishMarkdown, 'Opening reflection');
+        const hadithText = extractSectionText(
+          englishMarkdown,
+          ['Hadith connection', 'A Prophetic reminder', 'Related Hadith'],
+          { skipQuotedParagraph: false }
+        );
         const dayIdentity = getDayIdentity(dayBundle.dayNumber);
+        const canonicalJourney = dayBundle.metadata.canonical_journey;
+        const sacredRefs = canonicalJourney?.sacred_source_refs;
+
+        const verseKeys =
+          sacredRefs?.verse_keys && sacredRefs.verse_keys.length > 0
+            ? sacredRefs.verse_keys
+            : parsedEn.verseReferences;
+
+        const hadithCollection = sacredRefs?.hadith_collection || null;
+        const hadithNumber = sacredRefs?.hadith_number || null;
+        const hadithSource = sacredRefs?.hadith_source || null;
 
         let mergedBlocks = parsedEn.blocks as ParsedBlock[];
-        const localizedContent: Record<string, Record<string, unknown>> = {};
+        const localizedContent: Record<string, Record<string, unknown>> = dayBundle.localized_content || {};
 
         const urduMarkdown = dayBundle.markdownByLanguage.ur;
         if (urduMarkdown) {
@@ -278,18 +300,18 @@ export async function POST() {
 
         const lessonPayload = {
           day_number: dayBundle.dayNumber,
-          title: parsedTitle.title,
+          title: dayBundle.title || parsedTitle.title,
           subtitle: null,
           topic: dayIdentity
             ? `${dayIdentity.primaryEmotionalNote} - ${dayIdentity.dominantSpiritualMovement}`
             : 'Guided spiritual journey',
           description: openingSummary || null,
-          verse_keys: parsedEn.verseReferences,
+          verse_keys: verseKeys,
           lesson_text: null,
-          hadith_text: null,
-          hadith_source: null,
-          hadith_collection: null,
-          hadith_number: null,
+          hadith_text: hadithText || null,
+          hadith_source: hadithSource,
+          hadith_collection: hadithCollection,
+          hadith_number: hadithNumber,
           reflection_prompt: reflectionPrompt || null,
           estimated_minutes: dayBundle.metadata.estimated_minutes ?? 10,
           localized_content: Object.keys(localizedContent).length > 0 ? localizedContent : null,

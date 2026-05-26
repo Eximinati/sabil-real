@@ -1,5 +1,15 @@
 import { NextResponse } from 'next/server';
 
+const SUPPORTED_COLLECTIONS = new Set([
+  'bukhari',
+  'muslim',
+  'abudawud',
+  'tirmidhi',
+  'nasai',
+  'ibnmajah',
+  'malik',
+]);
+
 function pickFirstText(...values: Array<unknown>): string | null {
   for (const value of values) {
     if (typeof value === 'string' && value.trim()) {
@@ -56,25 +66,44 @@ function resolveSection(metadata: any): string | null {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ collection: string; number: string }> }
 ) {
   try {
     const { collection, number } = await params;
+    const normalizedCollection = collection.trim().toLowerCase();
+    const { searchParams } = new URL(request.url);
+    const requestedLanguage = searchParams.get('lang');
     const collectionId = parseInt(number, 10);
+
+    if (!SUPPORTED_COLLECTIONS.has(normalizedCollection)) {
+      return NextResponse.json({ error: 'Unsupported hadith collection' }, { status: 400 });
+    }
 
     if (!collectionId || collectionId < 1) {
       return NextResponse.json({ error: 'Invalid hadith number' }, { status: 400 });
     }
 
+    const langHint =
+      requestedLanguage === 'english' || requestedLanguage === 'urdu'
+        ? requestedLanguage
+        : null;
+
     const [englishData, urduData] = await Promise.all([
-      fetchEditionHadith(collection, number, 'eng'),
-      fetchEditionHadith(collection, number, 'urd'),
+      fetchEditionHadith(normalizedCollection, number, 'eng'),
+      fetchEditionHadith(normalizedCollection, number, 'urd'),
     ]);
 
     if (!englishData && !urduData) {
       return NextResponse.json(
-        { error: `Hadith not found: ${collection} ${number}` },
+        {
+          error: `Hadith not found: ${normalizedCollection} ${number}`,
+          fallback: {
+            collection: normalizedCollection,
+            number: collectionId,
+            requested_language: langHint,
+          },
+        },
         { status: 404 }
       );
     }
@@ -99,6 +128,12 @@ export async function GET(
     );
 
     const urduText = urduRawText ? decodeBrokenUnicode(urduRawText) : null;
+    const resolvedLanguage =
+      requestedLanguage === 'urdu'
+        ? (urduText ? 'urdu' : englishText ? 'english' : null)
+        : requestedLanguage === 'english'
+          ? (englishText ? 'english' : urduText ? 'urdu' : null)
+          : null;
 
     return NextResponse.json({
       hadith: {
@@ -106,13 +141,20 @@ export async function GET(
         arabic: pickFirstText(englishItem?.arab, urduItem?.arab),
         english: englishText || null,
         urdu: urduText,
-        collection,
-        name: metadata?.name ?? getCollectionName(collection),
+        collection: normalizedCollection,
+        name: metadata?.name ?? getCollectionName(normalizedCollection),
         section: resolveSection(metadata),
         available_languages: [
           ...(englishText ? ['english'] : []),
           ...(urduText ? ['urdu'] : []),
         ],
+        requested_language: langHint,
+        resolved_language: resolvedLanguage,
+      },
+      fallback: {
+        collection: normalizedCollection,
+        number: collectionId,
+        requested_language: langHint,
       },
     });
   } catch (error) {

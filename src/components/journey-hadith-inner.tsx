@@ -34,18 +34,30 @@ interface LessonData {
 
 interface HadithContentInnerProps {
   lesson: LessonData;
+  preferredLanguage?: 'auto' | 'english' | 'urdu';
+  title?: string;
 }
 
-export function HadithContentInner({ lesson }: HadithContentInnerProps) {
+export function HadithContentInner({
+  lesson,
+  preferredLanguage = 'auto',
+  title,
+}: HadithContentInnerProps) {
   const [hadith, setHadith] = useState<HadithData | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchKey, setFetchKey] = useState(0);
   const copy = useCopy();
   const { language } = useLanguage();
+  const selectedLanguage: 'english' | 'urdu' =
+    preferredLanguage === 'english' || preferredLanguage === 'urdu'
+      ? preferredLanguage
+      : language === 'ur'
+        ? 'urdu'
+        : 'english';
 
   useEffect(() => {
     setFetchKey(k => k + 1);
-  }, [lesson.hadith_collection, lesson.hadith_number]);
+  }, [lesson.hadith_collection, lesson.hadith_number, selectedLanguage]);
 
   useEffect(() => {
     if (fetchKey === 0) return;
@@ -56,7 +68,11 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
     
     async function fetchHadith() {
       try {
-        const res = await fetch(getApiUrl(`/hadith?collection=${lesson.hadith_collection}&number=${lesson.hadith_number}`));
+        const res = await fetch(
+          getApiUrl(
+            `/hadith?collection=${lesson.hadith_collection}&number=${lesson.hadith_number}&lang=${selectedLanguage}`
+          )
+        );
         if (!res.ok) throw new Error('Failed to fetch hadith');
         const data = await res.json();
         if (!cancelled) {
@@ -76,7 +92,7 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
   if (!lesson.hadith_text && !lesson.hadith_collection) return null;
 
   const isUrduFallbackHadith = /[\u0600-\u06FF]/.test(lesson.hadith_text || '');
-  const preferUrdu = language === 'ur';
+  const preferUrdu = selectedLanguage === 'urdu';
   const resolvedHadithText = preferUrdu
     ? hadith?.urdu || hadith?.english || ''
     : hadith?.english || hadith?.urdu || '';
@@ -118,7 +134,7 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
   if (!hadith && lesson.hadith_text) {
     return (
       <div className="mb-10">
-        <h2 className="section-heading">{copy.journey.lesson.hadithTitle}</h2>
+        <h2 className="section-heading">{title || copy.journey.lesson.hadithTitle}</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-4 md:p-6 relative">
           <span className="font-arabic text-[60px] text-[var(--color-accent)] absolute top-2 left-4 opacity-30" dir="rtl">"</span>
           <p className="font-arabic text-[40px] text-[var(--color-accent)] leading-none mb-2" dir="rtl">"</p>
@@ -139,7 +155,7 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
   if (!hadith) {
     return (
       <div className="mb-10">
-        <h2 className="section-heading">{copy.journey.lesson.hadithTitle}</h2>
+        <h2 className="section-heading">{title || copy.journey.lesson.hadithTitle}</h2>
         <div className="bg-[var(--color-bg)] border border-[var(--color-error)]/30 rounded-xl p-6 text-center">
           <svg className="w-8 h-8 mx-auto text-[var(--color-error)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -153,7 +169,7 @@ export function HadithContentInner({ lesson }: HadithContentInnerProps) {
 
   return (
     <div className="mb-10">
-      <h2 className="section-heading">{copy.journey.lesson.hadithTitle}</h2>
+      <h2 className="section-heading">{title || copy.journey.lesson.hadithTitle}</h2>
       <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl p-5 md:p-6 relative">
         <span className="font-arabic text-[60px] text-[var(--color-accent)] absolute top-2 left-4 opacity-30" dir="rtl">"</span>
         <div className="flex items-center gap-2 mb-3 mt-2">

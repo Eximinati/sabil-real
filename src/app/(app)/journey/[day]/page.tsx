@@ -4,6 +4,10 @@ import { getLessonByDay, getLessonByDayWithBlocks, getUserProgress, getUserRefle
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
 import { getServerDictionary } from '@/lib/i18n/server';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { buildCanonicalJourneyPlan } from '@/lib/journey-canonical';
+import type { LanguageCode } from '@/lib/i18n/config';
 
 interface PageProps {
   params: Promise<{ day: string }>;
@@ -11,6 +15,46 @@ interface PageProps {
 }
 
 export const revalidate = 60;
+
+async function readDayMarkdown(dayNumber: number): Promise<Partial<Record<LanguageCode, string>>> {
+  const dayFolder = `day-${String(dayNumber).padStart(2, '0')}`;
+  const structuredBasePath = path.join(process.cwd(), 'content', 'journey', 'days', dayFolder);
+  const legacyPath = path.join(process.cwd(), 'content', 'journey', `day${dayNumber}.md`);
+
+  async function readIfExists(filePath: string): Promise<string | null> {
+    try {
+      return await readFile(filePath, 'utf-8');
+    } catch {
+      return null;
+    }
+  }
+
+  const [enStructured, ur, enLegacy] = await Promise.all([
+    readIfExists(path.join(structuredBasePath, 'en.md')),
+    readIfExists(path.join(structuredBasePath, 'ur.md')),
+    readIfExists(legacyPath),
+  ]);
+
+  const en = enStructured || enLegacy;
+
+  return {
+    ...(en ? { en } : {}),
+    ...(ur ? { ur } : {}),
+  };
+}
+
+function parsePositiveInt(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
 
 export default async function LessonPage({ params, searchParams }: PageProps) {
   const { day } = await params;
@@ -50,18 +94,27 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const lessonProgress = progress.find(p => p.lesson_id === lessonWithBlocks.id);
   const status = lessonProgress?.status || 'not_started';
   const isCompleted = status === 'completed';
-  const translationId = urlTranslation ? parseInt(urlTranslation, 10) : preferences.translation_id;
+  const translationId = parsePositiveInt(urlTranslation) || preferences.translation_id;
   const tafsirId = preferences.tafsir_id;
+  const hadithLanguage = preferences.hadith_language;
+  const markdownByLanguage = await readDayMarkdown(dayNumber);
+  const canonicalPlan = buildCanonicalJourneyPlan(lessonWithBlocks, {
+    language,
+    markdownByLanguage,
+    preferences,
+  });
   const nextLesson = await getLessonByDay(dayNumber + 1, language);
 
   return (
     <StreamingLessonShell
       lesson={lessonWithBlocks}
       blocks={lessonWithBlocks.blocks}
+      canonicalPlan={canonicalPlan}
       initialReflection={initialReflection || ''}
       isCompleted={isCompleted}
       translationId={translationId}
       tafsirId={tafsirId}
+      hadithLanguage={hadithLanguage}
       urlTranslation={urlTranslation}
       hasNextDay={!!nextLesson}
     />

@@ -126,10 +126,12 @@ export async function getCachedTafsirContent(
 
 export async function getCachedHadith(
   collection: string,
-  number: string
+  number: string,
+  language?: 'english' | 'urdu'
 ) {
+  const languageParam = language ? `&lang=${language}` : '';
   return safeFetch(
-    `${API_BASE}/api/hadith/${collection}/${number}`,
+    `${API_BASE}/api/hadith/${collection}/${number}${languageParam}`,
     null
   );
 }

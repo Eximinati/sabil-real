@@ -56,6 +56,8 @@ export interface UserProgress {
 export interface UserPreferences {
   translation_id: number;
   tafsir_id: number;
+  hadith_language: 'auto' | 'english' | 'urdu';
+  ui_language: 'auto' | 'en' | 'ur';
   reminders_enabled: boolean;
   reminder_time: string | null;
   reminder_language: 'auto' | 'en' | 'ur';
@@ -156,17 +158,28 @@ export async function getUserPreferences(
   const supabase = await supabaseServer();
   const { data } = await supabase
     .from('user_preferences')
-    .select('translation_id, tafsir_id, reminders_enabled, reminder_time, reminder_language, last_active_at')
+    .select('translation_id, tafsir_id, hadith_language, ui_language, reminders_enabled, reminder_time, reminder_language, last_active_at')
     .eq('user_id', userId)
     .single();
 
-  return data ?? {
+  const defaults: UserPreferences = {
     translation_id: 203,
     tafsir_id: 169,
+    hadith_language: 'auto',
+    ui_language: 'auto',
     reminders_enabled: false,
     reminder_time: '20:30:00',
     reminder_language: 'auto',
     last_active_at: null,
+  };
+
+  if (!data) {
+    return defaults;
+  }
+
+  return {
+    ...defaults,
+    ...data,
   };
 }
 

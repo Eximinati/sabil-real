@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/context';
+import type { CanonicalTafsirRevealMode } from '@/types/journey-localization';
 
 interface TafsirData {
   text: string;
@@ -12,9 +13,14 @@ interface TafsirData {
 interface JourneyTafsirStreamingProps {
   verseKeys: string[];
   tafsirId: number;
+  initialRevealMode?: CanonicalTafsirRevealMode;
 }
 
-export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStreamingProps) {
+export function JourneyTafsirStreaming({
+  verseKeys,
+  tafsirId,
+  initialRevealMode = 'condensed',
+}: JourneyTafsirStreamingProps) {
   const { language } = useLanguage();
   const isUrdu = language === 'ur';
   const uiCopy = isUrdu
@@ -49,7 +55,7 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasTriedLoading, setHasTriedLoading] = useState(false);
-  const [isCondensed, setIsCondensed] = useState(true);
+  const [isCondensed, setIsCondensed] = useState(initialRevealMode !== 'full');
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const fetchedRef = useRef(false);
 
@@ -60,6 +66,10 @@ export function JourneyTafsirStreaming({ verseKeys, tafsirId }: JourneyTafsirStr
     verseKeyRef.current = verseKeys.join(',');
     tafsirIdRef.current = tafsirId;
   }, [verseKeys, tafsirId]);
+
+  useEffect(() => {
+    setIsCondensed(initialRevealMode !== 'full');
+  }, [initialRevealMode]);
 
   const loadTafsirs = useCallback(async () => {
     if (fetchedRef.current || hasTriedLoading) return;

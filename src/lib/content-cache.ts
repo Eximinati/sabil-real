@@ -306,6 +306,33 @@ export async function fetchCachedHadith(collection: string, number: number): Pro
   return data;
 }
 
+export async function fetchCachedHadithByLanguage(
+  collection: string,
+  number: number,
+  language: 'english' | 'urdu' = 'english'
+): Promise<any> {
+  const cacheKey = getCacheKey(collection, number, language);
+  const cached = getCacheEntry(contentCache.hadith, cacheKey);
+  if (cached.data) {
+    stats.hits++;
+    return cached.data;
+  }
+
+  if (pendingRequests.has(`hadith:${cacheKey}`)) {
+    return pendingRequests.get(`hadith:${cacheKey}`);
+  }
+
+  stats.misses++;
+  const promise = fetch(getApiUrl(`/hadith/${collection}/${number}?lang=${language}`)).then((res) => res.json());
+
+  pendingRequests.set(`hadith:${cacheKey}`, promise);
+
+  const data = await promise;
+  setCacheEntry(contentCache.hadith, cacheKey, data);
+  pendingRequests.delete(`hadith:${cacheKey}`);
+  return data;
+}
+
 export function getCacheSizes() {
   return {
     chapters: contentCache.chapters.size,
