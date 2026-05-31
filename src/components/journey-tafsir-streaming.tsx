@@ -16,12 +16,14 @@ interface JourneyTafsirStreamingProps {
   verseKeys: string[];
   tafsirId: number;
   initialRevealMode?: CanonicalTafsirRevealMode;
+  initialExpanded?: boolean;
 }
 
 export function JourneyTafsirStreaming({
   verseKeys,
   tafsirId,
   initialRevealMode = 'condensed',
+  initialExpanded = false,
 }: JourneyTafsirStreamingProps) {
   const { language } = useLanguage();
   const isUrdu = language === 'ur';
@@ -52,7 +54,7 @@ export function JourneyTafsirStreaming({
         readFull: 'Read full tafsir',
         readCondensed: 'Show condensed tafsir',
       };
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [tafsirs, setTafsirs] = useState<TafsirData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

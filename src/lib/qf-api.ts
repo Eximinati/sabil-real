@@ -158,13 +158,10 @@ export async function getTafsirs(): Promise<Tafsir[]> {
 export interface TafsirVerse {
   id: number;
   resource_id: number;
-  verse_id: number;
-  text: string;
-  language_name: string;
-  resource_name: string;
   verse_key: string;
-  verse_number: number;
-  chapter_id: number;
+  text: string;
+  slug?: string;
+  language_id?: number;
 }
 
 export interface Pagination {

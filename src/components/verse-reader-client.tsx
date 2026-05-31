@@ -11,6 +11,7 @@ import { useReadingProgress } from '@/hooks/use-reading-progress';
 import { useReadingHistory } from '@/hooks/use-reading-history';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { CopyButton } from './copy-button';
+import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
 import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
 import { AudioPlayer } from './audio-player';
@@ -119,6 +120,7 @@ export function VerseReaderClient({
   const [clientReciterId, setClientReciterId] = useState(() => getStoredReciterId() || 5);
   const [clientTafsirId, setClientTafsirId] = useState(() => getStoredTafsirId());
   const [tafsirLanguage, setTafsirLanguage] = useState<TafsirLanguagePreference>(() => getStoredTafsirLanguage());
+  const [activeTafsirVerse, setActiveTafsirVerse] = useState<string | null>(null);
 
   const handleTranslationChange = useCallback(
     (id: number) => {
@@ -589,15 +591,24 @@ handlePlayVerse(verseKey, files);
                   >
                     {translation?.text || copy.quran.translationUnavailable}
                   </p>
-                  <div className="mt-4 text-right">
-                    <Link
-                      href={`/tafsir?surah=${chapterId}&verse=${verseNumber}`}
-                    className="rtl-ready-arrow text-xs text-[var(--color-primary)] hover:underline"
-                    data-script-direction={language === 'ur' ? 'rtl' : 'ltr'}
-                  >
-                    {copy.quran.tafsirLink} →
-                  </Link>
-                  </div>
+                  {activeTafsirVerse === verse.verse_key ? (
+                    <JourneyTafsirStreaming
+                      key={verse.verse_key}
+                      verseKeys={[verse.verse_key]}
+                      tafsirId={clientTafsirId}
+                      initialExpanded
+                    />
+                  ) : (
+                    <div className="mt-4 text-right">
+                      <button
+                        onClick={() => setActiveTafsirVerse(verse.verse_key)}
+                        className="rtl-ready-arrow text-xs text-[var(--color-primary)] hover:underline"
+                        data-script-direction={language === 'ur' ? 'rtl' : 'ltr'}
+                      >
+                        {copy.quran.tafsirLink} →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </article>
             );

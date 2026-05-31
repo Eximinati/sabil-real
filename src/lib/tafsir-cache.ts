@@ -196,7 +196,8 @@ export async function fetchTafsir(
         ? rawTafsirs.map((t: any) => ({
             id: t.id,
             verse_key: t.verse_key || '',
-            verse_number: t.verse_number,
+            verse_number: t.verse_number ??
+              (t.verse_key ? (parseInt(t.verse_key.split(':')[1], 10) || 0) : 0),
             text: t.text || '',
             resource_name: t.resource_name,
           }))
