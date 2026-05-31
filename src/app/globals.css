@@ -401,6 +401,20 @@ a:focus-visible,
   padding-top: env(safe-area-inset-top, 0);
 }
 
+.journal-textarea {
+  background-image:
+    linear-gradient(to bottom, transparent 95%, rgba(183, 146, 42, 0.14) 95%),
+    radial-gradient(circle at top left, rgba(183, 146, 42, 0.08), transparent 40%);
+  background-size: 100% 2.1em, 100% 100%;
+  background-position: 0 0;
+}
+
+.dark .journal-textarea {
+  background-image:
+    linear-gradient(to bottom, transparent 95%, rgba(212, 175, 55, 0.18) 95%),
+    radial-gradient(circle at top left, rgba(212, 175, 55, 0.09), transparent 42%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

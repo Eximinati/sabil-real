@@ -4,10 +4,8 @@ import { getLessonByDay, getLessonByDayWithBlocks, getUserProgress, getUserRefle
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
 import { getServerDictionary } from '@/lib/i18n/server';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { buildCanonicalJourneyPlan } from '@/lib/journey-canonical';
-import type { LanguageCode } from '@/lib/i18n/config';
+import { resolveLanguagePreference } from '@/lib/user-preferences';
 
 interface PageProps {
   params: Promise<{ day: string }>;
@@ -15,33 +13,6 @@ interface PageProps {
 }
 
 export const revalidate = 60;
-
-async function readDayMarkdown(dayNumber: number): Promise<Partial<Record<LanguageCode, string>>> {
-  const dayFolder = `day-${String(dayNumber).padStart(2, '0')}`;
-  const structuredBasePath = path.join(process.cwd(), 'content', 'journey', 'days', dayFolder);
-  const legacyPath = path.join(process.cwd(), 'content', 'journey', `day${dayNumber}.md`);
-
-  async function readIfExists(filePath: string): Promise<string | null> {
-    try {
-      return await readFile(filePath, 'utf-8');
-    } catch {
-      return null;
-    }
-  }
-
-  const [enStructured, ur, enLegacy] = await Promise.all([
-    readIfExists(path.join(structuredBasePath, 'en.md')),
-    readIfExists(path.join(structuredBasePath, 'ur.md')),
-    readIfExists(legacyPath),
-  ]);
-
-  const en = enStructured || enLegacy;
-
-  return {
-    ...(en ? { en } : {}),
-    ...(ur ? { ur } : {}),
-  };
-}
 
 function parsePositiveInt(value: string | undefined): number | null {
   if (!value) {
@@ -69,8 +40,10 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
     redirect('/login');
   }
 
-  const lessonWithBlocks = await getLessonByDayWithBlocks(dayNumber, language);
-  
+  const preferences = await getUserPreferences(user.id);
+  const journeyLanguage = resolveLanguagePreference(preferences.journey_language, language);
+  const lessonWithBlocks = await getLessonByDayWithBlocks(dayNumber, journeyLanguage);
+
   if (!lessonWithBlocks) {
     return (
       <div className="px-6 pt-12 pb-12 max-w-[740px] mx-auto">
@@ -85,9 +58,8 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
     );
   }
 
-  const [progress, preferences, initialReflection] = await Promise.all([
+  const [progress, initialReflection] = await Promise.all([
     getUserProgress(user.id),
-    getUserPreferences(user.id),
     getUserReflection(user.id, lessonWithBlocks.id)
   ]);
 
@@ -97,13 +69,11 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const translationId = parsePositiveInt(urlTranslation) || preferences.translation_id;
   const tafsirId = preferences.tafsir_id;
   const hadithLanguage = preferences.hadith_language;
-  const markdownByLanguage = await readDayMarkdown(dayNumber);
   const canonicalPlan = buildCanonicalJourneyPlan(lessonWithBlocks, {
-    language,
-    markdownByLanguage,
+    language: journeyLanguage,
     preferences,
   });
-  const nextLesson = await getLessonByDay(dayNumber + 1, language);
+  const nextLesson = await getLessonByDay(dayNumber + 1, journeyLanguage);
 
   return (
     <StreamingLessonShell
@@ -115,6 +85,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       translationId={translationId}
       tafsirId={tafsirId}
       hadithLanguage={hadithLanguage}
+      journeyLanguage={preferences.journey_language}
       urlTranslation={urlTranslation}
       hasNextDay={!!nextLesson}
     />

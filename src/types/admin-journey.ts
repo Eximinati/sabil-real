@@ -82,6 +82,15 @@ export interface CanonicalAdminSacredDraft {
   tafsir_reveal_mode: 'condensed' | 'full';
 }
 
+export interface CanonicalAdminWeekContextDraft {
+  week_number: number;
+  week_title: string;
+  week_arc: string;
+  emotional_tone: string;
+  journey_identity: string;
+  editorial_notes: string;
+}
+
 export interface LessonWithBlocks {
   metadata: JourneyLessonMetadata;
   blocks: LessonBlock[];

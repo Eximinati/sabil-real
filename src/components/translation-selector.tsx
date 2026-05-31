@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/context';
+import { getDefaultTranslationIdForLanguage } from '@/lib/user-preferences';
 
 interface Translation {
   id: number;
@@ -29,9 +30,10 @@ export function TranslationSelector() {
         label: 'Translation',
         hint: 'Keep one translation as your quiet default while reading.',
       };
+  const defaultTranslationId = getDefaultTranslationIdForLanguage(language).toString();
 
   const chapterId = params.id as string;
-  const currentTranslation = searchParams.get('translation') || '203';
+  const currentTranslation = searchParams.get('translation') || defaultTranslationId;
 
   const sortedTranslations = useMemo(() => {
     const preferredLanguage = language === 'ur' ? 'urdu' : 'english';

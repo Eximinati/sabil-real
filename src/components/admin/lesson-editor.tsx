@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   CanonicalAdminSacredDraft,
   CanonicalAdminSectionDraft,
+  CanonicalAdminWeekContextDraft,
   JourneyLessonMetadata, 
   LessonBlock, 
   BlockType,
@@ -58,6 +59,7 @@ import {
   sanitizeVerseKeys,
   toCanonicalVerseReferenceLabel,
 } from '@/lib/canonical-sacred';
+import { getDefaultTranslationIdForLanguage } from '@/lib/user-preferences';
 import type {
   CanonicalJourneySectionId,
   JourneyEditorialStage,
@@ -102,8 +104,8 @@ const CANONICAL_SECTION_DEFAULTS: CanonicalAdminSectionDraft[] = [
   },
   {
     id: 'tafsir-insight',
-    heading: 'Tafsir insight',
-    emotional_goal: 'Optional one-line bridge into scholar context.',
+    heading: 'Tafsir framing',
+    emotional_goal: 'Short bridge before API scholar tafsir. NOT a copy-paste wall.',
     required: false,
     content_en: '',
     content_ur: '',
@@ -223,7 +225,7 @@ function buildCanonicalMarkdown(
     'opening-reflection': 'ابتدائی تامل',
     'seerah-moment': 'سیرت کا لمحہ',
     'quran-reflection': 'قرآنی تامل',
-    'tafsir-insight': 'تفسیری بصیرت',
+    'tafsir-insight': 'تفسیری فریمنگ',
     'hadith-connection': 'حدیثی ربط',
     'reflection-prompt': 'تاملی سوال',
     'tiny-action': 'چھوٹا عمل',
@@ -260,8 +262,8 @@ const CANONICAL_SECTION_TEMPLATES: Record<CanonicalJourneySectionId, { en: strin
     ur: 'قرآنی آیات دکھنے سے پہلے ایک نرم جملے میں ان کے ساتھ بیٹھنے کی دعوت دیں۔',
   },
   'tafsir-insight': {
-    en: 'Optional: write one short bridge line before tafsir reveal. Do not paste scholar tafsir text.',
-    ur: 'اختیاری: تفسیر کھلنے سے پہلے ایک مختصر ربطی جملہ لکھیں۔ تفسیری متن پیسٹ نہ کریں۔',
+    en: 'Write one short emotional framing line before dynamic scholar tafsir. Never paste tafsir walls — scholar text comes from API.',
+    ur: 'ڈائنامک تفسیر سے پہلے ایک مختصر جذباتی فریمنگ لکھیں۔ تفسیر کا متن API سے آتا ہے، اسے یہاں پیسٹ نہ کریں۔',
   },
   'hadith-connection': {
     en: 'Add one line that transitions into hadith source text rendered from API.',
@@ -334,6 +336,22 @@ function toCanonicalSacredDraft(metadata: JourneyLessonMetadata): CanonicalAdmin
   };
 }
 
+function toCanonicalWeekContextDraft(metadata: JourneyLessonMetadata): CanonicalAdminWeekContextDraft {
+  const canonical = metadata.shared_metadata?.canonical_journey;
+  const canonicalWeekContext = canonical?.week_context;
+  const shared = metadata.shared_metadata;
+  const weekFromDay = getWeekForDay(metadata.day_number);
+
+  return {
+    week_number: canonicalWeekContext?.week_number || weekFromDay,
+    week_title: canonicalWeekContext?.week_title || shared?.week_chapter || '',
+    week_arc: canonicalWeekContext?.week_arc || shared?.arc_identity || '',
+    emotional_tone: canonicalWeekContext?.emotional_tone || canonical?.emotional_note || shared?.emotional_note || '',
+    journey_identity: canonicalWeekContext?.journey_identity || canonical?.week_identity || shared?.arc_identity || `week-${weekFromDay}`,
+    editorial_notes: canonicalWeekContext?.editorial_notes || '',
+  };
+}
+
 const DEFAULT_CANONICAL_VERSE_KEYS = buildVerseKeysFromQuranRange(DEFAULT_QURAN_RANGE);
 const DEFAULT_CANONICAL_HADITH_COLLECTION = DEFAULT_HADITH_COLLECTION;
 const DEFAULT_CANONICAL_HADITH_NUMBER = DEFAULT_HADITH_NUMBER;
@@ -344,7 +362,8 @@ const DEFAULT_CANONICAL_HADITH_SOURCE =
 function withCanonicalDrafts(
   metadata: JourneyLessonMetadata,
   drafts: CanonicalAdminSectionDraft[],
-  sacredDraft: CanonicalAdminSacredDraft
+  sacredDraft: CanonicalAdminSacredDraft,
+  weekContext: CanonicalAdminWeekContextDraft
 ): JourneyLessonMetadata {
   const existingShared = metadata.shared_metadata || {};
   const existingCanonical = existingShared.canonical_journey || {};
@@ -402,14 +421,29 @@ function withCanonicalDrafts(
     ...metadata,
     shared_metadata: {
       ...existingShared,
+      week_chapter: weekContext.week_title.trim() || existingShared.week_chapter,
+      arc_identity: weekContext.week_arc.trim() || existingShared.arc_identity,
+      emotional_note: weekContext.emotional_tone.trim() || existingShared.emotional_note,
       canonical_journey: {
         ...existingCanonical,
         structure_version: existingCanonical.structure_version || 1,
         week_identity:
+          weekContext.journey_identity.trim() ||
           existingCanonical.week_identity ||
           existingShared.arc_identity ||
           `week-${getWeekForDay(metadata.day_number)}`,
-        emotional_note: existingCanonical.emotional_note || existingShared.emotional_note,
+        emotional_note:
+          weekContext.emotional_tone.trim() ||
+          existingCanonical.emotional_note ||
+          existingShared.emotional_note,
+        week_context: {
+          week_number: toPositiveInt(weekContext.week_number) || getWeekForDay(metadata.day_number),
+          week_title: weekContext.week_title.trim(),
+          week_arc: weekContext.week_arc.trim(),
+          emotional_tone: weekContext.emotional_tone.trim(),
+          journey_identity: weekContext.journey_identity.trim(),
+          editorial_notes: weekContext.editorial_notes.trim(),
+        },
         publishing_state:
           existingCanonical.publishing_state ||
           (metadata.is_published ? 'published' : 'review'),
@@ -488,6 +522,19 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
       }
     )
   );
+  const [canonicalWeekContextDraft, setCanonicalWeekContextDraft] = useState<CanonicalAdminWeekContextDraft>(
+    toCanonicalWeekContextDraft(
+      initialData?.metadata || {
+        day_number: 1,
+        title: '',
+        subtitle: '',
+        topic: '',
+        description: '',
+        estimated_minutes: 10,
+        is_published: false,
+      }
+    )
+  );
 
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
@@ -539,8 +586,23 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
   const metadataWithCanonicalDrafts = withCanonicalDrafts(
     metadata,
     canonicalDrafts,
-    canonicalSacredDraft
+    canonicalSacredDraft,
+    canonicalWeekContextDraft
   );
+  const hideGenericBlocksForCanonicalDay = metadata.day_number <= 5;
+  const hasCanonicalBlocks = blocks.length > 0;
+
+  const shouldShowLegacyBlocks = useMemo(
+    () => !hideGenericBlocksForCanonicalDay || hasCanonicalBlocks,
+    [hideGenericBlocksForCanonicalDay, hasCanonicalBlocks]
+  );
+
+  useEffect(() => {
+    if (metadata.day_number <= 5 && blocks.length > 0) {
+      setBlocks([]);
+      toast.info('Canonical day detected. Legacy blocks were cleared to keep sacred flow authored in canonical sections.');
+    }
+  }, [metadata.day_number]);
 
   useEffect(() => {
     const week = getWeekForDay(metadata.day_number);
@@ -928,7 +990,7 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
     (section) => section.content_en.trim().length > 0 || section.content_ur.trim().length > 0
   );
   const previewUsesCanonical = canonicalRequiredForDay || hasCanonicalAuthoredContent;
-  const canonicalPreviewTranslationId = canonicalPreviewLanguage === 'ur' ? 131 : 203;
+  const canonicalPreviewTranslationId = getDefaultTranslationIdForLanguage(canonicalPreviewLanguage);
 
   const hasCriticalCanonicalIssue = canonicalQa.issues.some((issue) => issue.severity === 'critical');
 
@@ -939,7 +1001,7 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
     setCanonicalDrafts((prevDrafts) => {
       const nextDrafts = transform(prevDrafts);
       setMetadata((prevMetadata) =>
-        withCanonicalDrafts(prevMetadata, nextDrafts, canonicalSacredDraft)
+        withCanonicalDrafts(prevMetadata, nextDrafts, canonicalSacredDraft, canonicalWeekContextDraft)
       );
       return nextDrafts;
     });
@@ -959,7 +1021,26 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
         [field]: value,
       } as CanonicalAdminSacredDraft;
 
-      setMetadata((prevMetadata) => withCanonicalDrafts(prevMetadata, canonicalDrafts, nextDraft));
+      setMetadata((prevMetadata) =>
+        withCanonicalDrafts(prevMetadata, canonicalDrafts, nextDraft, canonicalWeekContextDraft)
+      );
+      return nextDraft;
+    });
+  };
+
+  const updateCanonicalWeekContextDraft = (
+    field: keyof CanonicalAdminWeekContextDraft,
+    value: string | number
+  ) => {
+    setCanonicalWeekContextDraft((prevDraft) => {
+      const nextDraft = {
+        ...prevDraft,
+        [field]: value,
+      } as CanonicalAdminWeekContextDraft;
+
+      setMetadata((prevMetadata) =>
+        withCanonicalDrafts(prevMetadata, canonicalDrafts, canonicalSacredDraft, nextDraft)
+      );
       return nextDraft;
     });
   };
@@ -1432,8 +1513,10 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
               metadata={metadata}
               sections={canonicalDrafts}
               sacredDraft={canonicalSacredDraft}
+              weekContext={canonicalWeekContextDraft}
               onSectionChange={updateCanonicalSection}
               onSacredDraftChange={updateCanonicalSacredDraft}
+              onWeekContextChange={updateCanonicalWeekContextDraft}
               onLoadCanonicalTemplate={loadCanonicalTemplate}
             />
           </div>
@@ -1478,91 +1561,112 @@ export function LessonEditor({ initialData, userId }: LessonEditorProps) {
           </div>
         </div>
 
-        {/* Blocks Section */}
+        {/* Legacy Blocks Section — deprecated for canonical days */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-[var(--color-text)]">Content Blocks</h2>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowImportModal(true)}
-                className="px-3 py-1.5 bg-[var(--color-accent)] text-white text-sm rounded-lg hover:opacity-90"
-              >
-                Import Markdown
-              </button>
-
-              {metadata.day_number >= 2 && metadata.day_number <= 30 && (
-                <button
-                  onClick={insertTemplate}
-                  className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text)] text-sm rounded-lg hover:bg-[var(--color-bg)]"
-                >
-                  Insert Day Template
-                </button>
-              )}
-
-              <div className="relative group">
-                <button className="px-3 py-1.5 bg-[var(--color-primary)] text-white text-sm rounded-lg hover:bg-[var(--color-primary-hover)]">
-                  + Add Block
-                </button>
-                <div className="absolute right-0 top-full mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[180px]">
-                  {BLOCK_TYPES.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => addBlock(type)}
-                      className="w-full px-4 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-bg)] first:rounded-t-lg last:rounded-b-lg"
-                    >
-                      {BLOCK_TYPE_LABELS[type]}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-base font-medium text-[var(--color-text)]">
+                Legacy blocks
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">deprecated</span>
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">
+                The generic block builder is being replaced by the canonical journey composer above.
+                {metadata.day_number <= 5
+                  ? ' Days 1-5 use the canonical system exclusively.'
+                  : ' Migrate content to the canonical system for emotional rhythm consistency.'}
+              </p>
             </div>
           </div>
 
-          {blocks.length === 0 ? (
-            <p className="text-[var(--color-text-muted)] text-sm text-center py-8">
-              No content blocks yet. Click "Add Block" to start building your lesson.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {blocks.map((block, index) => (
-                <BlockEditor
-                  key={block.id || index}
-                  block={block}
-                  index={index}
-                  onUpdate={(updates) => updateBlock(index, updates)}
-                  onRemove={() => removeBlock(index)}
-                  onMoveUp={() => moveBlock(index, 'up')}
-                  onMoveDown={() => moveBlock(index, 'down')}
-                  canMoveUp={index > 0}
-                  canMoveDown={index < blocks.length - 1}
-                />
-              ))}
+          {!shouldShowLegacyBlocks && (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4 text-sm text-[var(--color-text-muted)]">
+              Days 1-5 use the canonical composer. Generic blocks are hidden to keep the sacred flow emotionally coherent.
             </div>
           )}
 
-          {metadata.day_number >= 2 && metadata.day_number <= 30 && (
-            <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-              <p className="text-sm font-medium text-[var(--color-text)]">Template coverage</p>
-              <div className="mt-3 grid gap-2">
-                {templateCoverage.sections.map((section) => {
-                  const isMatched = templateCoverage.matchedSectionIds.has(section.id);
-                  return (
-                    <div
-                      key={section.id}
-                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
-                        isMatched
-                          ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-200'
-                          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
-                      }`}
-                    >
-                      <span>{section.title}</span>
-                      <span>{isMatched ? 'Included' : 'Missing'}</span>
-                    </div>
-                  );
-                })}
+          {shouldShowLegacyBlocks && (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                {metadata.day_number >= 2 && metadata.day_number <= 30 && (
+                  <button
+                    onClick={insertTemplate}
+                    className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text)] text-sm rounded-lg hover:bg-[var(--color-bg)]"
+                  >
+                    Insert Day Template
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="px-3 py-1.5 bg-[var(--color-accent)] text-white text-sm rounded-lg hover:opacity-90"
+                >
+                  Import Markdown
+                </button>
+
+                <div className="relative group">
+                  <button className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text)] text-sm rounded-lg hover:bg-[var(--color-bg)]">
+                    + Add Block
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[180px]">
+                    {BLOCK_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => addBlock(type)}
+                        className="w-full px-4 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-bg)] first:rounded-t-lg last:rounded-b-lg"
+                      >
+                        {BLOCK_TYPE_LABELS[type]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+
+              {blocks.length === 0 ? (
+                <p className="text-[var(--color-text-muted)] text-sm text-center py-8">
+                  No legacy blocks yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {blocks.map((block, index) => (
+                    <BlockEditor
+                      key={block.id || index}
+                      block={block}
+                      index={index}
+                      onUpdate={(updates) => updateBlock(index, updates)}
+                      onRemove={() => removeBlock(index)}
+                      onMoveUp={() => moveBlock(index, 'up')}
+                      onMoveDown={() => moveBlock(index, 'down')}
+                      canMoveUp={index > 0}
+                      canMoveDown={index < blocks.length - 1}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {metadata.day_number >= 2 && metadata.day_number <= 30 && (
+                <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                  <p className="text-sm font-medium text-[var(--color-text)]">Template coverage</p>
+                  <div className="mt-3 grid gap-2">
+                    {templateCoverage.sections.map((section) => {
+                      const isMatched = templateCoverage.matchedSectionIds.has(section.id);
+                      return (
+                        <div
+                          key={section.id}
+                          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
+                            isMatched
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-200'
+                              : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
+                          }`}
+                        >
+                          <span>{section.title}</span>
+                          <span>{isMatched ? 'Included' : 'Missing'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

@@ -49,6 +49,15 @@ export interface CanonicalTafsirSettings {
   reveal_mode?: CanonicalTafsirRevealMode;
 }
 
+export interface CanonicalWeekContext {
+  week_number?: number;
+  week_title?: string;
+  week_arc?: string;
+  emotional_tone?: string;
+  journey_identity?: string;
+  editorial_notes?: string;
+}
+
 export interface CanonicalJourneySectionState {
   heading?: string;
   emotional_goal?: string;
@@ -70,6 +79,7 @@ export interface CanonicalJourneyState {
   structure_version?: number;
   week_identity?: string;
   emotional_note?: string;
+  week_context?: CanonicalWeekContext;
   publishing_state?: 'draft' | 'review' | 'published';
   default_tafsir_id?: number;
   tafsir?: CanonicalTafsirSettings;

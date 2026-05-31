@@ -1,4 +1,5 @@
 import { metadataStore } from './metadata-store';
+import { DEFAULT_TRANSLATION_ID } from './user-preferences';
 
 const API_BASE = '';
 
@@ -106,7 +107,7 @@ export async function getCachedTafsir(
 
 export async function getCachedVerses(
   chapterId: number,
-  translationId: number = 203
+  translationId: number = DEFAULT_TRANSLATION_ID
 ) {
   return safeFetch(
     `${API_BASE}/api/verses/${chapterId}?translation=${translationId}`,

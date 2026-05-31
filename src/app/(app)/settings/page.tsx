@@ -43,6 +43,13 @@ export default async function SettingsPage() {
         ? copy.settings.uiLanguageUrdu
         : copy.settings.uiLanguageAuto;
 
+  const currentJourneyLanguageLabel =
+    preferences.journey_language === 'en'
+      ? copy.settings.journeyLanguageEnglish
+      : preferences.journey_language === 'ur'
+        ? copy.settings.journeyLanguageUrdu
+        : copy.settings.journeyLanguageAuto;
+
   const createdDate = user.created_at 
     ? new Date(user.created_at).toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', {
         year: 'numeric', 
@@ -113,11 +120,16 @@ export default async function SettingsPage() {
               <p className="text-sm text-[var(--color-text-muted)] mb-1">{copy.settings.currentUiLanguage}</p>
               <p className="text-[var(--color-text)]">{currentUiLanguageLabel}</p>
             </div>
+            <div className="mb-6">
+              <p className="text-sm text-[var(--color-text-muted)] mb-1">{copy.settings.currentJourneyLanguage}</p>
+              <p className="text-[var(--color-text)]">{currentJourneyLanguageLabel}</p>
+            </div>
             <PreferencesForm 
               initialTranslationId={preferences.translation_id}
               initialTafsirId={preferences.tafsir_id}
               initialHadithLanguage={preferences.hadith_language}
               initialUiLanguage={preferences.ui_language}
+              initialJourneyLanguage={preferences.journey_language}
               initialRemindersEnabled={preferences.reminders_enabled}
               initialReminderTime={reminderTimeValue}
               initialReminderLanguage={preferences.reminder_language}

@@ -6,6 +6,7 @@
  */
 
 import { getQFToken, clearCachedToken } from './qf-token';
+import { DEFAULT_TRANSLATION_ID } from './user-preferences';
 
 const QF_API_BASE = process.env.QF_API_BASE!;
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID!;
@@ -299,7 +300,7 @@ export async function searchQuran(
   page: number = 1,
   size: number = 10,
   language: string = 'en',
-  translationId: number = 131
+  translationId: number = DEFAULT_TRANSLATION_ID
 ): Promise<SearchResponse> {
   return qfFetch<SearchResponse>('/search/v4/search', {
     q: query,

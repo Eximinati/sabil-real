@@ -153,6 +153,7 @@ export interface AppCopy {
     currentTafsir: string;
     currentHadithLanguage: string;
     currentUiLanguage: string;
+    currentJourneyLanguage: string;
     defaultTranslation: string;
     defaultTafsir: string;
     hadithLanguage: string;
@@ -165,6 +166,11 @@ export interface AppCopy {
     uiLanguageAuto: string;
     uiLanguageEnglish: string;
     uiLanguageUrdu: string;
+    journeyLanguage: string;
+    journeyLanguageDescription: string;
+    journeyLanguageAuto: string;
+    journeyLanguageEnglish: string;
+    journeyLanguageUrdu: string;
     reminders: string;
     remindersDescription: string;
     reminderEnabled: string;

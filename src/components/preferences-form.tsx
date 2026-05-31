@@ -23,6 +23,7 @@ interface PreferencesFormProps {
   initialTafsirId: number;
   initialHadithLanguage: 'auto' | 'english' | 'urdu';
   initialUiLanguage: 'auto' | 'en' | 'ur';
+  initialJourneyLanguage: 'auto' | 'en' | 'ur';
   initialRemindersEnabled: boolean;
   initialReminderTime: string;
   initialReminderLanguage: 'auto' | 'en' | 'ur';
@@ -33,6 +34,7 @@ export function PreferencesForm({
   initialTafsirId,
   initialHadithLanguage,
   initialUiLanguage,
+  initialJourneyLanguage,
   initialRemindersEnabled,
   initialReminderTime,
   initialReminderLanguage,
@@ -50,6 +52,7 @@ export function PreferencesForm({
   const [tafsirId, setTafsirId] = useState(initialTafsirId.toString());
   const [hadithLanguage, setHadithLanguage] = useState<'auto' | 'english' | 'urdu'>(initialHadithLanguage);
   const [uiLanguage, setUiLanguage] = useState<'auto' | 'en' | 'ur'>(initialUiLanguage);
+  const [journeyLanguage, setJourneyLanguage] = useState<'auto' | 'en' | 'ur'>(initialJourneyLanguage);
   const [remindersEnabled, setRemindersEnabled] = useState(initialRemindersEnabled);
   const [reminderTime, setReminderTime] = useState(initialReminderTime);
   const [reminderLanguage, setReminderLanguage] = useState<'auto' | 'en' | 'ur'>(initialReminderLanguage);
@@ -76,6 +79,7 @@ export function PreferencesForm({
           tafsirId: parseInt(tafsirId, 10),
           hadithLanguage,
           uiLanguage,
+          journeyLanguage,
           remindersEnabled,
           reminderTime,
           reminderLanguage,
@@ -159,6 +163,20 @@ export function PreferencesForm({
             <option value="auto">{copy.settings.uiLanguageAuto}</option>
             <option value="en">{copy.settings.uiLanguageEnglish}</option>
             <option value="ur">{copy.settings.uiLanguageUrdu}</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm text-[var(--color-text)] mb-1">{copy.settings.journeyLanguage}</label>
+          <p className="text-xs text-[var(--color-text-muted)] mb-2">{copy.settings.journeyLanguageDescription}</p>
+          <select
+            value={journeyLanguage}
+            onChange={(e) => setJourneyLanguage(e.target.value as 'auto' | 'en' | 'ur')}
+            className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2.5 bg-[var(--color-surface)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+          >
+            <option value="auto">{copy.settings.journeyLanguageAuto}</option>
+            <option value="en">{copy.settings.journeyLanguageEnglish}</option>
+            <option value="ur">{copy.settings.journeyLanguageUrdu}</option>
           </select>
         </div>
       </div>

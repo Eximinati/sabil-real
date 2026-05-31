@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from '@/lib/i18n/config';
-
-const DEFAULT_EN_TRANSLATION_ID = 203;
-const DEFAULT_UR_TRANSLATION_ID = 131;
-const DEFAULT_TAFSIR_ID = 169;
+import {
+  DEFAULT_TAFSIR_ID,
+  getDefaultTranslationIdForLanguage,
+} from '@/lib/user-preferences';
 
 function isMissingColumnError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
@@ -30,8 +30,8 @@ async function upsertPreferencesWithCompat(
     userId: string;
     translationId: number;
     tafsirId: number;
-    language: 'en' | 'ur';
-    completed: boolean;
+      language: 'en' | 'ur';
+      completed: boolean;
   }
 ) {
   const basePayload = {
@@ -45,7 +45,13 @@ async function upsertPreferencesWithCompat(
     {
       ...basePayload,
       ui_language: params.language,
+      journey_language: params.language,
       onboarding_completed: params.completed,
+    },
+    {
+      ...basePayload,
+      ui_language: params.language,
+      journey_language: params.language,
     },
     {
       ...basePayload,
@@ -107,7 +113,7 @@ export async function POST(request: Request) {
       throw existingPreferencesError;
     }
 
-    const fallbackTranslationId = language === 'ur' ? DEFAULT_UR_TRANSLATION_ID : DEFAULT_EN_TRANSLATION_ID;
+    const fallbackTranslationId = getDefaultTranslationIdForLanguage(language);
     const translationId = existingPreferences?.translation_id ?? fallbackTranslationId;
     const tafsirId = existingPreferences?.tafsir_id ?? DEFAULT_TAFSIR_ID;
 

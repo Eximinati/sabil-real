@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import {
+  getDefaultTranslationIdForLanguage,
+  normalizeTranslationId,
+} from '@/lib/user-preferences';
 
 interface Chapter {
   id: number;
@@ -186,10 +190,26 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
       }
       
       try {
+        const { data: authData } = await supabaseBrowser.auth.getUser();
+        let translationId = getDefaultTranslationIdForLanguage(language);
+
+        if (authData.user) {
+          const { data: prefs } = await supabaseBrowser
+            .from('user_preferences')
+            .select('translation_id')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+
+          translationId = normalizeTranslationId(
+            prefs?.translation_id,
+            getDefaultTranslationIdForLanguage(language)
+          );
+        }
+
         const [chaptersRes, bismillahRes, quran65Res] = await Promise.all([
           fetch('/api/chapters', { next: { revalidate: 3600 } }),
-          fetch('/api/verses/by_key/1:1?translation=203', { next: { revalidate: 3600 } }),
-          fetch('/api/verses/by_key/65:3?translation=203', { next: { revalidate: 3600 } }),
+          fetch(`/api/verses/by_key/1:1?translation=${translationId}`, { next: { revalidate: 3600 } }),
+          fetch(`/api/verses/by_key/65:3?translation=${translationId}`, { next: { revalidate: 3600 } }),
         ]);
 
         const chaptersData = await chaptersRes.json();
@@ -207,7 +227,7 @@ export function LandingContent({ staticChapters, staticBismillah, staticQuran65,
     }
 
     checkAuthAndFetch();
-  }, []);
+  }, [language]);
 
   const { bismillah, quran65 } = data;
 

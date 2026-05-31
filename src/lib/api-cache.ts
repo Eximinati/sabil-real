@@ -1,4 +1,5 @@
 import { getApiUrl } from './api-url';
+import { DEFAULT_TRANSLATION_ID } from './user-preferences';
 
 const CACHE_CONFIG = {
   chapters: { revalidate: 86400 }, // 24 hours - static data
@@ -98,7 +99,7 @@ export async function fetchAudioForChapter(reciterId: number, chapterId: number)
   return data.audio_files || [];
 }
 
-export async function fetchVerse(verseKey: string, translationId: number = 203) {
+export async function fetchVerse(verseKey: string, translationId: number = DEFAULT_TRANSLATION_ID) {
   const res = await fetch(
     getApiUrl(`/verses/by_key/${verseKey}?translation=${translationId}`),
     { next: { revalidate: CACHE_CONFIG.verses.revalidate } }
@@ -107,7 +108,7 @@ export async function fetchVerse(verseKey: string, translationId: number = 203) 
   return res.json();
 }
 
-export async function fetchVerses(verseKeys: string[], translationId: number = 203) {
+export async function fetchVerses(verseKeys: string[], translationId: number = DEFAULT_TRANSLATION_ID) {
   const promises = verseKeys.map(key => fetchVerse(key, translationId));
   return Promise.all(promises);
 }

@@ -11,6 +11,15 @@ import type {
   JourneySharedMetadata,
   JourneyTranslationStatusMap,
 } from '@/types/journey-localization';
+import {
+  DEFAULT_REMINDER_TIME,
+  DEFAULT_TAFSIR_ID,
+  DEFAULT_TRANSLATION_ID,
+  parseHadithLanguagePreference,
+  parsePreferenceLanguage,
+  type HadithLanguagePreference,
+  type PreferenceLanguage,
+} from './user-preferences';
 
 export interface JourneyLesson {
   id: string;
@@ -56,11 +65,12 @@ export interface UserProgress {
 export interface UserPreferences {
   translation_id: number;
   tafsir_id: number;
-  hadith_language: 'auto' | 'english' | 'urdu';
-  ui_language: 'auto' | 'en' | 'ur';
+  hadith_language: HadithLanguagePreference;
+  ui_language: PreferenceLanguage;
+  journey_language: PreferenceLanguage;
   reminders_enabled: boolean;
   reminder_time: string | null;
-  reminder_language: 'auto' | 'en' | 'ur';
+  reminder_language: PreferenceLanguage;
   last_active_at: string | null;
 }
 
@@ -158,17 +168,18 @@ export async function getUserPreferences(
   const supabase = await supabaseServer();
   const { data } = await supabase
     .from('user_preferences')
-    .select('translation_id, tafsir_id, hadith_language, ui_language, reminders_enabled, reminder_time, reminder_language, last_active_at')
+    .select('translation_id, tafsir_id, hadith_language, ui_language, journey_language, reminders_enabled, reminder_time, reminder_language, last_active_at')
     .eq('user_id', userId)
     .single();
 
   const defaults: UserPreferences = {
-    translation_id: 203,
-    tafsir_id: 169,
+    translation_id: DEFAULT_TRANSLATION_ID,
+    tafsir_id: DEFAULT_TAFSIR_ID,
     hadith_language: 'auto',
     ui_language: 'auto',
+    journey_language: 'auto',
     reminders_enabled: false,
-    reminder_time: '20:30:00',
+    reminder_time: DEFAULT_REMINDER_TIME,
     reminder_language: 'auto',
     last_active_at: null,
   };
@@ -177,9 +188,17 @@ export async function getUserPreferences(
     return defaults;
   }
 
-  return {
+  const merged = {
     ...defaults,
     ...data,
+  };
+
+  return {
+    ...merged,
+    hadith_language: parseHadithLanguagePreference(merged.hadith_language),
+    ui_language: parsePreferenceLanguage(merged.ui_language),
+    journey_language: parsePreferenceLanguage(merged.journey_language),
+    reminder_language: parsePreferenceLanguage(merged.reminder_language),
   };
 }
 

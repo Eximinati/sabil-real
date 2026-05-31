@@ -1,4 +1,5 @@
 import { getApiUrl } from './api-url';
+import { DEFAULT_TRANSLATION_ID } from './user-preferences';
 
 interface CacheEntry<T> {
   data: T;
@@ -161,7 +162,10 @@ export async function fetchCachedTranslations(): Promise<any[]> {
   return translations;
 }
 
-export async function fetchCachedVerse(verseKey: string, translationId: number = 203): Promise<any> {
+export async function fetchCachedVerse(
+  verseKey: string,
+  translationId: number = DEFAULT_TRANSLATION_ID
+): Promise<any> {
   const cacheKey = getCacheKey(verseKey, translationId);
   const cached = getCacheEntry(contentCache.verses, cacheKey);
   if (cached.data) {
@@ -189,7 +193,7 @@ export async function fetchCachedVerse(verseKey: string, translationId: number =
 
 export async function fetchCachedVerses(
   verseKeys: string[], 
-  translationId: number = 203
+  translationId: number = DEFAULT_TRANSLATION_ID
 ): Promise<any[]> {
   const cacheKeys = verseKeys.map(vk => getCacheKey(vk, translationId));
   

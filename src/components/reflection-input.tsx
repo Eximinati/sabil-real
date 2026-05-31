@@ -46,25 +46,30 @@ export function ReflectionInput({ lessonId, dayNumber, initialValue = '' }: Refl
   const isUrduDraft = language === 'ur' || hasUrduText;
 
   return (
-    <div className="rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/78 p-4 md:p-5">
-      <p className="mb-3 text-xs text-[var(--color-text-muted)]">{copy.reflectionInput.helper}</p>
+    <div className="rounded-3xl border border-[var(--color-border)]/60 bg-gradient-to-b from-[var(--color-surface)]/95 to-[var(--color-bg)]/80 p-5 shadow-[0_8px_32px_-20px_rgba(26,26,26,0.25)] md:p-6">
+      <div className="mb-4 flex items-center gap-2.5 text-xs text-[var(--color-text-muted)]">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-bg)]/70 text-xs tracking-wide">
+          ✦
+        </span>
+        <p className="tracking-[0.01em]">{copy.reflectionInput.helper}</p>
+      </div>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={copy.reflectionInput.placeholder}
-        className={`min-h-[220px] md:min-h-[200px] w-full resize-y rounded-[22px] border border-[var(--color-border)] bg-[var(--color-bg)]/55 p-4 md:p-5 text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 ${
-          isUrduDraft ? 'font-urdu text-[18px] leading-[2.15]' : 'text-[16px] leading-[1.95]'
+        className={`min-h-[260px] md:min-h-[240px] w-full resize-y rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-bg)]/55 p-5 md:p-6 text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)]/60 hover:border-[var(--color-border)] focus:border-[var(--color-primary)]/30 focus:bg-[var(--color-surface)]/70 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10 ${
+          isUrduDraft ? 'font-urdu text-[18px] leading-[2.15]' : 'text-[16px] leading-[2]'
         }`}
         dir={isUrduDraft ? 'rtl' : 'ltr'}
       />
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-[var(--color-text-muted)]">
-          {isUrduDraft ? 'Write gently in your own words.' : 'Write slowly and honestly. This space is private.'}
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-[var(--color-text-muted)]/70 italic">
+          {isUrduDraft ? 'اپنے الفاظ میں لکھیں۔' : 'Write slowly and honestly. This space is private.'}
         </p>
         <button
           onClick={handleSave}
           disabled={saving || !text.trim()}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)]/90 px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-[var(--color-primary)] disabled:opacity-40"
         >
           {saving ? (
             <>

@@ -58,6 +58,7 @@ interface StreamingLessonClientProps {
   translationId: number;
   tafsirId?: number;
   hadithLanguage?: 'auto' | 'english' | 'urdu';
+  journeyLanguage?: 'auto' | 'en' | 'ur';
   urlTranslation?: string | null;
   hasNextDay?: boolean;
 }
@@ -123,9 +124,11 @@ function StreamSectionLogger({ name, children }: { name: string; children: React
 
 function JourneyLessonHeader({ 
   translationId,
+  journeyLanguage = 'auto',
   urlTranslation,
 }: { 
   translationId: number;
+  journeyLanguage?: 'auto' | 'en' | 'ur';
   urlTranslation?: string | null;
 }) {
   const copy = useCopy();
@@ -137,6 +140,8 @@ function JourneyLessonHeader({
     urlTranslation ? parseInt(urlTranslation, 10) : translationId
   );
   const [selectedReciter, setSelectedReciter] = useState(5);
+  const [selectedJourneyLanguage, setSelectedJourneyLanguage] = useState<'auto' | 'en' | 'ur'>(journeyLanguage);
+  const [savingJourneyLanguage, setSavingJourneyLanguage] = useState(false);
 
   useEffect(() => {
     const storedReciter = localStorage.getItem('sabil-reciter-id');
@@ -150,6 +155,10 @@ function JourneyLessonHeader({
       setSelectedTranslation(parseInt(urlTranslation, 10));
     }
   }, [urlTranslation]);
+
+  useEffect(() => {
+    setSelectedJourneyLanguage(journeyLanguage);
+  }, [journeyLanguage]);
 
   const handleTranslationChange = (id: number) => {
     if (id === selectedTranslation) return;
@@ -169,6 +178,35 @@ function JourneyLessonHeader({
     setSelectedReciter(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
     toast.success(copy.common.toasts.reciterUpdated);
+  };
+
+  const handleJourneyLanguageChange = async (value: 'auto' | 'en' | 'ur') => {
+    if (value === selectedJourneyLanguage || savingJourneyLanguage) {
+      return;
+    }
+
+    setSelectedJourneyLanguage(value);
+    setSavingJourneyLanguage(true);
+
+    try {
+      const res = await fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ journeyLanguage: value }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save journey language preference');
+      }
+
+      toast.success(copy.common.toasts.preferencesUpdated);
+      router.refresh();
+    } catch {
+      setSelectedJourneyLanguage(journeyLanguage);
+      toast.error(copy.common.toasts.somethingWentWrong);
+    } finally {
+      setSavingJourneyLanguage(false);
+    }
   };
 
   return (
@@ -203,6 +241,21 @@ function JourneyLessonHeader({
               currentReciterId={selectedReciter}
               onReciterChange={handleReciterChange}
             />
+            <label className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)]">
+              <span className="text-[var(--color-text-muted)]">Journey</span>
+              <select
+                value={selectedJourneyLanguage}
+                disabled={savingJourneyLanguage}
+                onChange={(event) =>
+                  handleJourneyLanguageChange(event.target.value as 'auto' | 'en' | 'ur')
+                }
+                className="min-w-[110px] bg-transparent text-sm focus:outline-none disabled:opacity-60"
+              >
+                <option value="auto">Auto</option>
+                <option value="en">English</option>
+                <option value="ur">Urdu</option>
+              </select>
+            </label>
           </div>
         </details>
       </div>
@@ -219,6 +272,7 @@ export function StreamingLessonShell({
   translationId,
   tafsirId,
   hadithLanguage,
+  journeyLanguage,
   urlTranslation,
   hasNextDay
 }: StreamingLessonClientProps) {
@@ -232,8 +286,8 @@ export function StreamingLessonShell({
   const week = getWeekForDay(lesson.day_number);
   const currentArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === week);
   const { language } = useLanguage();
+  const canonicalResolvedLanguage = canonicalPlan?.languageContext.resolved;
   const shouldShowLanguageFallback =
-    language === 'ur' &&
     lesson.language_context?.requested === 'ur' &&
     lesson.language_context?.resolved === 'en';
   const isUrduTopic = /[\u0600-\u06FF]/.test(lesson.topic || '');
@@ -251,6 +305,7 @@ export function StreamingLessonShell({
     >
       <JourneyLessonHeader 
         translationId={translationId}
+        journeyLanguage={journeyLanguage}
         urlTranslation={urlTranslation}
       />
 
@@ -279,6 +334,7 @@ export function StreamingLessonShell({
             </div>
           )}
           <DayOneCanonicalExperience
+            key={`${canonicalResolvedLanguage || 'en'}-${translationId}`}
             lessonId={lesson.id}
             dayNumber={lesson.day_number}
             lessonTitle={lesson.title}
@@ -313,6 +369,7 @@ export function StreamingLessonShell({
             initialReflection={initialReflection}
             isCompleted={isCompleted}
             hasNextDay={hasNextDay}
+            languageOverride={canonicalResolvedLanguage}
           />
         </>
       ) : (

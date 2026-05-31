@@ -12,6 +12,7 @@ import { JourneyTimelineVirtualized } from '@/components/journey-timeline-virtua
 import { DailyIntentionCard } from '@/components/daily-intention-card';
 import { DAY_IDENTITY_30, WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 import { getServerDictionary } from '@/lib/i18n/server';
+import { resolveLanguagePreference } from '@/lib/user-preferences';
 
 interface Lesson {
   id: string;
@@ -112,11 +113,13 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
     redirect('/login');
   }
 
-  const [lessons, progress, preferences] = await Promise.all([
-    getPublishedLessons(language),
+  const [progress, preferences] = await Promise.all([
     getUserProgress(user.id),
     getUserPreferences(user.id),
   ]);
+
+  const journeyLanguage = resolveLanguagePreference(preferences.journey_language, language);
+  const lessons = await getPublishedLessons(journeyLanguage);
 
   const requestedNotice =
     notice === 'return-tomorrow' || notice === 'welcome-back'

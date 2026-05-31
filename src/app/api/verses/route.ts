@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getVerses, getChapterRecitationAudio } from '@/lib/qf-api';
 import {
+  DEFAULT_TRANSLATION_ID,
   normalizeApiErrorMessage,
   shouldFallbackFromError,
 } from '@/lib/qf-fallbacks';
@@ -14,7 +15,10 @@ export async function GET(request: Request) {
     const verseKeys = (searchParams.get('verse_keys')?.split(',') || [])
       .map((value) => value.trim())
       .filter(Boolean);
-    const translationId = parseInt(searchParams.get('translation') || '203', 10);
+    const translationId = parseInt(
+      searchParams.get('translation') || String(DEFAULT_TRANSLATION_ID),
+      10
+    );
     const reciterId = parseInt(searchParams.get('reciter') || '5', 10);
 
     if (verseKeys.length === 0) {

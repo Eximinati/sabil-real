@@ -2,6 +2,11 @@ import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getApiUrl } from '@/lib/api-url';
 import { BookmarksClient } from './bookmarks-client';
+import {
+  getDefaultTranslationIdFromPreferenceLanguage,
+  isMissingColumnError,
+  normalizeTranslationId,
+} from '@/lib/user-preferences';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +44,10 @@ async function getChapters(): Promise<ChapterData[]> {
   }
 }
 
-async function getVersesBatch(surahIds: number[]): Promise<Map<string, any>> {
+async function getVersesBatch(
+  surahIds: number[],
+  translationId: number
+): Promise<Map<string, any>> {
   const versesMap = new Map<string, any>();
   
   const uniqueSurahIds = [...new Set(surahIds)];
@@ -47,7 +55,7 @@ async function getVersesBatch(surahIds: number[]): Promise<Map<string, any>> {
   const results = await Promise.all(
     uniqueSurahIds.map(async (surahId) => {
       try {
-        const res = await fetch(getApiUrl(`/verses/${surahId}?translation=203`), { 
+        const res = await fetch(getApiUrl(`/verses/${surahId}?translation=${translationId}`), {
           next: { revalidate: 300 } 
         });
         const data = await res.json();
@@ -86,9 +94,38 @@ async function getBookmarks(): Promise<EnrichedBookmark[]> {
     return [];
   }
 
+  let preferences: { translation_id?: number | null; ui_language?: string | null } | null = null;
+
+  const { data: preferenceData, error: preferenceError } = await supabase
+    .from('user_preferences')
+    .select('translation_id, ui_language')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!preferenceError) {
+    preferences = preferenceData;
+  } else if (!isMissingColumnError(preferenceError)) {
+    throw preferenceError;
+  } else {
+    const { data: legacyPreferenceData } = await supabase
+      .from('user_preferences')
+      .select('translation_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    preferences = legacyPreferenceData;
+  }
+
+  const fallbackTranslation = getDefaultTranslationIdFromPreferenceLanguage(
+    preferences?.ui_language === 'en' || preferences?.ui_language === 'ur'
+      ? preferences.ui_language
+      : 'auto'
+  );
+  const translationId = normalizeTranslationId(preferences?.translation_id, fallbackTranslation);
+
   const surahIds = bookmarks.map(b => b.surah_id);
   const chapters = await getChapters();
-  const versesMap = await getVersesBatch(surahIds);
+  const versesMap = await getVersesBatch(surahIds, translationId);
 
   const enrichedBookmarks: EnrichedBookmark[] = bookmarks.map((bookmark) => {
     const chapter = chapters.find((c: ChapterData) => c.id === bookmark.surah_id);

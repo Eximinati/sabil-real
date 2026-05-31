@@ -46,11 +46,14 @@ interface DayOneCanonicalExperienceProps {
 
 const FALLBACK_VERSES = ['96:1', '96:2', '96:3', '96:4', '96:5'];
 
+const CONTENT_UNAVAILABLE = 'Content not yet available for this section.';
+const CONTENT_UNAVAILABLE_UR = 'اس حصے کے لیے مواد ابھی دستیاب نہیں ہے۔';
+
 const SECTION_DEFAULT_TITLES: Record<CanonicalJourneySectionId, string> = {
   'opening-reflection': 'Opening reflection',
   'seerah-moment': 'Seerah moment',
   'quran-reflection': 'Quran reflection',
-  'tafsir-insight': 'Tafsir insight',
+  'tafsir-insight': 'Tafsir framing',
   'hadith-connection': 'Hadith connection',
   'reflection-prompt': 'Reflection prompt',
   'tiny-action': 'Tiny action',
@@ -61,7 +64,7 @@ const SECTION_URDU_TITLES: Record<CanonicalJourneySectionId, string> = {
   'opening-reflection': 'ابتدائی تامل',
   'seerah-moment': 'سیرت کا لمحہ',
   'quran-reflection': 'قرآنی تامل',
-  'tafsir-insight': 'تفسیری بصیرت',
+  'tafsir-insight': 'تفسیری فریمنگ',
   'hadith-connection': 'حدیثی ربط',
   'reflection-prompt': 'تاملی سوال',
   'tiny-action': 'چھوٹا عمل',
@@ -132,31 +135,11 @@ export function DayOneCanonicalExperience({
     ? `/journey/${dayNumber + 1}`
     : '/journey?notice=return-tomorrow';
 
+  const unavailable = isUrduUi ? CONTENT_UNAVAILABLE_UR : CONTENT_UNAVAILABLE;
+
   const copy = isUrduUi
     ? {
         dayPrefix: 'دن',
-        openingFallback: [
-          'کئی بار ہم اللہ کی طرف ایسے دل کے ساتھ آتے ہیں جس پر تھکن، دباؤ یا خاموش غم رکھا ہوتا ہے۔',
-          'آج کی نرمی یہ ہے: آپ پہلے ہی اللہ کی نگاہِ رحمت میں ہیں۔',
-        ],
-        seerahFallback: [
-          'وحی سے پہلے رسول اللہ ﷺ غارِ حرا میں خاموشی اختیار کرتے تھے۔',
-          'پھر اللہ نے آغاز کھولا: پڑھو۔ ہدایت دباؤ نہیں، رحمت بن کر آئی۔',
-          'اگر آپ آج غیر یقینی کے ساتھ آئے ہیں، تو آپ اچھی صحبت میں ہیں۔',
-        ],
-        tafsirFallback: [
-          'اللہ نے آغاز رب کے تعارف سے کیا، جو دل کو وقت کے ساتھ سنوارتا ہے۔',
-          'تعلیم آہستہ بھی ہو سکتی ہے اور مقدس بھی۔',
-          'الجھاؤ بھی قرب کا دروازہ بن سکتا ہے جب دل سچائی سے اللہ کی طرف پلٹے۔',
-        ],
-        reflectionFallback:
-          'آج دل میں کون سی بات ایسی ہے جو آپ براہِ راست اللہ سے کہنا چاہتے ہیں؟',
-        tinyActionFallback:
-          'آج رات دو منٹ خاموش بیٹھ کر اللہ سے اپنے لفظوں میں سچی بات کریں۔',
-        closingFallback:
-          'اے اللہ، میرا دل سچا رکھ، میرے بوجھ ہلکے کر، اور اپنی رحمت سے مجھے اپنے قریب کر دے۔',
-        quranIntro:
-          'ان آیات کو جلدی میں نہ پڑھیں۔ انہیں دل میں اترنے دیں۔',
         scholarContextHeading: 'اگر علمی سیاق مدد دے',
         scholarContextHint: 'یہ آپ کے محفوظ کردہ مفسر کے مطابق دکھایا جاتا ہے۔',
         scholarFallbackHint: 'آپ کے پسندیدہ مفسر کی جگہ متبادل علمی سیاق دکھایا گیا۔',
@@ -167,28 +150,6 @@ export function DayOneCanonicalExperience({
       }
     : {
         dayPrefix: 'Day',
-        openingFallback: [
-          'Many of us come carrying private heaviness, pressure, or quiet shame.',
-          'Today begins somewhere gentler: you are already seen with mercy.',
-        ],
-        seerahFallback: [
-          'Before revelation, the Prophet Muhammad (peace be upon him) withdrew to Cave Hira in stillness.',
-          'Then guidance came: Read. Not as pressure, but as mercy.',
-          'If you arrived with uncertainty today, you are in good company.',
-        ],
-        tafsirFallback: [
-          'Allah begins by naming Himself as Rabb - the Lord who nurtures over time.',
-          'Learning is sacred and gradual, not rushed.',
-          'Even confusion can become a doorway to closeness when brought honestly to Allah.',
-        ],
-        reflectionFallback:
-          'What is one honest thing your heart needs to say directly to Allah tonight?',
-        tinyActionFallback:
-          'Take two quiet minutes tonight and speak honestly to Allah in your own words.',
-        closingFallback:
-          'O Allah, keep my heart sincere, soften what is heavy, and draw me nearer to You in mercy.',
-        quranIntro:
-          'Sit with these verses slowly. Let them open you before they inform you.',
         scholarContextHeading: 'If you want scholar context',
         scholarContextHint: 'Open only if it helps your heart stay present.',
         scholarFallbackHint: 'Your selected scholar was unavailable, so a gentle fallback context is shown.',
@@ -198,6 +159,7 @@ export function DayOneCanonicalExperience({
         continueLinkHasNext: 'Your next day is waiting quietly.',
         continueLinkNoNext: 'Return to today\'s journey.',
       };
+  const arrivalAyahTranslationId = translationId;
 
   const titleFor = (id: CanonicalJourneySectionId): string => {
     const planned = sectionTitles?.[id];
@@ -221,11 +183,11 @@ export function DayOneCanonicalExperience({
   const seerahParagraphs = toParagraphs(seerahMomentText);
   const tafsirParagraphs = toParagraphs(tafsirInsightText);
   const resolvedReflectionPrompt = firstParagraph(reflectionPromptText) ||
-    copy.reflectionFallback;
+    unavailable;
   const resolvedTinyAction = firstParagraph(tinyActionText) ||
-    copy.tinyActionFallback;
+    unavailable;
   const resolvedClosing = firstParagraph(closingDuaText) ||
-    copy.closingFallback;
+    unavailable;
   const shouldShowArrivalCard = dayNumber === 1;
 
   return (
@@ -244,67 +206,69 @@ export function DayOneCanonicalExperience({
         )}
 
         {shouldShowArrivalCard && (
-          <div className="mt-10 rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 px-6 py-7 md:px-8 md:py-9">
+            <div className="mt-10 rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 px-6 py-7 md:px-8 md:py-9">
             <p className="text-xs uppercase tracking-[0.08em] text-[var(--color-text-muted)]">A quiet ayah for arrival</p>
             <p className="reading-arabic mt-5 font-arabic text-right text-[30px] text-[var(--color-text)] md:text-[38px]" dir="rtl">
               مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَى
             </p>
-            <p className="mt-5 text-[15px] leading-[1.95] text-[var(--color-text-secondary)] md:text-[16px]">
-              "Your Lord has not left you, nor has He turned away from you."
-            </p>
+            <div className="mt-5">
+              <JourneyVerseContentInner
+                key={`arrival-ayah-${arrivalAyahTranslationId}`}
+                verseKeys={['93:3']}
+                translationId={arrivalAyahTranslationId}
+              />
+            </div>
             <p className="mt-2 text-sm text-[var(--color-text-muted)]">Surah Ad-Duha 93:3</p>
           </div>
         )}
       </section>
 
-      <section className="reading-section max-w-3xl">
-        <h2 className="section-heading">{titleFor('opening-reflection')}</h2>
-        <div className="space-y-5 text-[16px] leading-[2] text-[var(--color-text)]">
-          {(openingParagraphs.length > 0
-            ? openingParagraphs
-            : copy.openingFallback
-          ).map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
-      </section>
+      {openingParagraphs.length > 0 && (
+        <section className="reading-section max-w-3xl">
+          <h2 className="section-heading">{titleFor('opening-reflection')}</h2>
+          <div className="space-y-5 text-[16px] leading-[2] text-[var(--color-text)]">
+            {openingParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section className="reading-section rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-6 py-7 md:px-8 md:py-8">
-        <h2 className="section-heading">{titleFor('seerah-moment')}</h2>
-        {(seerahParagraphs.length > 0
-          ? seerahParagraphs
-          : copy.seerahFallback
-        ).map((paragraph, index) => (
-          <p
-            key={paragraph}
-            className={`text-[16px] leading-[2] ${index === 2 ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text)]'} ${index > 0 ? 'mt-5' : ''}`}
-          >
-            {paragraph}
-          </p>
-        ))}
-      </section>
+      {seerahParagraphs.length > 0 && (
+        <section className="reading-section rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-6 py-7 md:px-8 md:py-8">
+          <h2 className="section-heading">{titleFor('seerah-moment')}</h2>
+          {seerahParagraphs.map((paragraph, index) => (
+            <p
+              key={paragraph}
+              className={`text-[16px] leading-[2] ${index === 2 ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text)]'} ${index > 0 ? 'mt-5' : ''}`}
+            >
+              {paragraph}
+            </p>
+          ))}
+        </section>
+      )}
 
       <section className="reading-section">
         <JourneyVerseContentInner
+          key={`quran-verses-${translationId}`}
           verseKeys={verseKeys}
           translationId={translationId}
           title={titleFor('quran-reflection')}
-          intro={quranIntroText || copy.quranIntro}
+          intro={quranIntroText || unavailable}
           referenceLabel={quranRangeLabel}
         />
       </section>
 
-      <section className="reading-section max-w-3xl">
-        <h2 className="section-heading">{titleFor('tafsir-insight')}</h2>
-        <div className="space-y-5 text-[16px] leading-[2] text-[var(--color-text)]">
-          {(tafsirParagraphs.length > 0
-            ? tafsirParagraphs
-            : copy.tafsirFallback
-          ).map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
-      </section>
+      {tafsirParagraphs.length > 0 && (
+        <section className="reading-section max-w-3xl">
+          <h2 className="section-heading">{titleFor('tafsir-insight')}</h2>
+          <div className="space-y-5 text-[16px] leading-[2] text-[var(--color-text)]">
+            {tafsirParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+      )}
 
       {tafsirEnabled && tafsirId && (
         <section className="reading-section">
@@ -346,52 +310,58 @@ export function DayOneCanonicalExperience({
         />
       </section>
 
-      <section className="reading-section">
-        <h2 className="section-heading">{titleFor('reflection-prompt')}</h2>
-        <div className="rounded-[28px] border border-[var(--color-primary)]/20 bg-[var(--color-bg)] px-6 py-6 md:px-7">
-          <p className="text-[16px] leading-[1.9] text-[var(--color-text)]">
-            {resolvedReflectionPrompt}
+      {resolvedReflectionPrompt !== unavailable && (
+        <section className="reading-section">
+          <h2 className="section-heading">{titleFor('reflection-prompt')}</h2>
+          <div className="rounded-[28px] border border-[var(--color-primary)]/20 bg-[var(--color-bg)] px-6 py-6 md:px-7">
+            <p className="text-[16px] leading-[1.9] text-[var(--color-text)]">
+              {resolvedReflectionPrompt}
+            </p>
+          </div>
+          {previewOnly ? (
+            <div className="mt-5 rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-4 text-sm text-[var(--color-text-muted)]">
+              {isUrduUi
+                ? 'پیش نظارہ: یہاں ذاتی تامل کا اندراج محفوظ ہوتا ہے۔'
+                : 'Preview: private reflection entry appears here.'}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <ReflectionInput lessonId={lessonId} dayNumber={dayNumber} initialValue={initialReflection || ''} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {resolvedTinyAction !== unavailable && (
+        <section className="reading-section rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 px-6 py-7 md:px-8 md:py-8">
+          <h2 className="section-heading">{titleFor('tiny-action')}</h2>
+          <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">
+            {resolvedTinyAction}
           </p>
-        </div>
-        {previewOnly ? (
-          <div className="mt-5 rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-4 text-sm text-[var(--color-text-muted)]">
-            {isUrduUi
-              ? 'پیش نظارہ: یہاں ذاتی تامل کا اندراج محفوظ ہوتا ہے۔'
-              : 'Preview: private reflection entry appears here.'}
-          </div>
-        ) : (
-          <div className="mt-5">
-            <ReflectionInput lessonId={lessonId} dayNumber={dayNumber} initialValue={initialReflection || ''} />
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className="reading-section rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/82 px-6 py-7 md:px-8 md:py-8">
-        <h2 className="section-heading">{titleFor('tiny-action')}</h2>
-        <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">
-          {resolvedTinyAction}
-        </p>
-      </section>
-
-      <section className="reading-section rounded-[30px] border border-[var(--color-border)] bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg)] px-6 py-8 md:px-9 md:py-10">
-        <h2 className="section-heading">{titleFor('closing-dua')}</h2>
-        <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">
-          {resolvedClosing}
-        </p>
-        <p className="mt-6 text-sm leading-relaxed text-[var(--color-text-muted)]">
-          {hasNextDay
-            ? copy.continueLineHasNext
-            : copy.continueLineNoNext}
-          {' '}
-          <Link
-            href={nextDayHref}
-            className="rtl-ready-arrow text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
-            data-script-direction="ltr"
-          >
-            {hasNextDay ? copy.continueLinkHasNext : copy.continueLinkNoNext}
-          </Link>
-        </p>
-      </section>
+      {resolvedClosing !== unavailable && (
+        <section className="reading-section rounded-[30px] border border-[var(--color-border)] bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg)] px-6 py-8 md:px-9 md:py-10">
+          <h2 className="section-heading">{titleFor('closing-dua')}</h2>
+          <p className="text-[16px] leading-[1.95] text-[var(--color-text)]">
+            {resolvedClosing}
+          </p>
+          <p className="mt-6 text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {hasNextDay
+              ? copy.continueLineHasNext
+              : copy.continueLineNoNext}
+            {' '}
+            <Link
+              href={nextDayHref}
+              className="rtl-ready-arrow text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
+              data-script-direction="ltr"
+            >
+              {hasNextDay ? copy.continueLinkHasNext : copy.continueLinkNoNext}
+            </Link>
+          </p>
+        </section>
+      )}
 
       {!previewOnly && (
         <LessonCompleteButton lessonId={lessonId} dayNumber={dayNumber} isCompleted={isCompleted} />

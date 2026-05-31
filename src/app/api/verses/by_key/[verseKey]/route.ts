@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getVerses } from '@/lib/qf-api';
 import {
+  DEFAULT_TRANSLATION_ID,
   normalizeApiErrorMessage,
   shouldFallbackFromError,
 } from '@/lib/qf-fallbacks';
@@ -12,7 +13,10 @@ export async function GET(
   try {
     const { verseKey } = await params;
     const { searchParams } = new URL(request.url);
-    const translationId = parseInt(searchParams.get('translation') || '203', 10);
+    const translationId = parseInt(
+      searchParams.get('translation') || String(DEFAULT_TRANSLATION_ID),
+      10
+    );
 
     if (!Number.isFinite(translationId) || translationId <= 0) {
       return NextResponse.json({ error: 'Invalid translation id', verse: null }, { status: 400 });

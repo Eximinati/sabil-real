@@ -126,7 +126,7 @@ export function resolveLessonLanguageContext<T extends WithLocalizedContent>(
   const hasRequestedContent = hasLocalizedFields(requestedContent);
   const hasExplicitStatus = lesson.translation_status?.[requestedLanguage] !== undefined;
   const canUseRequested = hasExplicitStatus
-    ? isRuntimeReadyStatus(requestedStatus)
+    ? isRuntimeReadyStatus(requestedStatus) || hasRequestedContent
     : hasRequestedContent;
 
   return {

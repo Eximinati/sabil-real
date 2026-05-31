@@ -3,6 +3,10 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
 import { getApiUrl } from '@/lib/api-url';
 import { getServerDictionary } from '@/lib/i18n/server';
+import {
+  getDefaultTranslationIdForLanguage,
+  normalizeTranslationId,
+} from '@/lib/user-preferences';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -13,7 +17,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 300;
 
 export default async function ChapterPage({ params, searchParams }: PageProps) {
-  const { dictionary: copy } = await getServerDictionary();
+  const { dictionary: copy, language } = await getServerDictionary();
   const { id } = await params;
   const { translation: urlTranslation } = await searchParams;
   const chapterId = parseInt(id, 10);
@@ -40,13 +44,13 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let defaultTranslationId = 203;
+  let defaultTranslationId = getDefaultTranslationIdForLanguage(language);
   if (user) {
     const prefs = await getUserPreferences(user.id);
-    defaultTranslationId = prefs.translation_id;
+    defaultTranslationId = normalizeTranslationId(prefs.translation_id, defaultTranslationId);
   }
 
-  const translationId = urlTranslation || defaultTranslationId.toString();
+  const translationId = String(normalizeTranslationId(urlTranslation, defaultTranslationId));
 
   let chapter: any = null;
   let verses: any[] = [];

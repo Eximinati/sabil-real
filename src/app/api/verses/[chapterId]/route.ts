@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getVerses } from '@/lib/qf-api';
 import {
+  DEFAULT_TRANSLATION_ID,
   normalizeApiErrorMessage,
   shouldFallbackFromError,
 } from '@/lib/qf-fallbacks';
@@ -16,7 +17,7 @@ export async function GET(
     const { chapterId } = await params;
     const { searchParams } = new URL(request.url);
     
-    const translation = searchParams.get('translation') || '203';
+    const translation = searchParams.get('translation') || String(DEFAULT_TRANSLATION_ID);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const perPage = parseInt(searchParams.get('per_page') || '300', 10);
     const parsedChapterId = parseInt(chapterId, 10);

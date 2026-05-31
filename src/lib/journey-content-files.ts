@@ -42,6 +42,14 @@ export interface JourneyDayMetaFile {
     structureVersion?: number;
     weekIdentity?: string;
     emotionalNote?: string;
+    weekContext?: {
+      weekNumber?: number;
+      weekTitle?: string;
+      weekArc?: string;
+      emotionalTone?: string;
+      journeyIdentity?: string;
+      editorialNotes?: string;
+    };
     publishingState?: 'draft' | 'review' | 'published';
     defaultTafsirId?: number;
     sacredSourceRefs?: {
@@ -412,6 +420,8 @@ function buildCanonicalJourneyState(
   const englishMarkdown = markdownByLanguage.en || '';
   const urduMarkdown = markdownByLanguage.ur || '';
   const canonicalMeta = meta?.canonicalJourney;
+  const canonicalWeekContext = canonicalMeta?.weekContext;
+  const defaultWeekNumber = getWeekForDay(dayNumber);
 
   const quranBody = getSectionBody(englishMarkdown, ['quran reflection', 'quran for today', 'quran to sit with today']);
   const hadithBody = getSectionBody(englishMarkdown, ['hadith connection', 'a prophetic reminder', 'related hadith']);
@@ -533,6 +543,18 @@ function buildCanonicalJourneyState(
     structure_version: canonicalMeta?.structureVersion || 1,
     week_identity: canonicalMeta?.weekIdentity || defaults.arc_identity || `week-${getWeekForDay(dayNumber)}`,
     emotional_note: canonicalMeta?.emotionalNote || defaults.emotional_note,
+    week_context: {
+      week_number: canonicalWeekContext?.weekNumber || defaultWeekNumber,
+      week_title: canonicalWeekContext?.weekTitle || defaults.week_chapter,
+      week_arc: canonicalWeekContext?.weekArc || defaults.arc_identity,
+      emotional_tone: canonicalWeekContext?.emotionalTone || canonicalMeta?.emotionalNote || defaults.emotional_note,
+      journey_identity:
+        canonicalWeekContext?.journeyIdentity ||
+        canonicalMeta?.weekIdentity ||
+        defaults.arc_identity ||
+        `week-${defaultWeekNumber}`,
+      editorial_notes: canonicalWeekContext?.editorialNotes,
+    },
     publishing_state:
       canonicalMeta?.publishingState ||
       (hasPublishedState ? 'published' : hasUrduRuntime || hasLocalizedUrdu ? 'review' : 'draft'),

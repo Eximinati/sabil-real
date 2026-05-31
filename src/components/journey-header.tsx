@@ -7,6 +7,7 @@ import { JourneyReciterSelector } from './journey-reciter-selector';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import { getDefaultTranslationIdForLanguage } from '@/lib/user-preferences';
 
 interface Translation {
   id: number;
@@ -41,8 +42,9 @@ export function JourneyHeader({
   const [loading, setLoading] = useState(true);
   
   const urlTranslation = searchParams.get('translation');
+  const defaultTranslationId = getDefaultTranslationIdForLanguage(language);
   const [selectedTranslation, setSelectedTranslation] = useState<number>(
-    urlTranslation ? parseInt(urlTranslation, 10) : 203
+    urlTranslation ? parseInt(urlTranslation, 10) : defaultTranslationId
   );
   const [selectedReciter, setSelectedReciter] = useState<number>(5);
 

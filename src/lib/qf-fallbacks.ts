@@ -1,5 +1,9 @@
-export const DEFAULT_TRANSLATION_ID = 203;
-export const DEFAULT_TAFSIR_ID = 169;
+import {
+  DEFAULT_TAFSIR_ID,
+  DEFAULT_TRANSLATION_ID,
+} from './user-preferences';
+
+export { DEFAULT_TAFSIR_ID, DEFAULT_TRANSLATION_ID };
 
 export const FALLBACK_TRANSLATIONS = [
   {

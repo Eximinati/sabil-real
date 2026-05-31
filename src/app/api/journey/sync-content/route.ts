@@ -294,9 +294,21 @@ export async function POST() {
 
         const { data: existingLesson } = await supabase
           .from('journey_lessons')
-          .select('id, is_published')
+          .select('id')
           .eq('day_number', dayBundle.dayNumber)
           .maybeSingle();
+
+        if (existingLesson) {
+          results.push({
+            day: dayBundle.dayNumber,
+            lessonId: existingLesson.id,
+            blocks: 0,
+            status: 'skipped-existing',
+            source: dayBundle.source,
+            languages: Object.keys(dayBundle.markdownByLanguage),
+          });
+          continue;
+        }
 
         const lessonPayload = {
           day_number: dayBundle.dayNumber,
@@ -320,37 +332,26 @@ export async function POST() {
               en: true,
               ur: Boolean(dayBundle.markdownByLanguage.ur),
             },
-            isPublished: existingLesson?.is_published ?? false,
+            isPublished: false,
           }),
           shared_metadata: dayBundle.metadata,
-          is_published: existingLesson?.is_published ?? false,
+          is_published: false,
+          created_by: user.id,
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
 
-        let lessonId: string | null = existingLesson?.id || null;
+        const { data: inserted, error: insertError } = await supabase
+          .from('journey_lessons')
+          .insert(lessonPayload)
+          .select('id')
+          .single();
 
-        if (lessonId) {
-          const { error: updateError } = await supabase
-            .from('journey_lessons')
-            .update(lessonPayload)
-            .eq('id', lessonId);
-
-          if (updateError) {
-            throw new Error(updateError.message);
-          }
-        } else {
-          const { data: inserted, error: insertError } = await supabase
-            .from('journey_lessons')
-            .insert({ ...lessonPayload, created_by: user.id, created_at: new Date().toISOString() })
-            .select('id')
-            .single();
-
-          if (insertError || !inserted) {
-            throw new Error(insertError?.message || 'Failed to create lesson');
-          }
-
-          lessonId = inserted.id;
+        if (insertError || !inserted) {
+          throw new Error(insertError?.message || 'Failed to create lesson');
         }
+
+        const lessonId = inserted.id;
 
         if (!lessonId) {
           throw new Error('Missing lesson id after upsert');

@@ -123,6 +123,16 @@ function validateQuranRange(canonical: CanonicalJourneyState | undefined): Canon
   const rootRange = canonical?.sacred_source_refs?.quran_range;
   const rawRange = sectionRange || rootRange;
   if (!rawRange) {
+    const verseKeys =
+      canonical?.sections?.['quran-reflection']?.sacred_refs?.verse_keys ||
+      canonical?.sacred_source_refs?.verse_keys ||
+      [];
+
+    const hasValidVerseKeys = verseKeys.some((key) => /^\d{1,3}:\d{1,3}$/.test(key));
+    if (hasValidVerseKeys) {
+      return null;
+    }
+
     return {
       id: 'missing-quran-range',
       severity: 'warning',

@@ -3,6 +3,7 @@
 import type {
   CanonicalAdminSacredDraft,
   CanonicalAdminSectionDraft,
+  CanonicalAdminWeekContextDraft,
   JourneyLessonMetadata,
 } from '@/types/admin-journey';
 import type { CanonicalJourneySectionId } from '@/types/journey-localization';
@@ -11,6 +12,7 @@ interface CanonicalAuthoringPanelProps {
   metadata: JourneyLessonMetadata;
   sections: CanonicalAdminSectionDraft[];
   sacredDraft: CanonicalAdminSacredDraft;
+  weekContext: CanonicalAdminWeekContextDraft;
   onSectionChange: (
     sectionId: CanonicalJourneySectionId,
     field: 'heading' | 'emotional_goal' | 'content_en' | 'content_ur',
@@ -20,6 +22,10 @@ interface CanonicalAuthoringPanelProps {
     field: keyof CanonicalAdminSacredDraft,
     value: string | number | boolean | number[]
   ) => void;
+  onWeekContextChange: (
+    field: keyof CanonicalAdminWeekContextDraft,
+    value: string | number
+  ) => void;
   onLoadCanonicalTemplate: () => void;
 }
 
@@ -27,7 +33,7 @@ const SECTION_DESCRIPTION: Record<CanonicalJourneySectionId, string> = {
   'opening-reflection': 'Open the heart with gentle emotional entry.',
   'seerah-moment': 'Offer a small Prophetic human moment.',
   'quran-reflection': 'Frame revelation before the verses appear.',
-  'tafsir-insight': 'Author the bridge, not scholar text itself.',
+  'tafsir-insight': 'Author short framing, NOT scholar tafsir text. Scholar text comes from API.',
   'hadith-connection': 'Author a soft transition into hadith source text.',
   'reflection-prompt': 'Invite private internalization without pressure.',
   'tiny-action': 'Translate meaning into one lived gentle step.',
@@ -67,8 +73,10 @@ export function CanonicalAuthoringPanel({
   metadata,
   sections,
   sacredDraft,
+  weekContext,
   onSectionChange,
   onSacredDraftChange,
+  onWeekContextChange,
   onLoadCanonicalTemplate,
 }: CanonicalAuthoringPanelProps) {
   const health = getCanonicalHealth(sections);
@@ -109,6 +117,96 @@ export function CanonicalAuthoringPanel({
           </p>
         </div>
       </div>
+
+      <section className="mt-6 rounded-2xl border border-[var(--color-primary)]/15 bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg)] p-5 md:p-6">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-sm text-[var(--color-primary)]">
+            ✦
+          </span>
+          <div>
+            <p className="text-sm font-medium text-[var(--color-text)]">Week context — the emotional chapter</p>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">
+              This week is a chapter in the reader's spiritual journey. Name its emotional identity so every day feels like part of one unfolding arc — not isolated lessons.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1.5">Week number</label>
+            <input
+              type="number"
+              min={1}
+              max={53}
+              value={weekContext.week_number}
+              onChange={(event) => onWeekContextChange('week_number', Number.parseInt(event.target.value, 10) || 1)}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1.5">Journey identity</label>
+            <input
+              type="text"
+              value={weekContext.journey_identity}
+              onChange={(event) => onWeekContextChange('journey_identity', event.target.value)}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
+              placeholder="e.g. week-1"
+            />
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Unique slug for this emotional chapter.</p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-xs text-[var(--color-text-muted)] mb-1.5">Week title</label>
+          <input
+            type="text"
+            value={weekContext.week_title}
+            onChange={(event) => onWeekContextChange('week_title', event.target.value)}
+            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
+            placeholder="e.g. Seen and Welcomed by Allah"
+          />
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-xs text-[var(--color-text-muted)] mb-1.5">Emotional tone</label>
+          <input
+            type="text"
+            value={weekContext.emotional_tone}
+            onChange={(event) => onWeekContextChange('emotional_tone', event.target.value)}
+            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
+            placeholder="e.g. Tender reassurance with quiet grounding"
+          />
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">The emotional atmosphere that holds all 7 days together.</p>
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-xs text-[var(--color-text-muted)] mb-1.5">Emotional arc</label>
+          <input
+            type="text"
+            value={weekContext.week_arc}
+            onChange={(event) => onWeekContextChange('week_arc', event.target.value)}
+            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
+            placeholder="e.g. Safety, hope, belonging"
+          />
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">The emotional movement across this week, as comma-separated qualities.</p>
+        </div>
+
+        <details className="group mt-5">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]">
+            <span className="transition-transform group-open:rotate-180">▼</span>
+            Editorial notes (private)
+          </summary>
+          <div className="mt-3">
+            <textarea
+              value={weekContext.editorial_notes}
+              onChange={(event) => onWeekContextChange('editorial_notes', event.target.value)}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] resize-none transition-colors focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
+              rows={3}
+              placeholder="Quiet notes for multilingual coherence, emotional continuity, and publishing readiness..."
+            />
+          </div>
+        </details>
+      </section>
 
       <section className="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
         <p className="text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Sacred source references</p>

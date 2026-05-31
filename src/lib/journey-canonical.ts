@@ -47,6 +47,14 @@ export interface CanonicalJourneyPlan {
   };
   structureVersion?: number;
   weekIdentity?: string;
+  weekContext?: {
+    weekNumber?: number;
+    weekTitle?: string;
+    weekArc?: string;
+    emotionalTone?: string;
+    journeyIdentity?: string;
+    editorialNotes?: string;
+  };
   emotionalNote?: string;
   publishingState?: 'draft' | 'review' | 'published';
   languageContext: {
@@ -60,7 +68,7 @@ const SECTION_LABELS: Record<CanonicalJourneySectionId, string> = {
   'opening-reflection': 'Opening reflection',
   'seerah-moment': 'Seerah moment',
   'quran-reflection': 'Quran reflection',
-  'tafsir-insight': 'Tafsir insight',
+  'tafsir-insight': 'Tafsir framing',
   'hadith-connection': 'Hadith connection',
   'reflection-prompt': 'Reflection prompt',
   'tiny-action': 'Tiny action',
@@ -77,70 +85,6 @@ const SECTION_ORDER: CanonicalJourneySectionId[] = [
   'tiny-action',
   'closing-dua',
 ];
-
-type SectionAliasesByLanguage = Record<LanguageCode, string[]>;
-
-function parseMarkdownSections(markdown: string): Map<string, string> {
-  const lines = markdown.replace(/\r\n/g, '\n').split('\n');
-  const sections = new Map<string, string>();
-  let currentHeading = '';
-  let currentLines: string[] = [];
-
-  const flush = () => {
-    if (!currentHeading) {
-      return;
-    }
-
-    const normalized = currentHeading
-      .toLowerCase()
-      .replace(/[^a-z0-9\s\u0600-\u06FF]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (normalized) {
-      sections.set(normalized, currentLines.join('\n').trim());
-    }
-  };
-
-  for (const line of lines) {
-    const headingMatch = line.match(/^##\s+(.+)$/);
-    if (headingMatch) {
-      flush();
-      currentHeading = headingMatch[1];
-      currentLines = [];
-      continue;
-    }
-
-    if (!currentHeading) {
-      continue;
-    }
-
-    currentLines.push(line);
-  }
-
-  flush();
-  return sections;
-}
-
-function resolveSectionBody(
-  sections: Map<string, string>,
-  aliases: string[]
-): string | undefined {
-  for (const alias of aliases) {
-    const normalized = alias
-      .toLowerCase()
-      .replace(/[^a-z0-9\s\u0600-\u06FF]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const body = sections.get(normalized);
-    if (body && body.length > 0) {
-      return body;
-    }
-  }
-
-  return undefined;
-}
 
 function firstParagraph(value: string | undefined): string | undefined {
   if (!value) {
@@ -160,43 +104,6 @@ function firstParagraph(value: string | undefined): string | undefined {
     .replace(/\n+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function buildSectionAliases(): Record<CanonicalJourneySectionId, SectionAliasesByLanguage> {
-  return {
-    'opening-reflection': {
-      en: ['opening reflection'],
-      ur: ['ابتدائی تامل', 'ابتدائی غور', 'آغازی تامل'],
-    },
-    'seerah-moment': {
-      en: ['seerah moment', 'a seerah moment'],
-      ur: ['سیرت کا لمحہ', 'سیرت کا ایک لمحہ', 'نبوی لمحہ'],
-    },
-    'quran-reflection': {
-      en: ['quran reflection', 'quran to sit with today', 'quran for today'],
-      ur: ['قرآنی تامل', 'آج کے لیے قرآن', 'قرآن کے ساتھ تامل'],
-    },
-    'tafsir-insight': {
-      en: ['tafsir support', 'tafsir insight', 'sit with what this means'],
-      ur: ['تفسیری بصیرت', 'تفسیری رہنمائی', 'اس معنی کے ساتھ ٹھہریں'],
-    },
-    'hadith-connection': {
-      en: ['hadith connection', 'a prophetic reminder', 'related hadith'],
-      ur: ['حدیثی ربط', 'نبوی یاددہانی', 'متعلقہ حدیث'],
-    },
-    'reflection-prompt': {
-      en: ['private reflection', 'reflection for the heart'],
-      ur: ['تاملی سوال', 'دل کا تامل', 'نجی تامل'],
-    },
-    'tiny-action': {
-      en: ['tiny action', 'a tiny action for tonight', 'tiny action for tonight'],
-      ur: ['چھوٹا عمل', 'آج کا چھوٹا قدم', 'عملی قدم'],
-    },
-    'closing-dua': {
-      en: ['closing moment', 'closing dua'],
-      ur: ['اختتامی دعا', 'اختتامی لمحہ', 'اختتام'],
-    },
-  };
 }
 
 function getSectionFromCanonicalMeta(
@@ -308,7 +215,6 @@ export function buildCanonicalJourneyPlan(
   lesson: JourneyLesson,
   options: {
     language: LanguageCode;
-    markdownByLanguage?: Partial<Record<LanguageCode, string>>;
     preferences?: UserPreferences;
   }
 ): CanonicalJourneyPlan {
@@ -317,20 +223,6 @@ export function buildCanonicalJourneyPlan(
   const fallbackUsed =
     lesson.language_context?.fallbackUsed ||
     (requestedLanguage !== resolvedLanguage && requestedLanguage !== DEFAULT_LANGUAGE);
-  const markdownByLanguage = options.markdownByLanguage || {};
-  const resolvedMarkdown =
-    markdownByLanguage[resolvedLanguage] ||
-    markdownByLanguage[requestedLanguage] ||
-    markdownByLanguage[DEFAULT_LANGUAGE] ||
-    '';
-  const englishMarkdown = markdownByLanguage[DEFAULT_LANGUAGE] || resolvedMarkdown;
-
-  const sectionsByHeading = parseMarkdownSections(resolvedMarkdown);
-  const sectionsByHeadingEnglish =
-    englishMarkdown === resolvedMarkdown
-      ? sectionsByHeading
-      : parseMarkdownSections(englishMarkdown);
-  const aliases = buildSectionAliases();
   const languageCandidates = uniqueLanguageCandidates(
     resolvedLanguage,
     requestedLanguage,
@@ -349,25 +241,12 @@ export function buildCanonicalJourneyPlan(
 
   const sections: CanonicalJourneySectionView[] = SECTION_ORDER.map((sectionId) => {
     const sectionMeta = getSectionFromCanonicalMeta(lesson, sectionId);
-    const aliasSet = aliases[sectionId];
-    const prioritizedAliases = Array.from(
-      new Set([
-        ...(resolvedLanguage === 'ur' ? aliasSet.ur : aliasSet.en),
-        ...aliasSet.en,
-        ...aliasSet.ur,
-      ])
-    );
     const bodyFromMetadata = resolveSectionBodyFromMetadata(
       lesson,
       sectionId,
       languageCandidates
     );
-    const bodyFromMarkdown = resolveSectionBody(sectionsByHeading, prioritizedAliases);
-    const bodyFromEnglish =
-      sectionsByHeading === sectionsByHeadingEnglish
-        ? undefined
-        : resolveSectionBody(sectionsByHeadingEnglish, aliasSet.en);
-    const body = bodyFromMetadata || bodyFromMarkdown || bodyFromEnglish;
+    const body = bodyFromMetadata;
     const intro = firstParagraph(body);
 
     return {
@@ -413,6 +292,16 @@ export function buildCanonicalJourneyPlan(
     },
     structureVersion: canonicalJourney?.structure_version,
     weekIdentity: canonicalJourney?.week_identity,
+    weekContext: canonicalJourney?.week_context
+      ? {
+          weekNumber: canonicalJourney.week_context.week_number,
+          weekTitle: canonicalJourney.week_context.week_title,
+          weekArc: canonicalJourney.week_context.week_arc,
+          emotionalTone: canonicalJourney.week_context.emotional_tone,
+          journeyIdentity: canonicalJourney.week_context.journey_identity,
+          editorialNotes: canonicalJourney.week_context.editorial_notes,
+        }
+      : undefined,
     emotionalNote: canonicalJourney?.emotional_note,
     publishingState: canonicalJourney?.publishing_state,
     languageContext: {
