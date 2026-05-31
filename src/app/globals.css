@@ -58,6 +58,10 @@
   --sidebar-bg: linear-gradient(to bottom, #1A1510, #0F0D0A);
 }
 
+.sidebar-bg {
+  background: var(--sidebar-bg);
+}
+
 .dark {
   --color-bg: #050505;
   --color-surface: #0D0D0D;

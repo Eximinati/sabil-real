@@ -42,7 +42,7 @@ export function SidebarSkeleton({ email }: { email: string }) {
   const isUrdu = language === 'ur';
 
   return (
-    <aside className="w-[240px] bg-[var(--sidebar-bg)] text-white flex flex-col fixed h-screen hidden md:flex">
+    <aside className="w-[240px] sidebar-bg text-white flex flex-col fixed h-screen hidden md:flex">
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>
         <p className="font-arabic text-white/60 text-sm mt-1" dir="rtl">سبيل</p>
@@ -133,7 +133,7 @@ export const Sidebar = memo(function Sidebar({ userEmail: email, isFocusMode = f
     <aside 
       className={`${
         isFocusMode ? 'w-0 opacity-0' : 'w-[240px] opacity-100'
-      } bg-[var(--sidebar-bg)] text-white flex flex-col fixed h-screen hidden md:flex transition-all duration-300 ease-in-out overflow-hidden`}
+      } sidebar-bg text-white flex flex-col fixed h-screen hidden md:flex transition-all duration-300 ease-in-out overflow-hidden`}
     >
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>

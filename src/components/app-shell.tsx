@@ -68,7 +68,7 @@ function DesktopSidebar({ email }: { email: string }) {
     <aside 
       className={`${
         isFocusMode ? 'w-0 opacity-0' : 'w-[240px] opacity-100'
-      } bg-[var(--sidebar-bg)] text-white flex flex-col fixed h-screen hidden md:flex transition-all duration-300 ease-in-out overflow-hidden`}
+      } sidebar-bg text-white flex flex-col fixed h-screen hidden md:flex transition-all duration-300 ease-in-out overflow-hidden`}
     >
       <div className="p-6 pt-7">
         <h1 className="text-[20px] font-semibold">Sabil</h1>
@@ -153,7 +153,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <aside className="absolute left-0 top-0 bottom-0 w-[260px] bg-[var(--sidebar-bg)] text-white flex flex-col animate-fade-in">
+      <aside className="absolute left-0 top-0 bottom-0 w-[260px] sidebar-bg text-white flex flex-col animate-fade-in">
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-[20px] font-semibold">Sabil</h1>
