@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
 import { CopyButton } from './copy-button';
 import { getApiUrl } from '@/lib/api-url';
+import { hydrateAudio } from '@/lib/quran-cache-service';
 
 interface AudioFile {
   verse_key: string;
@@ -65,6 +66,9 @@ export function VerseCardClient({ verse, verseNumber, verseIndex, chapterId, tra
         if (data.error) throw new Error(data.error);
         
         files = data.audio_files || [];
+        for (const af of files) {
+          hydrateAudio(af.verse_key, reciterId, af.url);
+        }
         setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
       } catch {
         toast.error('Failed to load audio');

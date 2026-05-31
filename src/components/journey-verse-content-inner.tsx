@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { JourneyVerseSection } from './journey-verse-section';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/i18n/context';
-import { fetchVerses } from '@/lib/quran-cache-service';
+import { fetchVerses, fetchAudio } from '@/lib/quran-cache-service';
 import type { VerseResult } from '@/lib/quran-cache-service';
 
 const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
@@ -79,6 +79,7 @@ export function JourneyVerseContentInner({
   const [reciterId, setReciterId] = useState<number>(5);
   const toast = useToast();
   const prevKeyRef = useRef('');
+  const audioUrlRef = useRef<Record<string, string>>({});
 
   const urlTranslation = router.get('translation');
   const storedTranslation = typeof window !== 'undefined' ? localStorage.getItem('sabil-translation-id') : null;
@@ -139,24 +140,10 @@ export function JourneyVerseContentInner({
   const sectionTitle = title || uiCopy.sectionTitle;
   const isUrduIntro = /[\u0600-\u06FF]/.test(intro || '') || language === 'ur';
 
-  const audioUrlRef = useRef<Record<string, string>>({});
-
   useEffect(() => {
     if (verseKeys.length === 0) return;
-    fetch(`/api/verses?verse_keys=${verseKeysParam}&reciter=${reciterId}`)
-      .then(r => r.json())
-      .then(data => {
-        const map: Record<string, string> = {};
-        for (const item of (data.verses || [])) {
-          const rawUrl = item.audioUrl;
-          if (rawUrl) {
-            map[item.verseKey] = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
-              ? rawUrl.replace('cdn.quran.com', 'verses.quran.foundation')
-              : `${QURAN_AUDIO_BASE}/${rawUrl}`;
-          }
-        }
-        audioUrlRef.current = map;
-      })
+    fetchAudio(verseKeys, reciterId)
+      .then((map) => { audioUrlRef.current = map; })
       .catch(() => {});
   }, [verseKeysParam, reciterId]);
 

@@ -613,26 +613,26 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
 
     setLoadingVerses(true);
     
-    const fetchVerses = async () => {
+    const loadVerses = async () => {
       const verseKeys = verseBlocks.map(b => b.content.verse_key as string).filter(Boolean);
       if (verseKeys.length === 0) return;
 
       try {
-        const response = await fetch(`/api/verses?verse_keys=${verseKeys.join(',')}&translation=${translationId}`);
-        if (response.ok) {
-          const data = await response.json();
-          const map: Record<string, VerseWithData> = {};
-          (data.verses || []).forEach((v: { verse: VerseWithData; verseKey: string; chapterName?: string; audioUrl?: string }) => {
-            if (v.verse) {
-              map[v.verseKey] = {
-                ...v.verse,
-                chapter_name: v.chapterName,
-                audio_url: v.audioUrl,
-              };
-            }
-          });
-          setVerseDataMap(map);
+        const { fetchVerses } = await import('@/lib/quran-cache-service');
+        const result = await fetchVerses(verseKeys, translationId);
+        const map: Record<string, VerseWithData> = {};
+        for (const v of result.verses) {
+          map[v.verseKey] = {
+            verse_key: v.verseKey,
+            text_uthmani: v.textUthmani,
+            chapter_name: v.chapterName,
+            translations: v.translationText
+              ? [{ resource_name: '', text: v.translationText }]
+              : undefined,
+            audio_url: v.audioUrl,
+          };
         }
+        setVerseDataMap(map);
       } catch (error) {
         console.error('Failed to fetch verses:', error);
       } finally {
@@ -640,7 +640,7 @@ function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; trans
       }
     };
 
-    fetchVerses();
+    loadVerses();
   }, [blocks, translationId]);
 
   if (!blocks || blocks.length === 0) return null;

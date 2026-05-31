@@ -16,6 +16,13 @@ import { AudioPlayer } from './audio-player';
 import { getApiUrl } from '@/lib/api-url';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import {
+  hydrateVerses,
+  hydrateTranslation,
+  hydrateAudio,
+  getAudioUrl,
+  startPeriodicCleanup,
+} from '@/lib/quran-cache-service';
 
 interface AudioFile {
   verse_key: string;
@@ -82,6 +89,17 @@ export function VerseReaderClient({
   const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const hasRestoredScroll = useRef(false);
+
+  useEffect(() => {
+    hydrateVerses(verses, chapterName);
+    for (const v of verses) {
+      const t = v.translations?.find((tr: any) => tr.resource_id === translationId);
+      if (t) {
+        hydrateTranslation(v.verse_key, translationId, t.text);
+      }
+    }
+    startPeriodicCleanup();
+  }, []);
 
   const showBismillah = chapterId !== 1 && chapterId !== 9;
   const readingTimeMinutes = estimateReadingTimeMinutes(versesCount);
@@ -190,11 +208,20 @@ export function VerseReaderClient({
     if (!files) {
       setLoadingAudio(true);
       try {
-        const res = await fetch(getApiUrl(`/audio/${reciterId}/${chapterId}`));
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        files = data.audio_files || [];
-        setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
+        const cachedUrl = await getAudioUrl(verseKey, reciterId);
+        if (cachedUrl) {
+          files = [{ verse_key: verseKey, url: cachedUrl, duration: null }];
+          setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
+        } else {
+          const res = await fetch(getApiUrl(`/audio/${reciterId}/${chapterId}`));
+          const data = await res.json();
+          if (data.error) throw new Error(data.error);
+          files = data.audio_files || [];
+          for (const af of files) {
+            hydrateAudio(af.verse_key, reciterId, af.url);
+          }
+          setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
+        }
       } catch {
         toast.error(copy.quran.audioFailed);
         setLoadingAudio(false);

@@ -5,6 +5,7 @@ import { getApiUrl } from '@/lib/api-url';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getServerDictionary } from '@/lib/i18n/server';
 import { interpolate } from '@/lib/i18n/format';
+import { CacheHydrator } from '@/components/cache-hydrator';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -92,6 +93,13 @@ export default async function SearchPage({
                 {interpolate(copy.search.resultsLine, { total, query })}
               </p>
 
+              <CacheHydrator
+                verses={searchResults.map((r: any) => ({
+                  verse_key: r.verse_key,
+                  text_uthmani: r.text || '',
+                  chapterName: getChapterName(r.verse_key, chapters),
+                }))}
+              />
               <div className="space-y-4">
                 {searchResults.map((result: any, index: number) => {
                   const chapterName = getChapterName(result.verse_key, chapters);

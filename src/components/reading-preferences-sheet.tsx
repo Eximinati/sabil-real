@@ -3,28 +3,37 @@
 import { useState, useEffect, useCallback } from 'react';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { JourneyReciterSelector } from './journey-reciter-selector';
+import { TafsirLibrarySheet } from './tafsir-library-sheet';
+import type { TafsirLanguagePreference } from '@/lib/tafsir-preferences';
 
 interface ReadingPreferencesSheetProps {
   isOpen: boolean;
   onClose: () => void;
   currentTranslationId: number;
   currentReciterId: number;
-  selectedJourneyLanguage: 'auto' | 'en' | 'ur';
+  selectedJourneyLanguage?: 'auto' | 'en' | 'ur';
   onTranslationChange: (id: number) => void;
   onReciterChange: (id: number) => void;
-  onJourneyLanguageChange: (value: 'auto' | 'en' | 'ur') => void;
+  onJourneyLanguageChange?: (value: 'auto' | 'en' | 'ur') => void;
   onOpenTranslationLibrary: () => void;
   onOpenReciterLibrary: () => void;
+  currentTafsirId?: number;
+  onTafsirChange?: (id: number) => void;
+  tafsirPreferredLanguage?: TafsirLanguagePreference;
+  onTafsirLanguageChange?: (lang: TafsirLanguagePreference) => void;
+  hideJourneyLanguage?: boolean;
   copy: {
     readingPreferences: string;
-    journeyLanguage: string;
-    auto: string;
-    english: string;
-    urdu: string;
+    journeyLanguage?: string;
+    auto?: string;
+    english?: string;
+    urdu?: string;
     translation: string;
     reciter: string;
+    tafsir?: string;
     manageTranslations: string;
     manageReciters: string;
+    manageTafsirScholars?: string;
     readingStyle: string;
     comfortable: string;
     focused: string;
@@ -33,6 +42,7 @@ interface ReadingPreferencesSheetProps {
     enabled: string;
     manageAudio: string;
     close: string;
+    tafsirLibrary?: string;
   };
 }
 
@@ -41,16 +51,22 @@ export function ReadingPreferencesSheet({
   onClose,
   currentTranslationId,
   currentReciterId,
-  selectedJourneyLanguage,
+  selectedJourneyLanguage = 'auto',
   onTranslationChange,
   onReciterChange,
   onJourneyLanguageChange,
   onOpenTranslationLibrary,
   onOpenReciterLibrary,
+  currentTafsirId,
+  onTafsirChange,
+  tafsirPreferredLanguage,
+  onTafsirLanguageChange,
+  hideJourneyLanguage = false,
   copy,
 }: ReadingPreferencesSheetProps) {
   const [closing, setClosing] = useState(false);
   const [readingStyle, setReadingStyle] = useState<'comfortable' | 'focused' | 'large'>('comfortable');
+  const [showTafsirLibrary, setShowTafsirLibrary] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -103,33 +119,36 @@ export function ReadingPreferencesSheet({
         </div>
 
         <div className="px-5 py-4 space-y-6">
-          {/* Journey Language */}
-          <section>
-            <h3 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-              {copy.journeyLanguage}
-            </h3>
-            <div className="flex gap-2">
-              {[
-                { value: 'auto' as const, label: copy.auto },
-                { value: 'en' as const, label: copy.english },
-                { value: 'ur' as const, label: copy.urdu },
-              ].map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => onJourneyLanguageChange(value)}
-                  className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
-                    selectedJourneyLanguage === value
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/30'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </section>
+          {!hideJourneyLanguage && (
+            <>
+              <section>
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                  {copy.journeyLanguage || 'Journey Language'}
+                </h3>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'auto' as const, label: copy.auto || 'Auto' },
+                    { value: 'en' as const, label: copy.english || 'English' },
+                    { value: 'ur' as const, label: copy.urdu || 'Urdu' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => onJourneyLanguageChange?.(value)}
+                      className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+                        selectedJourneyLanguage === value
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                          : 'border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/30'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </section>
 
-          <hr className="border-[var(--color-border)]" />
+              <hr className="border-[var(--color-border)]" />
+            </>
+          )}
 
           {/* Translation */}
           <section>
@@ -160,6 +179,33 @@ export function ReadingPreferencesSheet({
           </section>
 
           <hr className="border-[var(--color-border)]" />
+
+          {/* Tafsir Scholar */}
+          {onTafsirChange && (
+            <section>
+              <h3 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                {copy.tafsir || 'Tafsir Scholar'}
+              </h3>
+              <button
+                onClick={() => setShowTafsirLibrary(true)}
+                className="flex w-full items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/55 px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/30"
+              >
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text)]">
+                    {currentTafsirId ? `Scholar #${currentTafsirId}` : copy.manageTafsirScholars || 'Browse Scholars'}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {copy.manageTafsirScholars || 'Manage Tafsir Scholars'}
+                  </p>
+                </div>
+                <svg className="h-4 w-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </section>
+          )}
+
+          {onTafsirChange && <hr className="border-[var(--color-border)]" />}
 
           {/* Reading Style (UI-only) */}
           <section>
@@ -221,6 +267,31 @@ export function ReadingPreferencesSheet({
           </button>
         </div>
       </div>
+
+      {onTafsirChange && (
+        <TafsirLibrarySheet
+          isOpen={showTafsirLibrary}
+          onClose={() => setShowTafsirLibrary(false)}
+          currentTafsirId={currentTafsirId || 169}
+          onSelect={onTafsirChange}
+          preferredLanguage={tafsirPreferredLanguage || 'auto'}
+          onLanguageChange={onTafsirLanguageChange || (() => {})}
+          copy={{
+            tafsirLibrary: copy.tafsirLibrary || 'Tafsir Library',
+            searchPlaceholder: copy.tafsirLibrary || 'Search language or scholar',
+            currentScholar: copy.tafsir || 'Current Scholar',
+            recentlyUsed: copy.manageTafsirScholars || 'Recently Used',
+            recommended: copy.manageTafsirScholars || 'Recommended',
+            allScholars: copy.manageTafsirScholars || 'All Scholars',
+            languageFilter: copy.tafsir || 'Language',
+            auto: copy.auto || 'Auto',
+            english: copy.english || 'English',
+            urdu: copy.urdu || 'Urdu',
+            arabic: copy.auto || 'Arabic',
+            noResults: copy.tafsir || 'No results found.',
+          }}
+        />
+      )}
     </>
   );
 }

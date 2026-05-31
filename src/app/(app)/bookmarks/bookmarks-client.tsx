@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
+import { hydrateVerses, startPeriodicCleanup } from '@/lib/quran-cache-service';
 
 interface EnrichedBookmark {
   id: string;
@@ -25,6 +26,16 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
   const toast = useToast();
   const copy = useCopy();
   const { interpolate } = useI18nText();
+
+  useEffect(() => {
+    const verses = bookmarks.map((b) => ({
+      verse_key: `${b.surah_id}:${b.verse_number}`,
+      text_uthmani: b.verseText,
+      chapterName: b.chapterName,
+    }));
+    hydrateVerses(verses);
+    startPeriodicCleanup();
+  }, []);
 
   const removeBookmark = async (surahId: number, verseNumber: number) => {
     try {

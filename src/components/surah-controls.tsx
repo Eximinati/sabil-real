@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAudioPlayerContext } from './audio-player-provider';
 import { getStoredReciterId } from '@/hooks/use-audio-player';
 import { useToast } from '@/hooks/use-toast';
 import { getApiUrl } from '@/lib/api-url';
 import { useCopy } from '@/hooks/use-copy';
+import { hydrateAudio } from '@/lib/quran-cache-service';
 
 interface AudioFile {
   verse_key: string;
@@ -41,6 +42,9 @@ export function SurahControls({ chapterId }: SurahControlsProps) {
       if (data.error) throw new Error(data.error);
       
       const files: AudioFile[] = data.audio_files || [];
+      for (const af of files) {
+        hydrateAudio(af.verse_key, reciterId, af.url);
+      }
       setCachedAudio(prev => ({ ...prev, [reciterId]: files }));
       return files;
     } catch (error) {

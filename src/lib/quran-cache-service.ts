@@ -22,6 +22,12 @@ export interface TranslationCacheEntry {
   text: string;
 }
 
+export interface AudioCacheEntry {
+  verseKey: string;
+  reciterId: number;
+  url: string;
+}
+
 interface ApiVerseData {
   verse_key: string;
   text_uthmani: string;
@@ -48,17 +54,36 @@ export interface VerseResult {
   translationText?: string;
 }
 
+/* ─── Memory Limits ──────────────────────────────────────────── */
+
+const MAX_MEMORY_VERSES = 2000;
+const MAX_MEMORY_TRANSLATIONS = 2000;
+const MAX_MEMORY_AUDIO = 2000;
+
+/* ─── LRU-safe Map helpers ──────────────────────────────────── */
+
+function lruSet<K, V>(map: Map<K, V>, key: K, value: V, max: number): void {
+  if (map.has(key)) {
+    map.delete(key);
+  } else if (map.size >= max) {
+    const first = map.keys().next().value;
+    if (first !== undefined) map.delete(first);
+  }
+  map.set(key, value);
+}
+
 /* ─── Level 1: Memory Cache ─────────────────────────────────── */
 
 type MemoryStore = {
   verses: Map<string, VerseCacheEntry>;
   translations: Map<string, TranslationCacheEntry>;
+  audio: Map<string, AudioCacheEntry>;
 };
 
 let mem: MemoryStore | null = null;
 
 function memStore(): MemoryStore {
-  if (!mem) mem = { verses: new Map(), translations: new Map() };
+  if (!mem) mem = { verses: new Map(), translations: new Map(), audio: new Map() };
   return mem;
 }
 
@@ -67,6 +92,9 @@ function vKey(k: string): string {
 }
 function tKey(vk: string, tid: number): string {
   return `trans:${vk}:${tid}`;
+}
+function aKey(vk: string, rid: number): string {
+  return `audio:${vk}:${rid}`;
 }
 
 function memAllVerses(keys: string[]): boolean {
@@ -81,21 +109,40 @@ function memGetVerse(k: string): VerseCacheEntry | undefined {
   return memStore().verses.get(vKey(k));
 }
 function memSetVerse(k: string, e: VerseCacheEntry): void {
-  memStore().verses.set(vKey(k), { ...e, verseKey: k });
+  lruSet(memStore().verses, vKey(k), { ...e, verseKey: k }, MAX_MEMORY_VERSES);
 }
 function memGetTrans(k: string, tid: number): TranslationCacheEntry | undefined {
   return memStore().translations.get(tKey(k, tid));
 }
 function memSetTrans(k: string, tid: number, text: string): void {
-  memStore().translations.set(tKey(k, tid), {
+  lruSet(memStore().translations, tKey(k, tid), {
     verseKey: k,
     translationId: tid,
     text,
-  });
+  }, MAX_MEMORY_TRANSLATIONS);
+}
+function memGetAudio(k: string, rid: number): AudioCacheEntry | undefined {
+  return memStore().audio.get(aKey(k, rid));
+}
+function memSetAudio(k: string, rid: number, url: string): void {
+  lruSet(memStore().audio, aKey(k, rid), {
+    verseKey: k,
+    reciterId: rid,
+    url,
+  }, MAX_MEMORY_AUDIO);
 }
 
 export function resetMemoryCache(): void {
-  mem = { verses: new Map(), translations: new Map() };
+  mem = { verses: new Map(), translations: new Map(), audio: new Map() };
+}
+
+export function getMemoryCacheSizes() {
+  const s = memStore();
+  return {
+    verses: s.verses.size,
+    translations: s.translations.size,
+    audio: s.audio.size,
+  };
 }
 
 /* ─── Level 2: Browser Cache (localForage) ──────────────────── */
@@ -104,6 +151,7 @@ import localforage from 'localforage';
 
 const AR_TTL = 30 * 24 * 60 * 60 * 1000;
 const TRANS_TTL = 7 * 24 * 60 * 60 * 1000;
+const AUDIO_TTL = 7 * 24 * 60 * 60 * 1000;
 
 interface StoreEntry {
   data: unknown;
@@ -145,6 +193,14 @@ async function lfSet(k: string, data: unknown, ttl: number): Promise<void> {
   }
 }
 
+async function lfRemove(k: string): Promise<void> {
+  try {
+    await lfStore().removeItem(k);
+  } catch {
+    /* silent */
+  }
+}
+
 async function browserHydrateVerses(keys: string[]): Promise<number> {
   let hit = 0;
   for (const k of keys) {
@@ -165,6 +221,19 @@ async function browserHydrateTrans(keys: string[], tid: number): Promise<number>
     const cached = await lfGet<TranslationCacheEntry>(tKey(k, tid));
     if (cached) {
       memSetTrans(k, tid, cached.text);
+      hit++;
+    }
+  }
+  return hit;
+}
+
+async function browserHydrateAudio(keys: string[], rid: number): Promise<number> {
+  let hit = 0;
+  for (const k of keys) {
+    if (memStore().audio.has(aKey(k, rid))) continue;
+    const cached = await lfGet<AudioCacheEntry>(aKey(k, rid));
+    if (cached) {
+      memSetAudio(k, rid, cached.url);
       hit++;
     }
   }
@@ -192,26 +261,38 @@ function dedupedFetch(path: string): Promise<ApiResponse> {
   return p;
 }
 
+/* ─── Audio URL normalization ────────────────────────────────── */
+
+const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
+
+function normalizeAudioUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+    return rawUrl.replace('cdn.quran.com', 'verses.quran.foundation');
+  }
+  return `${QURAN_AUDIO_BASE}/${rawUrl}`;
+}
+
 /* ─── Main Orchestrator ─────────────────────────────────────── */
 
-async function ensureVerses(keys: string[]): Promise<void> {
+async function ensureVerses(keys: string[], reciterId?: number): Promise<void> {
   const missing = keys.filter((k) => !memStore().verses.has(vKey(k)));
   if (missing.length === 0) {
     log(`Memory hit all ${keys.length} verses`);
     return;
   }
 
-  // Try browser cache first
   const browserHit = await browserHydrateVerses(missing);
   if (browserHit > 0) log(`Browser hit ${browserHit} verses`);
 
   const stillMissing = keys.filter((k) => !memStore().verses.has(vKey(k)));
   if (stillMissing.length === 0) return;
 
-  // Fetch from API (verses_only=true skips translation data in response)
-  const param = stillMissing.join(',');
-  log(`API miss ${stillMissing.length} verses: ${param}`);
-  const data = await dedupedFetch(`/verses?verse_keys=${param}&verses_only=true`);
+  let url = `/verses?verse_keys=${stillMissing.join(',')}&verses_only=true`;
+  if (reciterId) url += `&reciter=${reciterId}`;
+
+  log(`API miss ${stillMissing.length} verses: ${stillMissing.join(',')}`);
+  const data = await dedupedFetch(url);
 
   if (!data.verses) return;
 
@@ -224,6 +305,12 @@ async function ensureVerses(keys: string[]): Promise<void> {
     };
     memSetVerse(item.verseKey, entry);
     lfSet(vKey(item.verseKey), entry, AR_TTL);
+
+    if (item.audioUrl && reciterId) {
+      const audioUrl = normalizeAudioUrl(item.audioUrl);
+      memSetAudio(item.verseKey, reciterId, audioUrl);
+      lfSet(aKey(item.verseKey, reciterId), { verseKey: item.verseKey, reciterId, url: audioUrl }, AUDIO_TTL);
+    }
   }
 }
 
@@ -255,6 +342,77 @@ async function ensureTranslations(keys: string[], tid: number): Promise<void> {
   }
 }
 
+/* ─── Audio Fetching ────────────────────────────────────────── */
+
+export async function fetchAudio(
+  verseKeys: string[],
+  reciterId: number
+): Promise<Record<string, string>> {
+  if (verseKeys.length === 0) return {};
+
+  const result: Record<string, string> = {};
+
+  const missing: string[] = [];
+  for (const vk of verseKeys) {
+    const cached = memGetAudio(vk, reciterId);
+    if (cached) {
+      result[vk] = cached.url;
+    } else {
+      missing.push(vk);
+    }
+  }
+
+  if (missing.length > 0) {
+    const browserHit = await browserHydrateAudio(missing, reciterId);
+    if (browserHit > 0) log(`Browser hit ${browserHit} audio entries`);
+  }
+
+  for (const vk of missing) {
+    if (!result[vk]) {
+      const cached = memGetAudio(vk, reciterId);
+      if (cached) {
+        result[vk] = cached.url;
+      }
+    }
+  }
+
+  const stillMissing = verseKeys.filter((vk) => !result[vk]);
+  if (stillMissing.length === 0) return result;
+
+  const param = stillMissing.join(',');
+  log(`API miss ${stillMissing.length} audio entries`);
+  const data = await dedupedFetch(`/verses?verse_keys=${param}&reciter=${reciterId}&verses_only=true`);
+
+  if (data.verses) {
+    for (const item of data.verses) {
+      if (item.audioUrl) {
+        const url = normalizeAudioUrl(item.audioUrl);
+        memSetAudio(item.verseKey, reciterId, url);
+        lfSet(aKey(item.verseKey, reciterId), { verseKey: item.verseKey, reciterId, url }, AUDIO_TTL);
+        result[item.verseKey] = url;
+      }
+    }
+  }
+
+  return result;
+}
+
+export async function getAudioUrl(
+  verseKey: string,
+  reciterId: number
+): Promise<string | null> {
+  const cached = memGetAudio(verseKey, reciterId);
+  if (cached) return cached.url;
+
+  const browserCached = await lfGet<AudioCacheEntry>(aKey(verseKey, reciterId));
+  if (browserCached) {
+    memSetAudio(verseKey, reciterId, browserCached.url);
+    return browserCached.url;
+  }
+
+  return null;
+}
+
 /* ─── Public API ────────────────────────────────────────────── */
 
 export async function fetchVerses(
@@ -267,23 +425,32 @@ export async function fetchVerses(
   const allCached = memAllVerses(verseKeys) && memAllTrans(verseKeys, translationId);
 
   if (!allCached) {
-    await ensureVerses(verseKeys);
+    await ensureVerses(verseKeys, reciterId);
     await ensureTranslations(verseKeys, translationId);
   }
 
-  return {
-    verses: verseKeys.map((vk) => {
-      const v = memGetVerse(vk);
-      const t = memGetTrans(vk, translationId);
-      const chapterName = v?.chapterName || '';
-      return {
-        verseKey: vk,
-        textUthmani: v?.textUthmani || '',
-        chapterName,
-        translationText: t?.text,
-      };
-    }),
-  };
+  const verses = verseKeys.map((vk) => {
+    const v = memGetVerse(vk);
+    const t = memGetTrans(vk, translationId);
+    const a = reciterId ? memGetAudio(vk, reciterId) : undefined;
+    const chapterName = v?.chapterName || '';
+    return {
+      verseKey: vk,
+      textUthmani: v?.textUthmani || '',
+      chapterName,
+      translationText: t?.text,
+      audioUrl: a?.url,
+    };
+  });
+
+  if (reciterId) {
+    const missingAudio = verseKeys.filter((vk) => !memGetAudio(vk, reciterId));
+    if (missingAudio.length > 0) {
+      fetchAudio(missingAudio, reciterId).catch(() => {});
+    }
+  }
+
+  return { verses };
 }
 
 export async function fetchTranslations(
@@ -314,8 +481,8 @@ export async function getTranslationText(
   verseKey: string,
   translationId: number
 ): Promise<string | null> {
-  const mem = memGetTrans(verseKey, translationId);
-  if (mem) return mem.text;
+  const m = memGetTrans(verseKey, translationId);
+  if (m) return m.text;
 
   const cached = await lfGet<TranslationCacheEntry>(tKey(verseKey, translationId));
   if (cached) {
@@ -324,4 +491,83 @@ export async function getTranslationText(
   }
 
   return null;
+}
+
+/* ─── Hydrate cache from pre-fetched data ────────────────────── */
+
+export function hydrateVerses(
+  verses: Array<{
+    verse_key: string;
+    text_uthmani: string;
+    chapterName?: string;
+  }>,
+  chapterName?: string
+): void {
+  for (const v of verses) {
+    memSetVerse(v.verse_key, {
+      verseKey: v.verse_key,
+      textUthmani: v.text_uthmani || '',
+      chapterName: v.chapterName || chapterName || '',
+    });
+  }
+}
+
+export function hydrateAudio(
+  verseKey: string,
+  reciterId: number,
+  url: string
+): void {
+  memSetAudio(verseKey, reciterId, normalizeAudioUrl(url));
+}
+
+export function hydrateTranslation(
+  verseKey: string,
+  translationId: number,
+  text: string
+): void {
+  memSetTrans(verseKey, translationId, text);
+}
+
+/* ─── Cache Health ───────────────────────────────────────────── */
+
+export function clearExpiredBrowserEntries(): Promise<number> {
+  return new Promise((resolve) => {
+    let cleared = 0;
+    lfStore()
+      .iterate<StoreEntry, void>((value, key) => {
+        if (Date.now() - value.ts > value.ttl) {
+          lfStore().removeItem(key);
+          cleared++;
+        }
+      })
+      .then(() => resolve(cleared))
+      .catch(() => resolve(cleared));
+  });
+}
+
+export function clearAllCaches(): void {
+  resetMemoryCache();
+  lfStore()
+    .clear()
+    .catch(() => {});
+}
+
+/* ─── Periodic Cleanup ───────────────────────────────────────── */
+
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+export function startPeriodicCleanup(intervalMs = 600000): void {
+  if (cleanupTimer) return;
+  cleanupTimer = setInterval(() => {
+    clearExpiredBrowserEntries().then((count) => {
+      if (count > 0) log(`Cleaned ${count} expired browser entries`);
+    });
+  }, intervalMs);
+}
+
+export function stopPeriodicCleanup(): void {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+  }
 }
