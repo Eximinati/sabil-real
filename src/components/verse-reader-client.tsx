@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAudioPlayerContext } from './audio-player-provider';
 import { useFocusMode } from './focus-mode-provider';
 import { useToast } from '@/hooks/use-toast';
-import { getStoredReciterId } from '@/hooks/use-audio-player';
+import { getStoredReciterId, setStoredReciterId } from '@/hooks/use-audio-player';
 import { useReadingProgress } from '@/hooks/use-reading-progress';
 import { useReadingHistory } from '@/hooks/use-reading-history';
 import { useBookmarks } from '@/hooks/use-bookmarks';
@@ -13,6 +14,9 @@ import { CopyButton } from './copy-button';
 import { FocusModeToggle } from './focus-mode-toggle';
 import { SurahControls } from './surah-controls';
 import { AudioPlayer } from './audio-player';
+import { ReadingPreferencesSheet } from './reading-preferences-sheet';
+import { ReciterLibrarySheet } from './reciter-library-sheet';
+import { TranslationLibrarySheet } from './translation-library-sheet';
 import { getApiUrl } from '@/lib/api-url';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
@@ -23,6 +27,13 @@ import {
   getAudioUrl,
   startPeriodicCleanup,
 } from '@/lib/quran-cache-service';
+import {
+  getStoredTafsirId,
+  setStoredTafsirId,
+  getStoredTafsirLanguage,
+  setStoredTafsirLanguage,
+} from '@/lib/tafsir-preferences';
+import type { TafsirLanguagePreference } from '@/lib/tafsir-preferences';
 
 interface AudioFile {
   verse_key: string;
@@ -100,6 +111,64 @@ export function VerseReaderClient({
     }
     startPeriodicCleanup();
   }, []);
+
+  const router = useRouter();
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [showTranslationLibrary, setShowTranslationLibrary] = useState(false);
+  const [showReciterLibrary, setShowReciterLibrary] = useState(false);
+  const [clientReciterId, setClientReciterId] = useState(() => getStoredReciterId() || 5);
+  const [clientTafsirId, setClientTafsirId] = useState(() => getStoredTafsirId());
+  const [tafsirLanguage, setTafsirLanguage] = useState<TafsirLanguagePreference>(() => getStoredTafsirLanguage());
+
+  const handleTranslationChange = useCallback(
+    (id: number) => {
+      localStorage.setItem('sabil-translation-id', id.toString());
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        params.set('translation', id.toString());
+        router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+      }
+    },
+    [router]
+  );
+
+  const handleReciterChange = useCallback((id: number) => {
+    setClientReciterId(id);
+    setStoredReciterId(id);
+  }, []);
+
+  const handleTafsirChange = useCallback((id: number) => {
+    setClientTafsirId(id);
+    setStoredTafsirId(id);
+  }, []);
+
+  const handleTafsirLanguageChange = useCallback((lang: TafsirLanguagePreference) => {
+    setTafsirLanguage(lang);
+    setStoredTafsirLanguage(lang);
+  }, []);
+
+  const isUrdu = language === 'ur';
+  const prefsCopy = {
+    readingPreferences: isUrdu ? 'پڑھنے کی ترجیحات' : 'Reading Preferences',
+    translation: isUrdu ? 'ترجمہ' : 'Translation',
+    reciter: isUrdu ? 'قاری' : 'Reciter',
+    tafsir: isUrdu ? 'تفسیر' : 'Tafsir Scholar',
+    manageTranslations: isUrdu ? 'تراجم کا نظم کریں' : 'Manage Translations',
+    manageReciters: isUrdu ? 'قاریوں کا نظم کریں' : 'Manage Reciters',
+    manageTafsirScholars: isUrdu ? 'تمام مفسرین' : 'Browse All Scholars',
+    readingStyle: isUrdu ? 'پڑھنے کا انداز' : 'Reading Style',
+    comfortable: isUrdu ? 'آرام دہ' : 'Comfortable',
+    focused: isUrdu ? 'مرتکز' : 'Focused',
+    largeText: isUrdu ? 'بڑا متن' : 'Large Text',
+    audio: isUrdu ? 'آڈیو' : 'Audio',
+    enabled: isUrdu ? 'فعال' : 'Enabled',
+    manageAudio: isUrdu ? 'آڈیو کا نظم کریں' : 'Manage Audio',
+    close: isUrdu ? 'بند کریں' : 'Close',
+    auto: isUrdu ? 'آٹو' : 'Auto',
+    english: isUrdu ? 'انگریزی' : 'English',
+    urdu: isUrdu ? 'اردو' : 'Urdu',
+    tafsirLibrary: isUrdu ? 'تفسیر کی لائبریری' : 'Tafsir Library',
+  };
 
   const showBismillah = chapterId !== 1 && chapterId !== 9;
   const readingTimeMinutes = estimateReadingTimeMinutes(versesCount);
@@ -312,6 +381,17 @@ handlePlayVerse(verseKey, files);
 
               <div className="quiet-controls flex shrink-0 items-center gap-2">
                 <SurahControls chapterId={chapterId} />
+                <button
+                  onClick={() => setShowPrefs(true)}
+                  className="quiet-controls inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)]/80 px-3 py-2 text-sm text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)]/35 hover:text-[var(--color-text)]"
+                  aria-label={isUrdu ? 'پڑھنے کی ترجیحات' : 'Reading Preferences'}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="hidden sm:inline">{isUrdu ? 'ترجیحات' : 'Preferences'}</span>
+                </button>
                 <FocusModeToggle />
               </div>
             </div>
@@ -584,6 +664,57 @@ handlePlayVerse(verseKey, files);
           </div>
         </div>
       )}
+
+      <ReadingPreferencesSheet
+        isOpen={showPrefs}
+        onClose={() => setShowPrefs(false)}
+        currentTranslationId={translationId}
+        currentReciterId={clientReciterId}
+        onTranslationChange={handleTranslationChange}
+        onReciterChange={handleReciterChange}
+        onOpenTranslationLibrary={() => { setShowPrefs(false); setShowTranslationLibrary(true); }}
+        onOpenReciterLibrary={() => { setShowPrefs(false); setShowReciterLibrary(true); }}
+        currentTafsirId={clientTafsirId}
+        onTafsirChange={handleTafsirChange}
+        tafsirPreferredLanguage={tafsirLanguage}
+        onTafsirLanguageChange={handleTafsirLanguageChange}
+        hideJourneyLanguage
+        copy={prefsCopy}
+      />
+
+      <TranslationLibrarySheet
+        isOpen={showTranslationLibrary}
+        onClose={() => setShowTranslationLibrary(false)}
+        currentTranslationId={translationId}
+        onSelect={handleTranslationChange}
+        preferredLanguage={language === 'ur' ? 'urdu' : 'english'}
+        copy={{
+          translationLibrary: isUrdu ? 'تراجم کی لائبریری' : 'Translation Library',
+          searchPlaceholder: isUrdu ? 'زبان یا مترجم تلاش کریں' : 'Search language or translator',
+          recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+          recommended: isUrdu ? 'تجویز کردہ' : 'Recommended',
+          urduSection: isUrdu ? 'اردو' : 'Urdu',
+          englishSection: isUrdu ? 'انگریزی' : 'English',
+          otherLanguages: isUrdu ? 'دیگر زبانیں' : 'Other Languages',
+          noResults: isUrdu ? 'کوئی ترجمہ نہیں ملا۔' : 'No translations found.',
+        }}
+      />
+
+      <ReciterLibrarySheet
+        isOpen={showReciterLibrary}
+        onClose={() => setShowReciterLibrary(false)}
+        currentReciterId={clientReciterId}
+        onSelect={handleReciterChange}
+        copy={{
+          reciterLibrary: isUrdu ? 'قاریوں کی لائبریری' : 'Reciter Library',
+          searchPlaceholder: isUrdu ? 'قاری تلاش کریں' : 'Search reciters',
+          currentReciter: isUrdu ? 'موجودہ قاری' : 'Current Reciter',
+          recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+          recommended: isUrdu ? 'سارے قاری' : 'All Reciters',
+          allReciters: isUrdu ? 'تمام قاری' : 'All Reciters',
+          noResults: isUrdu ? 'کوئی قاری نہیں ملا۔' : 'No reciters found.',
+        }}
+      />
 
       <AudioPlayer />
     </div>
