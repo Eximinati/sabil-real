@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { JourneyVerseSection } from './journey-verse-section';
 import { useToast } from '@/hooks/use-toast';
-import { getApiUrl } from '@/lib/api-url';
 import { useLanguage } from '@/lib/i18n/context';
+import { fetchVerses } from '@/lib/quran-cache-service';
+import type { VerseResult } from '@/lib/quran-cache-service';
 
 const QURAN_AUDIO_BASE = 'https://verses.quran.foundation';
 
@@ -18,7 +19,7 @@ interface VerseData {
   }>;
 }
 
-interface VerseWithData {
+interface VerseRenderItem {
   verse: VerseData | null;
   chapterName: string;
   verseKey: string;
@@ -31,14 +32,6 @@ interface JourneyVerseContentInnerProps {
   title?: string;
   intro?: string;
   referenceLabel?: string;
-}
-
-function resolveAudioUrl(url: string): string {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url.replace('cdn.quran.com', 'verses.quran.foundation');
-  }
-  return `${QURAN_AUDIO_BASE}/${url}`;
 }
 
 function logPerformance(metric: string, value: number) {
@@ -76,7 +69,7 @@ export function JourneyVerseContentInner({
         errorDescription: 'Please check your connection and try again.',
         empty: 'No verses available for this lesson.',
       };
-  const [verses, setVerses] = useState<VerseWithData[]>([]);
+  const [verses, setVerses] = useState<VerseRenderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPlayingVerse, setCurrentPlayingVerse] = useState<string | null>(null);
@@ -84,11 +77,16 @@ export function JourneyVerseContentInner({
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [reciterId, setReciterId] = useState<number>(5);
-  const [fetchKey, setFetchKey] = useState(0);
   const toast = useToast();
+  const prevKeyRef = useRef('');
 
   const urlTranslation = router.get('translation');
-  const currentTranslation = urlTranslation ? parseInt(urlTranslation, 10) : translationId;
+  const storedTranslation = typeof window !== 'undefined' ? localStorage.getItem('sabil-translation-id') : null;
+  const currentTranslation = urlTranslation
+    ? parseInt(urlTranslation, 10)
+    : storedTranslation
+      ? parseInt(storedTranslation, 10)
+      : translationId;
   const verseKeysParam = verseKeys.join(',');
 
   useEffect(() => {
@@ -99,31 +97,44 @@ export function JourneyVerseContentInner({
   }, []);
 
   useEffect(() => {
-    setFetchKey(k => k + 1);
-  }, [verseKeysParam, currentTranslation, reciterId]);
-
-  useEffect(() => {
-    if (fetchKey === 0) return;
-    
     const startTime = performance.now();
     setLoading(true);
-    
-    async function fetchVerses() {
+    setError(null);
+
+    const key = `${verseKeysParam}|${currentTranslation}`;
+    prevKeyRef.current = key;
+
+    async function loadVerses() {
       try {
-        const res = await fetch(getApiUrl(`/verses?verse_keys=${verseKeysParam}&translation=${currentTranslation}&reciter=${reciterId}`));
-        if (!res.ok) throw new Error('Failed to fetch verses');
-        const data = await res.json();
-        setVerses(data.verses || []);
+        const result = await fetchVerses(verseKeys, currentTranslation, reciterId);
+        const mapped: VerseRenderItem[] = result.verses.map((v: VerseResult) => ({
+          verse: v.textUthmani
+            ? {
+                verse_key: v.verseKey,
+                text_uthmani: v.textUthmani,
+                translations: v.translationText
+                  ? [{ resource_name: '', text: v.translationText }]
+                  : undefined,
+              }
+            : null,
+          chapterName: v.chapterName,
+          verseKey: v.verseKey,
+        }));
+        if (prevKeyRef.current !== key) return;
+        setVerses(mapped);
         logPerformance('Verse content loaded', performance.now() - startTime);
       } catch (err) {
+        if (prevKeyRef.current !== key) return;
         setError(uiCopy.fetchFailed);
       } finally {
-        setLoading(false);
+        if (prevKeyRef.current === key) {
+          setLoading(false);
+        }
       }
     }
-    
-    fetchVerses();
-  }, [fetchKey, currentTranslation, reciterId, uiCopy.fetchFailed, verseKeysParam]);
+
+    loadVerses();
+  }, [verseKeysParam, currentTranslation, reciterId, uiCopy.fetchFailed]);
 
   const sectionTitle = title || uiCopy.sectionTitle;
   const isUrduIntro = /[\u0600-\u06FF]/.test(intro || '') || language === 'ur';
@@ -147,20 +158,13 @@ export function JourneyVerseContentInner({
         return;
       }
 
-      const verseData = verses.find(v => v.verseKey === verseKey);
-      let url = providedUrl || verseData?.audioUrl;
-      
-      if (!url) {
-        url = getAudioUrl(verseKey);
-      } else {
-        url = resolveAudioUrl(url);
-      }
-      
+      let url = providedUrl || getAudioUrl(verseKey);
+
       if (!url) {
         toast.error(uiCopy.audioUnavailable);
         return;
       }
-      
+
       setLoadingAudio(true);
       audio.src = url;
       audio.play()
@@ -182,12 +186,14 @@ export function JourneyVerseContentInner({
     }
   };
 
-  const showVerses = loading ? verseKeys.slice(0, 1).map((key, idx) => ({
-    verse: null,
-    chapterName: '',
-    verseKey: key,
-    audioUrl: undefined
-  })) : verses;
+  const showVerses = loading
+    ? verseKeys.slice(0, 1).map((key, idx) => ({
+        verse: null,
+        chapterName: '',
+        verseKey: key,
+        audioUrl: undefined,
+      }))
+    : verses;
 
   if (loading) {
     return (

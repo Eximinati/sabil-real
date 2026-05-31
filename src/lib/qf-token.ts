@@ -1,18 +1,21 @@
 /**
  * Quran Foundation API Token Manager
- * 
+ *
  * Uses OAuth2 Client Credentials flow:
  * - POST to oauth2/token endpoint with HTTP Basic Auth
  * - Client ID as username, Client Secret as password
  * - Body: grant_type=client_credentials&scope=content
  * - Returns access_token valid for 3600 seconds
- * 
- * Token is cached in memory with 60-second buffer before expiry
+ *
+ * Token cached in memory with refresh ~30s before expiry.
+ * Concurrent requests coalesced into single in-flight fetch.
  */
 
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID!;
 const QF_CLIENT_SECRET = process.env.QF_CLIENT_SECRET!;
 const QF_OAUTH_URL = process.env.QF_OAUTH_URL!;
+const SAFETY_BUFFER_MS = 30000;
+const TOKEN_LIFETIME_MS = 3600 * 1000;
 
 interface TokenResponse {
   access_token: string;
@@ -23,10 +26,12 @@ interface TokenResponse {
 
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
+let pendingTokenPromise: Promise<string> | null = null;
 
 export function clearCachedToken(): void {
   cachedToken = null;
   tokenExpiry = null;
+  pendingTokenPromise = null;
 }
 
 function getBasicAuthHeader(): string {
@@ -54,7 +59,7 @@ async function fetchNewToken(): Promise<string> {
   }
 
   const data: TokenResponse = await response.json();
-  
+
   if (!data.access_token) {
     throw new Error('No access_token in OAuth response');
   }
@@ -64,17 +69,24 @@ async function fetchNewToken(): Promise<string> {
 
 export async function getQFToken(): Promise<string> {
   const now = Date.now();
-  
-  // Check if token exists and is not expiring within 60 seconds
-  if (cachedToken && tokenExpiry && (now < tokenExpiry - 60000)) {
+
+  if (cachedToken && tokenExpiry && now < tokenExpiry - SAFETY_BUFFER_MS) {
     return cachedToken;
   }
 
-  // Token is missing or about to expire, fetch a new one
-  cachedToken = await fetchNewToken();
-  
-  // Set expiry time (3600 seconds = 1 hour, subtract buffer when checking)
-  tokenExpiry = now + (3600 * 1000);
-  
-  return cachedToken;
+  if (pendingTokenPromise) {
+    return pendingTokenPromise;
+  }
+
+  pendingTokenPromise = (async () => {
+    try {
+      cachedToken = await fetchNewToken();
+      tokenExpiry = now + TOKEN_LIFETIME_MS;
+      return cachedToken;
+    } finally {
+      pendingTokenPromise = null;
+    }
+  })();
+
+  return pendingTokenPromise;
 }
