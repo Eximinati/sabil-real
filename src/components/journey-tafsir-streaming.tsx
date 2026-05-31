@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/context';
+import { fetchTafsir, startPeriodicCleanup } from '@/lib/tafsir-cache';
+import type { TafsirCacheVerse } from '@/lib/tafsir-cache';
 import type { CanonicalTafsirRevealMode } from '@/types/journey-localization';
 
 interface TafsirData {
@@ -86,16 +88,12 @@ export function JourneyTafsirStreaming({
     setLoading(true);
     
     try {
-      const res = await fetch(`/api/tafsirs/${tafsirIdRef.current}/${chapterId}`);
+      const cached = await fetchTafsir(tafsirIdRef.current, parseInt(chapterId, 10));
+      const fetchedTafsirs = cached?.verses || [];
       
-      if (!res.ok) throw new Error('Failed to fetch tafsir');
-      
-      const data = await res.json();
-      const fetchedTafsirs = data.tafsirs || data || [];
-      
-      const filtered = Array.isArray(fetchedTafsirs) 
-        ? fetchedTafsirs.filter((t: TafsirData) => verseNumbers.includes(String(t.verse_number)))
-        : [];
+      const filtered = fetchedTafsirs.filter(
+        (t: TafsirCacheVerse) => verseNumbers.includes(String(t.verse_number))
+      );
       
       setTafsirs(filtered);
       setHasTriedLoading(true);
@@ -112,6 +110,10 @@ export function JourneyTafsirStreaming({
       loadTafsirs();
     }
   }, [isExpanded, hasTriedLoading, loadTafsirs]);
+
+  useEffect(() => {
+    startPeriodicCleanup();
+  }, []);
 
   const toggleExpanded = useCallback(() => {
     if (!isExpanded && !hasTriedLoading) {
