@@ -12,6 +12,7 @@ import {
 } from './journey-lesson-skeleton';
 import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
 import { JourneyTranslationSelector } from './journey-translation-selector';
+import { TranslationLibrarySheet } from './translation-library-sheet';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
@@ -145,6 +146,8 @@ function JourneyLessonHeader({
   );
   const [selectedReciter, setSelectedReciter] = useState(5);
   const [savingJourneyLanguage, setSavingJourneyLanguage] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const { language } = useLanguage();
 
   useEffect(() => {
     const storedReciter = localStorage.getItem('sabil-reciter-id');
@@ -209,6 +212,24 @@ function JourneyLessonHeader({
     }
   };
 
+  const handleLibrarySelect = (id: number) => {
+    setShowLibrary(false);
+    handleTranslationChange(id);
+  };
+
+  const preferredLanguage = language === 'ur' ? 'urdu' : 'english';
+  const isUrdu = language === 'ur';
+  const libraryCopy = {
+    translationLibrary: isUrdu ? 'تراجم کی لائبریری' : 'Translation Library',
+    searchPlaceholder: isUrdu ? 'زبان یا مترجم تلاش کریں' : 'Search language or translator',
+    recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+    recommended: isUrdu ? 'تجویز کردہ' : 'Recommended',
+    urduSection: isUrdu ? 'اردو' : 'Urdu',
+    englishSection: isUrdu ? 'انگریزی' : 'English',
+    otherLanguages: isUrdu ? 'دیگر زبانیں' : 'Other Languages',
+    noResults: isUrdu ? 'کوئی ترجمہ نہیں ملا۔' : 'No translations found.',
+  };
+
   return (
     <div className="mb-6 md:mb-10">
       <div className="mx-auto max-w-[740px] rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/78 px-4 py-4 backdrop-blur-sm md:px-5">
@@ -231,34 +252,46 @@ function JourneyLessonHeader({
           <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
             {copy.journey.lesson.readingSettingsDescription}
           </p>
-          <div className="quiet-controls mt-3 flex flex-wrap items-center gap-2">
+          <div className="quiet-controls mt-3 space-y-4">
             <JourneyTranslationSelector
               currentTranslationId={selectedTranslation}
-              variant="header"
+              variant="inline"
               onTranslationChange={handleTranslationChange}
+              onOpenLibrary={() => setShowLibrary(true)}
             />
-            <JourneyReciterSelector
-              currentReciterId={selectedReciter}
-              onReciterChange={handleReciterChange}
-            />
-            <label className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)]">
-              <span className="text-[var(--color-text-muted)]">Journey</span>
-              <select
-                value={selectedJourneyLanguage}
-                disabled={savingJourneyLanguage}
-                onChange={(event) =>
-                  handleJourneyLanguageChange(event.target.value as 'auto' | 'en' | 'ur')
-                }
-                className="min-w-[110px] bg-transparent text-sm focus:outline-none disabled:opacity-60"
-              >
-                <option value="auto">Auto</option>
-                <option value="en">English</option>
-                <option value="ur">Urdu</option>
-              </select>
-            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <JourneyReciterSelector
+                currentReciterId={selectedReciter}
+                onReciterChange={handleReciterChange}
+              />
+              <label className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)]">
+                <span className="text-[var(--color-text-muted)]">Journey</span>
+                <select
+                  value={selectedJourneyLanguage}
+                  disabled={savingJourneyLanguage}
+                  onChange={(event) =>
+                    handleJourneyLanguageChange(event.target.value as 'auto' | 'en' | 'ur')
+                  }
+                  className="min-w-[110px] bg-transparent text-sm focus:outline-none disabled:opacity-60"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="en">English</option>
+                  <option value="ur">Urdu</option>
+                </select>
+              </label>
+            </div>
           </div>
         </details>
       </div>
+
+      <TranslationLibrarySheet
+        isOpen={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        currentTranslationId={selectedTranslation}
+        onSelect={handleLibrarySelect}
+        preferredLanguage={preferredLanguage}
+        copy={libraryCopy}
+      />
     </div>
   );
 }

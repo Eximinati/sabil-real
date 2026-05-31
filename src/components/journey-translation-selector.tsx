@@ -14,23 +14,39 @@ interface Translation {
 interface JourneyTranslationSelectorProps {
   currentTranslationId: number;
   onTranslationChange?: (id: number) => void;
-  variant?: 'header' | 'lesson';
+  variant?: 'header' | 'lesson' | 'inline';
+  onOpenLibrary?: () => void;
 }
 
 const STORAGE_KEY = 'sabil-translation-id';
+const RECENT_KEY = 'sabil-recent-translations';
+const MAX_RECENT = 5;
 
-function getLanguageRank(languageName: string, preferredLanguage: 'english' | 'urdu') {
-  const normalized = (languageName || '').toLowerCase();
-  if (normalized === preferredLanguage) return 0;
-  if (normalized === 'arabic') return 1;
-  if (normalized === 'english' || normalized === 'urdu') return 2;
-  return 3;
+function getRecentIds(): number[] {
+  try {
+    const stored = localStorage.getItem(RECENT_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.map(Number).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addRecentId(id: number) {
+  try {
+    const ids = getRecentIds().filter((i) => i !== id);
+    ids.unshift(id);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(ids.slice(0, MAX_RECENT)));
+  } catch {
+  }
 }
 
 export function JourneyTranslationSelector({
   currentTranslationId,
   onTranslationChange,
   variant = 'lesson',
+  onOpenLibrary,
 }: JourneyTranslationSelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,11 +54,10 @@ export function JourneyTranslationSelector({
   const { language } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const [search, setSearch] = useState('');
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTranslation, setCurrentTranslation] = useState<Translation | null>(null);
+  const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -56,9 +71,7 @@ export function JourneyTranslationSelector({
         setLoading(false);
       })
       .catch(() => {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       });
 
     return () => {
@@ -71,90 +84,20 @@ export function JourneyTranslationSelector({
     setCurrentTranslation(next);
   }, [currentTranslationId, translations]);
 
-  const preferredLanguage = language === 'ur' ? 'urdu' : 'english';
-  const isUrdu = language === 'ur';
-  const copy = isUrdu
-    ? {
-        buttonFallback: 'ترجمہ',
-        buttonCollapsed: 'ترجمہ',
-        changeTranslation: 'ترجمہ تبدیل کریں',
-        closePicker: 'ترجمہ فہرست بند کریں',
-        chooseTitle: 'ترجمہ منتخب کریں',
-        chooseSubtitle: 'ایک بار منتخب کریں، پھر توجہ پڑھنے پر رکھیں۔',
-        close: 'بند کریں',
-        current: 'موجودہ',
-        loading: 'لوڈ ہو رہا ہے...',
-        recommended: 'تجویز کردہ',
-        moreTranslations: 'مزید تراجم',
-        hide: 'چھپائیں',
-        show: 'دکھائیں',
-        searchPlaceholder: 'زبان یا مترجم تلاش کریں',
-        noneFound: 'کوئی ترجمہ نہیں ملا۔',
-      }
-    : {
-        buttonFallback: 'Translation',
-        buttonCollapsed: 'Translation',
-        changeTranslation: 'Change translation',
-        closePicker: 'Close translation picker',
-        chooseTitle: 'Choose translation',
-        chooseSubtitle: 'Set once, then keep reading central.',
-        close: 'Close',
-        current: 'Current',
-        loading: 'Loading...',
-        recommended: 'Recommended',
-        moreTranslations: 'More translations',
-        hide: 'Hide',
-        show: 'Show',
-        searchPlaceholder: 'Search language or translator',
-        noneFound: 'No translations found.',
-      };
-
-  const recommendedTranslations = useMemo(() => {
-    return [...translations]
-      .sort((a, b) => {
-        const rankA = getLanguageRank(a.language_name, preferredLanguage);
-        const rankB = getLanguageRank(b.language_name, preferredLanguage);
-
-        if (rankA !== rankB) {
-          return rankA - rankB;
-        }
-
-        return (a.author_name || '').localeCompare(b.author_name || '');
-      })
-      .slice(0, 6);
-  }, [preferredLanguage, translations]);
-
-  const filteredAllTranslations = useMemo(() => {
-    const sorted = [...translations].sort((a, b) => {
-      const lang = (a.language_name || '').localeCompare(b.language_name || '');
-      if (lang !== 0) {
-        return lang;
-      }
-
-      return (a.author_name || '').localeCompare(b.author_name || '');
-    });
-
-    const needle = search.trim().toLowerCase();
-    if (!needle) {
-      return sorted;
-    }
-
-    return sorted.filter((t) => {
-      return (
-        (t.author_name || '').toLowerCase().includes(needle) ||
-        (t.language_name || '').toLowerCase().includes(needle) ||
-        (t.name || '').toLowerCase().includes(needle)
-      );
-    });
-  }, [search, translations]);
+  useEffect(() => {
+    const recentIds = getRecentIds();
+    const recent = recentIds
+      .map((id) => translations.find((t) => t.id === id))
+      .filter((t): t is Translation => !!t);
+    setRecentTranslations(recent);
+  }, [translations, currentTranslationId]);
 
   const handleSelect = useCallback(
     (selected: Translation) => {
       setCurrentTranslation(selected);
       setIsOpen(false);
-      setShowAll(false);
-      setSearch('');
       localStorage.setItem(STORAGE_KEY, selected.id.toString());
+      addRecentId(selected.id);
 
       if (onTranslationChange) {
         onTranslationChange(selected.id);
@@ -168,8 +111,71 @@ export function JourneyTranslationSelector({
     [onTranslationChange, pathname, router, searchParams]
   );
 
+  const isUrdu = language === 'ur';
+  const copy = useMemo(
+    () => ({
+      buttonFallback: isUrdu ? 'ترجمہ' : 'Translation',
+      changeTranslation: isUrdu ? 'ترجمہ تبدیل کریں' : 'Change translation',
+      closePicker: isUrdu ? 'ترجمہ فہرست بند کریں' : 'Close translation picker',
+      quranTranslation: isUrdu ? 'قرآن ترجمہ' : 'Quran Translation',
+      recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+      selectTranslation: isUrdu ? 'ترجمہ منتخب کریں ←' : 'Select Translation →',
+      browseAll: isUrdu ? 'تمام تراجم دیکھیں' : 'Browse All Translations',
+      loading: isUrdu ? 'لوڈ ہو رہا ہے...' : 'Loading...',
+      close: isUrdu ? 'بند کریں' : 'Close',
+    }),
+    [isUrdu]
+  );
+
   const buttonLabel = currentTranslation?.author_name || copy.buttonFallback;
-  const collapsedButtonLabel = variant === 'header' ? copy.buttonCollapsed : buttonLabel;
+  const nonCurrentRecent = recentTranslations.filter((t) => t.id !== currentTranslationId);
+
+  if (variant === 'inline') {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/55 px-4 py-3">
+          <p className="text-xs text-[var(--color-text-muted)]">{copy.quranTranslation}</p>
+          <p className="mt-0.5 text-sm font-medium text-[var(--color-text)]">
+            {currentTranslation?.author_name || copy.buttonFallback}
+          </p>
+          {currentTranslation?.language_name && (
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {currentTranslation.language_name}
+            </p>
+          )}
+        </div>
+
+        {nonCurrentRecent.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+              {copy.recentlyUsed}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {nonCurrentRecent.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => handleSelect(t)}
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-bg)]"
+                >
+                  {t.author_name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={onOpenLibrary}
+          className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
+        >
+          <span className="font-medium">{copy.browseAll}</span>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -185,7 +191,7 @@ export function JourneyTranslationSelector({
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
         </svg>
-        <span className="max-w-[170px] truncate">{collapsedButtonLabel}</span>
+        <span className="max-w-[170px] truncate">{buttonLabel}</span>
       </button>
 
       {isOpen && (
@@ -196,13 +202,12 @@ export function JourneyTranslationSelector({
             aria-label={copy.closePicker}
           />
 
-          <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
             <div className="border-b border-[var(--color-border)] p-4">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-[var(--color-text)]">{copy.chooseTitle}</h2>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{copy.chooseSubtitle}</p>
-                </div>
+                <h2 className="text-lg font-semibold text-[var(--color-text)]">
+                  {copy.quranTranslation}
+                </h2>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="rounded-full p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/50"
@@ -214,82 +219,58 @@ export function JourneyTranslationSelector({
                 </button>
               </div>
 
-              {currentTranslation && (
-                <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/55 px-3 py-2 text-xs text-[var(--color-text-muted)]">
-                  {copy.current}: <span className="text-[var(--color-text)]">{currentTranslation.author_name}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="max-h-[70vh] overflow-y-auto p-3">
               {loading ? (
-                <div className="p-8 text-center text-sm text-[var(--color-text-muted)]">{copy.loading}</div>
+                <div className="py-8 text-center text-sm text-[var(--color-text-muted)]">
+                  {copy.loading}
+                </div>
               ) : (
-                <>
-                  <div className="mb-3 px-1 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-                    {copy.recommended}
+                <div className="mt-3">
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/55 px-4 py-3">
+                    <p className="text-xs text-[var(--color-text-muted)]">{copy.quranTranslation}</p>
+                    <p className="mt-0.5 text-sm font-medium text-[var(--color-text)]">
+                      {currentTranslation?.author_name || copy.buttonFallback}
+                    </p>
+                    {currentTranslation?.language_name && (
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        {currentTranslation.language_name}
+                      </p>
+                    )}
                   </div>
-                  <div className="space-y-1">
-                    {recommendedTranslations.map((t) => (
-                      <button
-                        key={`recommended-${t.id}`}
-                        onClick={() => handleSelect(t)}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${
-                          t.id === currentTranslation?.id
-                            ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                            : 'text-[var(--color-text)] hover:bg-[var(--color-bg)]'
-                        }`}
-                      >
-                        <span className="text-sm font-medium">{t.author_name}</span>
-                        <span className="text-xs text-[var(--color-text-muted)]">{t.language_name}</span>
-                      </button>
-                    ))}
-                  </div>
+
+                  {nonCurrentRecent.length > 0 && (
+                    <div className="mt-4">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                        {copy.recentlyUsed}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {nonCurrentRecent.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => handleSelect(t)}
+                            className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-bg)]"
+                          >
+                            {t.author_name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-4 border-t border-[var(--color-border)] pt-3">
                     <button
-                      onClick={() => setShowAll((prev) => !prev)}
-                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
+                      onClick={() => {
+                        setIsOpen(false);
+                        onOpenLibrary?.();
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
                     >
-                      <span>{copy.moreTranslations}</span>
-                      <span>{showAll ? copy.hide : copy.show}</span>
+                      <span className="font-medium">{copy.selectTranslation}</span>
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
-
-                    {showAll && (
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          placeholder={copy.searchPlaceholder}
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
-                          className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none"
-                        />
-
-                        <div className="mt-2 max-h-[34vh] space-y-1 overflow-y-auto pr-1">
-                          {filteredAllTranslations.map((t) => (
-                            <button
-                              key={`all-${t.id}`}
-                              onClick={() => handleSelect(t)}
-                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${
-                                t.id === currentTranslation?.id
-                                  ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                                  : 'text-[var(--color-text)] hover:bg-[var(--color-bg)]'
-                              }`}
-                            >
-                              <span className="text-sm font-medium">{t.author_name}</span>
-                              <span className="text-xs text-[var(--color-text-muted)]">{t.language_name}</span>
-                            </button>
-                          ))}
-                          {filteredAllTranslations.length === 0 && (
-                            <p className="px-3 py-5 text-center text-sm text-[var(--color-text-muted)]">
-                              {copy.noneFound}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>

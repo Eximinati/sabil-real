@@ -139,6 +139,18 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       tafsir: 'آپ کی تفسیر کی قراءت کی جگہ تیار ہو رہی ہے...',
       verses: 'آیات تیار ہو رہی ہیں...',
     },
+    translationPicker: {
+      quranTranslation: 'قرآن ترجمہ',
+      recentlyUsed: 'حالیہ استعمال شدہ',
+      selectTranslation: 'ترجمہ منتخب کریں ←',
+      translationLibrary: 'تراجم کی لائبریری',
+      searchPlaceholder: 'زبان یا مترجم تلاش کریں',
+      recommended: 'تجویز کردہ',
+      urduSection: 'اردو',
+      englishSection: 'انگریزی',
+      otherLanguages: 'دیگر زبانیں',
+      noResults: 'کوئی ترجمہ نہیں ملا۔',
+    },
   },
   settings: {
     title: 'ترتیبات',

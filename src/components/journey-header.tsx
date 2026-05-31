@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { JourneyTranslationSelector } from './journey-translation-selector';
+import { TranslationLibrarySheet } from './translation-library-sheet';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
@@ -47,6 +48,7 @@ export function JourneyHeader({
     urlTranslation ? parseInt(urlTranslation, 10) : defaultTranslationId
   );
   const [selectedReciter, setSelectedReciter] = useState<number>(5);
+  const [showLibrary, setShowLibrary] = useState(false);
 
   const progressPercent = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
 
@@ -85,6 +87,22 @@ export function JourneyHeader({
     setSelectedReciter(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
     toast.success(copy.common.toasts.reciterUpdated);
+  };
+
+  const handleLibrarySelect = (id: number) => {
+    setShowLibrary(false);
+    handleTranslationChange(id);
+  };
+
+  const libraryCopy = {
+    translationLibrary: isUrdu ? 'تراجم کی لائبریری' : 'Translation Library',
+    searchPlaceholder: isUrdu ? 'زبان یا مترجم تلاش کریں' : 'Search language or translator',
+    recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+    recommended: isUrdu ? 'تجویز کردہ' : 'Recommended',
+    urduSection: isUrdu ? 'اردو' : 'Urdu',
+    englishSection: isUrdu ? 'انگریزی' : 'English',
+    otherLanguages: isUrdu ? 'دیگر زبانیں' : 'Other Languages',
+    noResults: isUrdu ? 'کوئی ترجمہ نہیں ملا۔' : 'No translations found.',
   };
 
   return (
@@ -133,6 +151,7 @@ export function JourneyHeader({
         <JourneyTranslationSelector 
           currentTranslationId={selectedTranslation} 
           variant="header"
+          onOpenLibrary={() => setShowLibrary(true)}
         />
         <JourneyReciterSelector
           currentReciterId={selectedReciter}
@@ -151,6 +170,15 @@ export function JourneyHeader({
           </a>
         )}
       </div>
+
+      <TranslationLibrarySheet
+        isOpen={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        currentTranslationId={selectedTranslation}
+        onSelect={handleLibrarySelect}
+        preferredLanguage={isUrdu ? 'urdu' : 'english'}
+        copy={libraryCopy}
+      />
     </div>
   );
 }

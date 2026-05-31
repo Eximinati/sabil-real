@@ -141,6 +141,18 @@ export const EN_COPY: AppCopy = {
       tafsir: 'Preparing your tafsir reading space...',
       verses: 'Preparing verses...',
     },
+    translationPicker: {
+      quranTranslation: 'Quran Translation',
+      recentlyUsed: 'Recently Used',
+      selectTranslation: 'Select Translation →',
+      translationLibrary: 'Translation Library',
+      searchPlaceholder: 'Search language or translator',
+      recommended: 'Recommended',
+      urduSection: 'Urdu',
+      englishSection: 'English',
+      otherLanguages: 'Other Languages',
+      noResults: 'No translations found.',
+    },
   },
   settings: {
     title: 'Settings',

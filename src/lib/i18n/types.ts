@@ -140,6 +140,18 @@ export interface AppCopy {
       tafsir: string;
       verses: string;
     };
+    translationPicker: {
+      quranTranslation: string;
+      recentlyUsed: string;
+      selectTranslation: string;
+      translationLibrary: string;
+      searchPlaceholder: string;
+      recommended: string;
+      urduSection: string;
+      englishSection: string;
+      otherLanguages: string;
+      noResults: string;
+    };
   };
   settings: {
     title: string;

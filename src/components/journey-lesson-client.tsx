@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { JourneyVerseSection } from './journey-verse-section';
 import { JourneyTranslationSelector } from './journey-translation-selector';
+import { TranslationLibrarySheet } from './translation-library-sheet';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { ReflectionInput } from './reflection-input';
 import { LessonCompleteButton } from './lesson-complete-button';
@@ -92,6 +93,7 @@ export function JourneyLessonClient({
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [reciterId, setReciterId] = useState<number>(5);
+  const [showLibrary, setShowLibrary] = useState(false);
   const toast = useToast();
 
   const urlTranslation = router.get('translation');
@@ -108,6 +110,26 @@ export function JourneyLessonClient({
     setReciterId(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
     toast.success(copy.common.toasts.reciterUpdated);
+  };
+
+  const handleLibrarySelect = (id: number) => {
+    setShowLibrary(false);
+    const params = new URLSearchParams(window.location.search);
+    params.set('translation', id.toString());
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+    localStorage.setItem('sabil-translation-id', id.toString());
+    window.location.reload();
+  };
+
+  const libraryCopy = {
+    translationLibrary: isUrdu ? 'تراجم کی لائبریری' : 'Translation Library',
+    searchPlaceholder: isUrdu ? 'زبان یا مترجم تلاش کریں' : 'Search language or translator',
+    recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+    recommended: isUrdu ? 'تجویز کردہ' : 'Recommended',
+    urduSection: isUrdu ? 'اردو' : 'Urdu',
+    englishSection: isUrdu ? 'انگریزی' : 'English',
+    otherLanguages: isUrdu ? 'دیگر زبانیں' : 'Other Languages',
+    noResults: isUrdu ? 'کوئی ترجمہ نہیں ملا۔' : 'No translations found.',
   };
 
   const getAudioUrl = useCallback((verseKey: string): string => {
@@ -222,6 +244,7 @@ export function JourneyLessonClient({
             <JourneyTranslationSelector 
               currentTranslationId={currentTranslation} 
               variant="lesson"
+              onOpenLibrary={() => setShowLibrary(true)}
             />
             <JourneyReciterSelector
               currentReciterId={reciterId}
@@ -380,6 +403,15 @@ export function JourneyLessonClient({
           isCompleted={isCompleted}
         />
       </div>
+
+      <TranslationLibrarySheet
+        isOpen={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        currentTranslationId={currentTranslation}
+        onSelect={handleLibrarySelect}
+        preferredLanguage={isUrdu ? 'urdu' : 'english'}
+        copy={libraryCopy}
+      />
     </div>
   );
 }
