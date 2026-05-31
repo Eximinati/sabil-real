@@ -295,7 +295,7 @@ export function CanonicalAuthoringPanel({
             <div>
               <p className="text-sm font-medium text-[var(--color-text)]">Tafsir source mapping</p>
               <p className="text-xs text-[var(--color-text-muted)]">
-                Let readers use preferences while keeping fallback spiritually stable.
+                System auto-fetches from Quran Foundation API. Scholar name displayed at runtime — no manual copy-paste needed.
               </p>
             </div>
             <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">

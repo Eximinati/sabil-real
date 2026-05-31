@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { TranslationLibrarySheet } from './translation-library-sheet';
 import { JourneyReciterSelector } from './journey-reciter-selector';
+import { ReciterLibrarySheet } from './reciter-library-sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
@@ -49,6 +50,7 @@ export function JourneyHeader({
   );
   const [selectedReciter, setSelectedReciter] = useState<number>(5);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showReciterLibrary, setShowReciterLibrary] = useState(false);
 
   const progressPercent = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
 
@@ -92,6 +94,21 @@ export function JourneyHeader({
   const handleLibrarySelect = (id: number) => {
     setShowLibrary(false);
     handleTranslationChange(id);
+  };
+
+  const handleReciterLibrarySelect = (id: number) => {
+    setShowReciterLibrary(false);
+    handleReciterChange(id);
+  };
+
+  const reciterLibraryCopy = {
+    reciterLibrary: isUrdu ? 'قاریوں کی لائبریری' : 'Reciter Library',
+    searchPlaceholder: isUrdu ? 'قاری تلاش کریں' : 'Search reciters',
+    currentReciter: isUrdu ? 'موجودہ قاری' : 'Current Reciter',
+    recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+    recommended: isUrdu ? 'سارے قاری' : 'All Reciters',
+    allReciters: isUrdu ? 'تمام قاری' : 'All Reciters',
+    noResults: isUrdu ? 'کوئی قاری نہیں ملا۔' : 'No reciters found.',
   };
 
   const libraryCopy = {
@@ -156,6 +173,8 @@ export function JourneyHeader({
         <JourneyReciterSelector
           currentReciterId={selectedReciter}
           onReciterChange={handleReciterChange}
+          variant="header"
+          onOpenLibrary={() => setShowReciterLibrary(true)}
         />
 
         {nextLessonHref && completedDays > 0 && completedDays < totalDays && (
@@ -178,6 +197,14 @@ export function JourneyHeader({
         onSelect={handleLibrarySelect}
         preferredLanguage={isUrdu ? 'urdu' : 'english'}
         copy={libraryCopy}
+      />
+
+      <ReciterLibrarySheet
+        isOpen={showReciterLibrary}
+        onClose={() => setShowReciterLibrary(false)}
+        currentReciterId={selectedReciter}
+        onSelect={handleReciterLibrarySelect}
+        copy={reciterLibraryCopy}
       />
     </div>
   );

@@ -106,9 +106,8 @@ function JourneyVerseCard({
             {(chapterName || verseFrame.chapterFallback)} · {verseFrame.verseWord} {verseNumber}
           </span>
           <div className="flex items-center gap-2">
-            {audioUrl && (
               <button
-                onClick={() => onPlayAudio(verseKey, audioUrl, 0)}
+                onClick={() => onPlayAudio(verseKey, audioUrl || '', 0)}
                 className={`p-2 rounded-full transition-colors ${
                   isCurrentlyPlaying
                     ? 'bg-[var(--color-primary)] text-white'
@@ -127,7 +126,6 @@ function JourneyVerseCard({
                   </svg>
                 )}
               </button>
-            )}
           </div>
         </div>
         

@@ -11,9 +11,9 @@ import {
   TafsirSectionSkeleton
 } from './journey-lesson-skeleton';
 import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
-import { JourneyTranslationSelector } from './journey-translation-selector';
 import { TranslationLibrarySheet } from './translation-library-sheet';
-import { JourneyReciterSelector } from './journey-reciter-selector';
+import { ReciterLibrarySheet } from './reciter-library-sheet';
+import { ReadingPreferencesSheet } from './reading-preferences-sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useFocusMode } from './focus-mode-provider';
@@ -22,6 +22,7 @@ import { DayOneCanonicalExperience } from './journey-day-one-canonical';
 import { WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 import type { JourneyLanguageContext } from '@/types/journey-localization';
 import { useLanguage } from '@/lib/i18n/context';
+import { getStoredTafsirId } from '@/lib/tafsir-preferences';
 import type { CanonicalJourneyPlan } from '@/lib/journey-canonical';
 
 interface LessonData {
@@ -146,7 +147,9 @@ function JourneyLessonHeader({
   );
   const [selectedReciter, setSelectedReciter] = useState(5);
   const [savingJourneyLanguage, setSavingJourneyLanguage] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showReciterLibrary, setShowReciterLibrary] = useState(false);
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -217,6 +220,21 @@ function JourneyLessonHeader({
     handleTranslationChange(id);
   };
 
+  const handleReciterLibrarySelect = (id: number) => {
+    setShowReciterLibrary(false);
+    handleReciterChange(id);
+  };
+
+  const handleOpenTranslationLibrary = () => {
+    setShowPrefs(false);
+    setShowLibrary(true);
+  };
+
+  const handleOpenReciterLibrary = () => {
+    setShowPrefs(false);
+    setShowReciterLibrary(true);
+  };
+
   const preferredLanguage = language === 'ur' ? 'urdu' : 'english';
   const isUrdu = language === 'ur';
   const libraryCopy = {
@@ -230,6 +248,36 @@ function JourneyLessonHeader({
     noResults: isUrdu ? 'کوئی ترجمہ نہیں ملا۔' : 'No translations found.',
   };
 
+  const reciterLibraryCopy = {
+    reciterLibrary: isUrdu ? 'قاریوں کی لائبریری' : 'Reciter Library',
+    searchPlaceholder: isUrdu ? 'قاری تلاش کریں' : 'Search reciters',
+    currentReciter: isUrdu ? 'موجودہ قاری' : 'Current Reciter',
+    recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+    recommended: isUrdu ? 'سارے قاری' : 'All Reciters',
+    allReciters: isUrdu ? 'تمام قاری' : 'All Reciters',
+    noResults: isUrdu ? 'کوئی قاری نہیں ملا۔' : 'No reciters found.',
+  };
+
+  const readingPrefsCopy = {
+    readingPreferences: isUrdu ? 'پڑھنے کی ترجیحات' : 'Reading Preferences',
+    journeyLanguage: isUrdu ? 'سفر کی زبان' : 'Journey Language',
+    auto: isUrdu ? 'آٹو' : 'Auto',
+    english: isUrdu ? 'انگریزی' : 'English',
+    urdu: isUrdu ? 'اردو' : 'Urdu',
+    translation: isUrdu ? 'ترجمہ' : 'Translation',
+    reciter: isUrdu ? 'قاری' : 'Reciter',
+    manageTranslations: isUrdu ? 'تراجم کا نظم کریں' : 'Manage Translations',
+    manageReciters: isUrdu ? 'قاریوں کا نظم کریں' : 'Manage Reciters',
+    readingStyle: isUrdu ? 'پڑھنے کا انداز' : 'Reading Style',
+    comfortable: isUrdu ? 'آرام دہ' : 'Comfortable',
+    focused: isUrdu ? 'مرتکز' : 'Focused',
+    largeText: isUrdu ? 'بڑا متن' : 'Large Text',
+    audio: isUrdu ? 'آڈیو' : 'Audio',
+    enabled: isUrdu ? 'فعال' : 'Enabled',
+    manageAudio: isUrdu ? 'آڈیو کا نظم کریں' : 'Manage Audio',
+    close: isUrdu ? 'بند کریں' : 'Close',
+  };
+
   return (
     <div className="mb-6 md:mb-10">
       <div className="mx-auto max-w-[740px] rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/78 px-4 py-4 backdrop-blur-sm md:px-5">
@@ -240,48 +288,21 @@ function JourneyLessonHeader({
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">{copy.journey.lesson.centerPrompt}</p>
         </div>
 
-        <details className="group mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/45 p-3">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-sm text-[var(--color-text-secondary)]">
+        <button
+          onClick={() => setShowPrefs(true)}
+          className="mt-4 flex w-full items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/45 p-3 text-sm text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-bg)]/70"
+        >
+          <span className="flex items-center gap-2">
+            <svg className="h-4 w-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
             {copy.journey.lesson.readingSettings}
-            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-transform group-open:rotate-180">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
-          </summary>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            {copy.journey.lesson.readingSettingsDescription}
-          </p>
-          <div className="quiet-controls mt-3 space-y-4">
-            <JourneyTranslationSelector
-              currentTranslationId={selectedTranslation}
-              variant="inline"
-              onTranslationChange={handleTranslationChange}
-              onOpenLibrary={() => setShowLibrary(true)}
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <JourneyReciterSelector
-                currentReciterId={selectedReciter}
-                onReciterChange={handleReciterChange}
-              />
-              <label className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)]">
-                <span className="text-[var(--color-text-muted)]">Journey</span>
-                <select
-                  value={selectedJourneyLanguage}
-                  disabled={savingJourneyLanguage}
-                  onChange={(event) =>
-                    handleJourneyLanguageChange(event.target.value as 'auto' | 'en' | 'ur')
-                  }
-                  className="min-w-[110px] bg-transparent text-sm focus:outline-none disabled:opacity-60"
-                >
-                  <option value="auto">Auto</option>
-                  <option value="en">English</option>
-                  <option value="ur">Urdu</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </details>
+          </span>
+          <svg className="h-4 w-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
       <TranslationLibrarySheet
@@ -291,6 +312,28 @@ function JourneyLessonHeader({
         onSelect={handleLibrarySelect}
         preferredLanguage={preferredLanguage}
         copy={libraryCopy}
+      />
+
+      <ReciterLibrarySheet
+        isOpen={showReciterLibrary}
+        onClose={() => setShowReciterLibrary(false)}
+        currentReciterId={selectedReciter}
+        onSelect={handleReciterLibrarySelect}
+        copy={reciterLibraryCopy}
+      />
+
+      <ReadingPreferencesSheet
+        isOpen={showPrefs}
+        onClose={() => setShowPrefs(false)}
+        currentTranslationId={selectedTranslation}
+        currentReciterId={selectedReciter}
+        selectedJourneyLanguage={selectedJourneyLanguage}
+        onTranslationChange={handleTranslationChange}
+        onReciterChange={handleReciterChange}
+        onJourneyLanguageChange={handleJourneyLanguageChange}
+        onOpenTranslationLibrary={handleOpenTranslationLibrary}
+        onOpenReciterLibrary={handleOpenReciterLibrary}
+        copy={readingPrefsCopy}
       />
     </div>
   );
@@ -313,6 +356,9 @@ export function StreamingLessonShell({
   const copy = useCopy();
   const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
   const [clientJourneyLanguage, setClientJourneyLanguage] = useState<'auto' | 'en' | 'ur'>(journeyLanguage);
+  const [clientTafsirId, setClientTafsirId] = useState<number>(
+    getStoredTafsirId() || tafsirId || 169
+  );
 
   const canUseCanonicalExperience =
     lesson.day_number >= 1 && lesson.day_number <= 5 && isCanonicalPlanComplete(canonicalPlan);
@@ -378,7 +424,7 @@ export function StreamingLessonShell({
             lessonTitle={lesson.title}
             lessonSubtitle={lesson.subtitle}
             translationId={translationId}
-            tafsirId={canonicalPlan?.resolvedTafsirId || tafsirId || canonicalPlan?.defaultTafsirId}
+            tafsirId={canonicalPlan?.resolvedTafsirId || clientTafsirId || canonicalPlan?.defaultTafsirId}
             canonicalVerseKeys={canonicalPlan?.verseKeys}
             quranRangeLabel={canonicalPlan?.quranRangeLabel}
             quranIntroText={resolveCanonicalTextBySectionId(canonicalPlan, 'quran-reflection')}
@@ -482,12 +528,12 @@ export function StreamingLessonShell({
             </StreamSectionLogger>
           </Suspense>
 
-          {tafsirId && lesson.verse_keys.length > 0 && (
+          {clientTafsirId && lesson.verse_keys.length > 0 && (
             <Suspense fallback={<TafsirSectionSkeleton />}>
               <StreamSectionLogger name="TafsirContent">
                 <JourneyTafsirStreaming 
                   verseKeys={lesson.verse_keys}
-                  tafsirId={tafsirId}
+                  tafsirId={clientTafsirId}
                 />
               </StreamSectionLogger>
             </Suspense>

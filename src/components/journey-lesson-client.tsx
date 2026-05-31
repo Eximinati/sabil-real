@@ -8,6 +8,7 @@ import { JourneyVerseSection } from './journey-verse-section';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { TranslationLibrarySheet } from './translation-library-sheet';
 import { JourneyReciterSelector } from './journey-reciter-selector';
+import { ReciterLibrarySheet } from './reciter-library-sheet';
 import { ReflectionInput } from './reflection-input';
 import { LessonCompleteButton } from './lesson-complete-button';
 import { useToast } from '@/hooks/use-toast';
@@ -94,6 +95,7 @@ export function JourneyLessonClient({
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [reciterId, setReciterId] = useState<number>(5);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showReciterLibrary, setShowReciterLibrary] = useState(false);
   const toast = useToast();
 
   const urlTranslation = router.get('translation');
@@ -110,6 +112,11 @@ export function JourneyLessonClient({
     setReciterId(id);
     localStorage.setItem('sabil-reciter-id', id.toString());
     toast.success(copy.common.toasts.reciterUpdated);
+  };
+
+  const handleReciterLibrarySelect = (id: number) => {
+    setShowReciterLibrary(false);
+    handleReciterChange(id);
   };
 
   const handleLibrarySelect = (id: number) => {
@@ -130,6 +137,16 @@ export function JourneyLessonClient({
     englishSection: isUrdu ? 'انگریزی' : 'English',
     otherLanguages: isUrdu ? 'دیگر زبانیں' : 'Other Languages',
     noResults: isUrdu ? 'کوئی ترجمہ نہیں ملا۔' : 'No translations found.',
+  };
+
+  const reciterLibraryCopy = {
+    reciterLibrary: isUrdu ? 'قاریوں کی لائبریری' : 'Reciter Library',
+    searchPlaceholder: isUrdu ? 'قاری تلاش کریں' : 'Search reciters',
+    currentReciter: isUrdu ? 'موجودہ قاری' : 'Current Reciter',
+    recentlyUsed: isUrdu ? 'حالیہ استعمال شدہ' : 'Recently Used',
+    recommended: isUrdu ? 'سارے قاری' : 'All Reciters',
+    allReciters: isUrdu ? 'تمام قاری' : 'All Reciters',
+    noResults: isUrdu ? 'کوئی قاری نہیں ملا۔' : 'No reciters found.',
   };
 
   const getAudioUrl = useCallback((verseKey: string): string => {
@@ -249,6 +266,8 @@ export function JourneyLessonClient({
             <JourneyReciterSelector
               currentReciterId={reciterId}
               onReciterChange={handleReciterChange}
+              variant="lesson"
+              onOpenLibrary={() => setShowReciterLibrary(true)}
             />
           </div>
         </div>
@@ -411,6 +430,14 @@ export function JourneyLessonClient({
         onSelect={handleLibrarySelect}
         preferredLanguage={isUrdu ? 'urdu' : 'english'}
         copy={libraryCopy}
+      />
+
+      <ReciterLibrarySheet
+        isOpen={showReciterLibrary}
+        onClose={() => setShowReciterLibrary(false)}
+        currentReciterId={reciterId}
+        onSelect={handleReciterLibrarySelect}
+        copy={reciterLibraryCopy}
       />
     </div>
   );

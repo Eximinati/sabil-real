@@ -611,7 +611,7 @@ export function JourneyAuthoringStudio({ initialData, userId }: JourneyAuthoring
 
             <section>
               <h3 className="text-sm font-semibold text-[var(--color-text)] mb-1">Tafsir Insight</h3>
-              <p className="text-xs text-[var(--color-text-muted)] mb-4">Author selects reference source. User preference determines runtime display.</p>
+              <p className="text-xs text-[var(--color-text-muted)] mb-4">Author selects reference source. System auto-fetches content from API — no manual copy-paste needed.</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-[var(--color-text-muted)] mb-1">Default scholar ID</label>
@@ -620,12 +620,22 @@ export function JourneyAuthoringStudio({ initialData, userId }: JourneyAuthoring
                     className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12" />
                 </div>
                 <div>
-                  <label className="block text-xs text-[var(--color-text-muted)] mb-1">Scholar source</label>
-                  <input type="text"
-                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/12"
-                    placeholder="e.g. Ibn Kathir" />
+                  <label className="block text-xs text-[var(--color-text-muted)] mb-1">Scholar language</label>
+                  <select
+                    value=""
+                    disabled
+                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-text)] opacity-60"
+                  >
+                    <option value="">Auto (API determines)</option>
+                    <option value="en">English</option>
+                    <option value="ur">Urdu</option>
+                    <option value="ar">Arabic</option>
+                  </select>
                 </div>
               </div>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                Content auto-fetches from Quran Foundation API. Scholar name displayed at runtime.
+              </p>
               <label className="flex items-center gap-2 mt-3 text-sm text-[var(--color-text)]">
                 <input type="checkbox" checked={sacredDraft.tafsir_enabled}
                   onChange={(e) => updateSacredField('tafsir_enabled', e.target.checked)}
