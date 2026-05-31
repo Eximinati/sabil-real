@@ -125,10 +125,14 @@ function StreamSectionLogger({ name, children }: { name: string; children: React
 function JourneyLessonHeader({ 
   translationId,
   journeyLanguage = 'auto',
+  selectedJourneyLanguage,
+  onJourneyLanguageChange,
   urlTranslation,
 }: { 
   translationId: number;
   journeyLanguage?: 'auto' | 'en' | 'ur';
+  selectedJourneyLanguage: 'auto' | 'en' | 'ur';
+  onJourneyLanguageChange: (value: 'auto' | 'en' | 'ur') => void;
   urlTranslation?: string | null;
 }) {
   const copy = useCopy();
@@ -140,7 +144,6 @@ function JourneyLessonHeader({
     urlTranslation ? parseInt(urlTranslation, 10) : translationId
   );
   const [selectedReciter, setSelectedReciter] = useState(5);
-  const [selectedJourneyLanguage, setSelectedJourneyLanguage] = useState<'auto' | 'en' | 'ur'>(journeyLanguage);
   const [savingJourneyLanguage, setSavingJourneyLanguage] = useState(false);
 
   useEffect(() => {
@@ -155,10 +158,6 @@ function JourneyLessonHeader({
       setSelectedTranslation(parseInt(urlTranslation, 10));
     }
   }, [urlTranslation]);
-
-  useEffect(() => {
-    setSelectedJourneyLanguage(journeyLanguage);
-  }, [journeyLanguage]);
 
   const handleTranslationChange = (id: number) => {
     if (id === selectedTranslation) return;
@@ -185,7 +184,7 @@ function JourneyLessonHeader({
       return;
     }
 
-    setSelectedJourneyLanguage(value);
+    onJourneyLanguageChange(value);
     setSavingJourneyLanguage(true);
 
     try {
@@ -202,7 +201,7 @@ function JourneyLessonHeader({
       toast.success(copy.common.toasts.preferencesUpdated);
       router.refresh();
     } catch {
-      setSelectedJourneyLanguage(journeyLanguage);
+      onJourneyLanguageChange(journeyLanguage);
       toast.error(copy.common.toasts.somethingWentWrong);
     } finally {
       setSavingJourneyLanguage(false);
@@ -272,13 +271,19 @@ export function StreamingLessonShell({
   translationId,
   tafsirId,
   hadithLanguage,
-  journeyLanguage,
+  journeyLanguage = 'auto',
   urlTranslation,
   hasNextDay
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
   const copy = useCopy();
   const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
+  const [clientJourneyLanguage, setClientJourneyLanguage] = useState<'auto' | 'en' | 'ur'>(journeyLanguage);
+
+  useEffect(() => {
+    setClientJourneyLanguage(journeyLanguage);
+  }, [journeyLanguage]);
+
   const canUseCanonicalExperience =
     lesson.day_number >= 1 && lesson.day_number <= 5 && isCanonicalPlanComplete(canonicalPlan);
   const shouldShowCanonicalIncompleteWarning =
@@ -286,6 +291,7 @@ export function StreamingLessonShell({
   const week = getWeekForDay(lesson.day_number);
   const currentArc = WEEKLY_EMOTIONAL_ARCS.find((arc) => arc.week === week);
   const { language } = useLanguage();
+  const effectiveLanguageOverride = clientJourneyLanguage === 'auto' ? language : clientJourneyLanguage;
   const canonicalResolvedLanguage = canonicalPlan?.languageContext.resolved;
   const shouldShowLanguageFallback =
     lesson.language_context?.requested === 'ur' &&
@@ -306,6 +312,8 @@ export function StreamingLessonShell({
       <JourneyLessonHeader 
         translationId={translationId}
         journeyLanguage={journeyLanguage}
+        selectedJourneyLanguage={clientJourneyLanguage}
+        onJourneyLanguageChange={setClientJourneyLanguage}
         urlTranslation={urlTranslation}
       />
 
@@ -334,7 +342,7 @@ export function StreamingLessonShell({
             </div>
           )}
           <DayOneCanonicalExperience
-            key={`${canonicalResolvedLanguage || 'en'}-${translationId}`}
+            key={`day-${lesson.day_number}-${effectiveLanguageOverride}-${translationId}`}
             lessonId={lesson.id}
             dayNumber={lesson.day_number}
             lessonTitle={lesson.title}
@@ -369,7 +377,7 @@ export function StreamingLessonShell({
             initialReflection={initialReflection}
             isCompleted={isCompleted}
             hasNextDay={hasNextDay}
-            languageOverride={canonicalResolvedLanguage}
+            languageOverride={effectiveLanguageOverride}
           />
         </>
       ) : (
