@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { TafsirLibrarySheet } from './tafsir-library-sheet';
+import {
+  getStoredHadithLanguage,
+  setStoredHadithLanguage,
+  addRecentHadithLanguage,
+  type HadithLanguagePreference,
+} from '@/lib/hadith-preferences';
 import type { TafsirLanguagePreference } from '@/lib/tafsir-preferences';
 
 interface ReadingPreferencesSheetProps {
@@ -23,6 +29,7 @@ interface ReadingPreferencesSheetProps {
   tafsirPreferredLanguage?: TafsirLanguagePreference;
   onTafsirLanguageChange?: (lang: TafsirLanguagePreference) => void;
   hideJourneyLanguage?: boolean;
+  hideHadithLanguage?: boolean;
   copy: {
     readingPreferences: string;
     journeyLanguage?: string;
@@ -64,11 +71,18 @@ export function ReadingPreferencesSheet({
   tafsirPreferredLanguage,
   onTafsirLanguageChange,
   hideJourneyLanguage = false,
+  hideHadithLanguage = false,
   copy,
 }: ReadingPreferencesSheetProps) {
   const [closing, setClosing] = useState(false);
   const [readingStyle, setReadingStyle] = useState<'comfortable' | 'focused' | 'large'>('comfortable');
   const [showTafsirLibrary, setShowTafsirLibrary] = useState(false);
+  const [hadithLanguage, setHadithLanguage] = useState<HadithLanguagePreference>(() => getStoredHadithLanguage());
+
+  useEffect(() => {
+    setStoredHadithLanguage(hadithLanguage);
+    addRecentHadithLanguage(hadithLanguage);
+  }, [hadithLanguage]);
 
   useEffect(() => {
     if (isOpen) {
@@ -208,6 +222,38 @@ export function ReadingPreferencesSheet({
           )}
 
           {onTafsirChange && <hr className="border-[var(--color-border)]" />}
+
+          {/* Hadith Language */}
+          {!hideHadithLanguage && (
+            <>
+              <section>
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                  {copy.tafsir ? 'Hadith Language' : 'Hadith Language'}
+                </h3>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'auto' as const, label: copy.auto || 'Auto' },
+                    { value: 'english' as const, label: copy.english || 'English' },
+                    { value: 'urdu' as const, label: copy.urdu || 'Urdu' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => setHadithLanguage(value)}
+                      className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+                        hadithLanguage === value
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                          : 'border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]/30'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-[var(--color-border)]" />
+            </>
+          )}
 
           {/* Reading Style (UI-only) */}
           <section>

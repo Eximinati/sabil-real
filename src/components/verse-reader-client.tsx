@@ -690,6 +690,7 @@ handlePlayVerse(verseKey, files);
         tafsirPreferredLanguage={tafsirLanguage}
         onTafsirLanguageChange={handleTafsirLanguageChange}
         hideJourneyLanguage
+        hideHadithLanguage
         copy={prefsCopy}
       />
 

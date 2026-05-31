@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyState } from './ui/empty-state';
 import { getCachedHadithCollections } from '@/lib/api-utils';
 import { fetchHadith } from '@/lib/hadith-cache';
+import {
+  getStoredHadithLanguage,
+  setStoredHadithLanguage,
+  addRecentHadithLanguage,
+} from '@/lib/hadith-preferences';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
 
@@ -48,16 +53,25 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
   const defaultNumber = collection === 'muslim' ? 93 : 1;
   const number = searchParams.get('number') || initialNumber || defaultNumber.toString();
   const requestedTextLanguage = searchParams.get('lang');
-  const [textLanguage, setTextLanguage] = useState<'english' | 'urdu'>(
-    language === 'ur' ? 'urdu' : 'english'
-  );
+  const [textLanguage, setTextLanguage] = useState<'english' | 'urdu'>(() => {
+    if (requestedTextLanguage === 'english' || requestedTextLanguage === 'urdu') {
+      return requestedTextLanguage;
+    }
+    const stored = getStoredHadithLanguage();
+    if (stored === 'english' || stored === 'urdu') return stored;
+    return language === 'ur' ? 'urdu' : 'english';
+  });
 
   useEffect(() => {
     if (requestedTextLanguage === 'urdu' || requestedTextLanguage === 'english') {
       setTextLanguage(requestedTextLanguage);
       return;
     }
-
+    const stored = getStoredHadithLanguage();
+    if (stored === 'english' || stored === 'urdu') {
+      setTextLanguage(stored);
+      return;
+    }
     setTextLanguage(language === 'ur' ? 'urdu' : 'english');
   }, [language, requestedTextLanguage]);
 
@@ -158,6 +172,8 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
 
   const handleLanguageChange = useCallback((nextLanguage: 'english' | 'urdu') => {
     setTextLanguage(nextLanguage);
+    setStoredHadithLanguage(nextLanguage);
+    addRecentHadithLanguage(nextLanguage);
     if (!collection) {
       return;
     }

@@ -337,6 +337,7 @@ export function TafsirSelector({ initialTafsirs }: TafsirSelectorProps) {
         tafsirPreferredLanguage={preferredLang}
         onTafsirLanguageChange={handlePrefsLanguageChange}
         hideJourneyLanguage
+        hideHadithLanguage
         copy={readingPrefsCopy}
       />
 
