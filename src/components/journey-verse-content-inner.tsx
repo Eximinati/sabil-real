@@ -139,51 +139,73 @@ export function JourneyVerseContentInner({
   const sectionTitle = title || uiCopy.sectionTitle;
   const isUrduIntro = /[\u0600-\u06FF]/.test(intro || '') || language === 'ur';
 
+  const audioUrlRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    if (verseKeys.length === 0) return;
+    fetch(`/api/verses?verse_keys=${verseKeysParam}&reciter=${reciterId}`)
+      .then(r => r.json())
+      .then(data => {
+        const map: Record<string, string> = {};
+        for (const item of (data.verses || [])) {
+          const rawUrl = item.audioUrl;
+          if (rawUrl) {
+            map[item.verseKey] = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+              ? rawUrl.replace('cdn.quran.com', 'verses.quran.foundation')
+              : `${QURAN_AUDIO_BASE}/${rawUrl}`;
+          }
+        }
+        audioUrlRef.current = map;
+      })
+      .catch(() => {});
+  }, [verseKeysParam, reciterId]);
+
   const getAudioUrl = (verseKey: string): string => {
+    const cached = audioUrlRef.current[verseKey];
+    if (cached) return cached;
     const chapter = verseKey.split(':')[0];
     const verse = verseKey.split(':')[1];
     return `${QURAN_AUDIO_BASE}/audio-recitation/${reciterId}/${chapter}/${verse}.mp3`;
   };
 
   const playAudio = (verseKey: string, providedUrl?: string) => {
-    if (!audio) {
-      const newAudio = new Audio();
-      setAudio(newAudio);
+    let player = audio;
+    if (!player) {
+      player = new Audio();
+      setAudio(player);
     }
 
-    if (audio) {
-      if (currentPlayingVerse === verseKey && isPlaying) {
-        audio.pause();
-        setIsPlaying(false);
-        return;
-      }
-
-      let url = providedUrl || getAudioUrl(verseKey);
-
-      if (!url) {
-        toast.error(uiCopy.audioUnavailable);
-        return;
-      }
-
-      setLoadingAudio(true);
-      audio.src = url;
-      audio.play()
-        .then(() => {
-          setCurrentPlayingVerse(verseKey);
-          setIsPlaying(true);
-          setLoadingAudio(false);
-        })
-        .catch((err) => {
-          console.error('Audio play error:', err);
-          setLoadingAudio(false);
-          toast.error(uiCopy.audioFailed);
-        });
-
-      audio.onended = () => {
-        setIsPlaying(false);
-        setCurrentPlayingVerse(null);
-      };
+    if (currentPlayingVerse === verseKey && isPlaying) {
+      player.pause();
+      setIsPlaying(false);
+      return;
     }
+
+    let url = providedUrl || getAudioUrl(verseKey);
+
+    if (!url) {
+      toast.error(uiCopy.audioUnavailable);
+      return;
+    }
+
+    setLoadingAudio(true);
+    player.src = url;
+    player.play()
+      .then(() => {
+        setCurrentPlayingVerse(verseKey);
+        setIsPlaying(true);
+        setLoadingAudio(false);
+      })
+      .catch((err) => {
+        console.error('Audio play error:', err);
+        setLoadingAudio(false);
+        toast.error(uiCopy.audioFailed);
+      });
+
+    player.onended = () => {
+      setIsPlaying(false);
+      setCurrentPlayingVerse(null);
+    };
   };
 
   const showVerses = loading

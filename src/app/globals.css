@@ -4,8 +4,8 @@
 
 :root {
   --color-bg: #F9F6F1;
-  --color-surface: #FFFFFF;
-  --color-border: #E8E0D5;
+  --color-surface: #FAF7F2;
+  --color-border: #E0D7C7;
   --color-border-focus: #B7922A;
   /* Gold as PRIMARY for premium emotional identity */
   --color-primary: #B7922A;
@@ -19,9 +19,9 @@
   --color-success-light: #F0F9F4;
 
   --color-text: #1A1A1A;
-  --color-text-secondary: #4B5563;
-  --color-text-muted: #6B7280;
-  --color-text-subtle: #9CA3AF;
+  --color-text-secondary: #424753;
+  --color-text-muted: #565B68;
+  --color-text-subtle: #777C8A;
   --color-error: #DC2626;
 
   --font-sans: var(--font-inter), system-ui, sans-serif;
@@ -438,18 +438,81 @@ a:focus-visible,
   padding-top: env(safe-area-inset-top, 0);
 }
 
-.journal-textarea {
-  background-image:
-    linear-gradient(to bottom, transparent 95%, rgba(183, 146, 42, 0.14) 95%),
-    radial-gradient(circle at top left, rgba(183, 146, 42, 0.08), transparent 40%);
-  background-size: 100% 2.1em, 100% 100%;
-  background-position: 0 0;
+.reflection-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 24px -12px rgba(0,0,0,0.08);
+  transition: box-shadow 0.3s ease;
 }
 
-.dark .journal-textarea {
+@media (min-width: 768px) {
+  .reflection-card {
+    padding: 1.75rem;
+  }
+}
+
+.dark .reflection-card {
+  background: linear-gradient(165deg, rgba(13,13,13,0.95), rgba(5,5,5,0.9));
+  box-shadow: 0 4px 32px -16px rgba(0,0,0,0.5);
+}
+
+.reflection-prompt-card {
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: 28px;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .reflection-prompt-card {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+.dark .reflection-prompt-card {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(212, 175, 55, 0.03));
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.reflection-textarea {
+  background-color: var(--color-bg);
   background-image:
-    linear-gradient(to bottom, transparent 95%, rgba(212, 175, 55, 0.18) 95%),
-    radial-gradient(circle at top left, rgba(212, 175, 55, 0.09), transparent 42%);
+    linear-gradient(to bottom, transparent 95%, rgba(183, 146, 42, 0.12) 95%),
+    radial-gradient(circle at top left, rgba(183, 146, 42, 0.06), transparent 40%);
+  background-size: 100% 2.1em, 100% 100%;
+  background-position: 0 0;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 1.25rem;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+@media (min-width: 768px) {
+  .reflection-textarea {
+    padding: 1.5rem;
+  }
+}
+
+.reflection-textarea:focus {
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.dark .reflection-textarea {
+  background-color: rgba(5,5,5,0.6);
+  border-color: rgba(212, 175, 55, 0.12);
+  background-image:
+    linear-gradient(to bottom, transparent 95%, rgba(212, 175, 55, 0.15) 95%),
+    radial-gradient(circle at top left, rgba(212, 175, 55, 0.07), transparent 42%);
+}
+
+.dark .reflection-textarea:focus {
+  background-color: rgba(13,13,13,0.85);
+  border-color: rgba(212, 175, 55, 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {

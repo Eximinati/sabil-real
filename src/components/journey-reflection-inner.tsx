@@ -61,7 +61,7 @@ export function ReflectionContentInner({ lesson, initialReflection }: Reflection
   return (
     <div className="reading-section">
       <h2 className="section-heading">{copy.journey.lesson.reflectionTitle}</h2>
-      <div className="rounded-[28px] border border-[var(--color-primary)]/20 bg-[var(--color-bg)]/85 p-5 md:p-6">
+      <div className="reflection-prompt-card">
         <p
           className={`text-[var(--color-text)] ${isUrduPrompt ? 'reading-prose-urdu' : 'reading-prose'} `}
           dir={isUrduPrompt ? 'rtl' : 'ltr'}
@@ -70,7 +70,7 @@ export function ReflectionContentInner({ lesson, initialReflection }: Reflection
           {lesson.reflection_prompt}
         </p>
       </div>
-      <div className="mt-5 md:mt-6">
+      <div className="mt-6 md:mt-7">
         <ReflectionInput
           lessonId={lesson.id}
           dayNumber={lesson.day_number}

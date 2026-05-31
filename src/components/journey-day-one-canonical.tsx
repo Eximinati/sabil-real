@@ -313,19 +313,19 @@ export function DayOneCanonicalExperience({
       {resolvedReflectionPrompt !== unavailable && (
         <section className="reading-section">
           <h2 className="section-heading">{titleFor('reflection-prompt')}</h2>
-          <div className="rounded-[28px] border border-[var(--color-primary)]/20 bg-[var(--color-bg)] px-6 py-6 md:px-7">
+          <div className="reflection-prompt-card">
             <p className="text-[16px] leading-[1.9] text-[var(--color-text)]">
               {resolvedReflectionPrompt}
             </p>
           </div>
           {previewOnly ? (
-            <div className="mt-5 rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-4 text-sm text-[var(--color-text-muted)]">
+            <div className="mt-6 rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-4 text-sm text-[var(--color-text-muted)]">
               {isUrduUi
                 ? 'پیش نظارہ: یہاں ذاتی تامل کا اندراج محفوظ ہوتا ہے۔'
                 : 'Preview: private reflection entry appears here.'}
             </div>
           ) : (
-            <div className="mt-5">
+            <div className="mt-6">
               <ReflectionInput lessonId={lessonId} dayNumber={dayNumber} initialValue={initialReflection || ''} />
             </div>
           )}
