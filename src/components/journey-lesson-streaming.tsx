@@ -198,6 +198,7 @@ function JourneyLessonHeader({
         throw new Error('Failed to save journey language preference');
       }
 
+      document.cookie = `sabil-journey-language=${value}; path=/; max-age=31536000; samesite=lax`;
       toast.success(copy.common.toasts.preferencesUpdated);
       router.refresh();
     } catch {
@@ -279,10 +280,6 @@ export function StreamingLessonShell({
   const copy = useCopy();
   const FocusModeToggle = require('./focus-mode-toggle').FocusModeToggle;
   const [clientJourneyLanguage, setClientJourneyLanguage] = useState<'auto' | 'en' | 'ur'>(journeyLanguage);
-
-  useEffect(() => {
-    setClientJourneyLanguage(journeyLanguage);
-  }, [journeyLanguage]);
 
   const canUseCanonicalExperience =
     lesson.day_number >= 1 && lesson.day_number <= 5 && isCanonicalPlanComplete(canonicalPlan);

@@ -89,6 +89,7 @@ export function PreferencesForm({
         if ((uiLanguage === 'en' || uiLanguage === 'ur') && uiLanguage !== language) {
           setLanguage(uiLanguage);
         }
+        document.cookie = `sabil-journey-language=${journeyLanguage}; path=/; max-age=31536000; samesite=lax`;
         setSaved(true);
         toast.success(copy.common.toasts.preferencesUpdated);
         setTimeout(() => setSaved(false), 2000);

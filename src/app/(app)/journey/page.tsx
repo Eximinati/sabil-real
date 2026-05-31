@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { supabaseServer } from '@/lib/supabase-server';
 import {
   getPublishedLessons,
@@ -12,7 +13,8 @@ import { JourneyTimelineVirtualized } from '@/components/journey-timeline-virtua
 import { DailyIntentionCard } from '@/components/daily-intention-card';
 import { DAY_IDENTITY_30, WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 import { getServerDictionary } from '@/lib/i18n/server';
-import { resolveLanguagePreference } from '@/lib/user-preferences';
+import { resolveLanguagePreference, type PreferenceLanguage } from '@/lib/user-preferences';
+import { JOURNEY_LANGUAGE_COOKIE_NAME } from '@/lib/i18n/config';
 
 interface Lesson {
   id: string;
@@ -118,7 +120,10 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
     getUserPreferences(user.id),
   ]);
 
-  const journeyLanguage = resolveLanguagePreference(preferences.journey_language, language);
+  const cookieStore = await cookies();
+  const cookieJourneyLanguage = cookieStore.get(JOURNEY_LANGUAGE_COOKIE_NAME)?.value as PreferenceLanguage | undefined;
+  const effectiveJourneyPreference = cookieJourneyLanguage || preferences.journey_language;
+  const journeyLanguage = resolveLanguagePreference(effectiveJourneyPreference, language);
   const lessons = await getPublishedLessons(journeyLanguage);
 
   const requestedNotice =

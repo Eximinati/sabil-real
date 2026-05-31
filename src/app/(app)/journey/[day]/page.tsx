@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getLessonByDay, getLessonByDayWithBlocks, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
 import { getServerDictionary } from '@/lib/i18n/server';
 import { buildCanonicalJourneyPlan } from '@/lib/journey-canonical';
-import { resolveLanguagePreference } from '@/lib/user-preferences';
+import { resolveLanguagePreference, type PreferenceLanguage } from '@/lib/user-preferences';
+import { JOURNEY_LANGUAGE_COOKIE_NAME } from '@/lib/i18n/config';
 
 interface PageProps {
   params: Promise<{ day: string }>;
@@ -41,7 +43,10 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   }
 
   const preferences = await getUserPreferences(user.id);
-  const journeyLanguage = resolveLanguagePreference(preferences.journey_language, language);
+  const cookieStore = await cookies();
+  const cookieJourneyLanguage = cookieStore.get(JOURNEY_LANGUAGE_COOKIE_NAME)?.value as PreferenceLanguage | undefined;
+  const effectiveJourneyPreference = cookieJourneyLanguage || preferences.journey_language;
+  const journeyLanguage = resolveLanguagePreference(effectiveJourneyPreference, language);
   const lessonWithBlocks = await getLessonByDayWithBlocks(dayNumber, journeyLanguage);
 
   if (!lessonWithBlocks) {

@@ -6,6 +6,7 @@ export const DEFAULT_LANGUAGE: LanguageCode = 'en';
 
 export const LANGUAGE_COOKIE_NAME = 'sabil-language';
 export const LANGUAGE_STORAGE_KEY = 'sabil-language';
+export const JOURNEY_LANGUAGE_COOKIE_NAME = 'sabil-journey-language';
 
 export function isSupportedLanguage(value: string | null | undefined): value is LanguageCode {
   if (!value) return false;
