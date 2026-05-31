@@ -18,6 +18,7 @@ interface ReadingPreferencesSheetProps {
   onOpenTranslationLibrary: () => void;
   onOpenReciterLibrary: () => void;
   currentTafsirId?: number;
+  currentTafsirName?: string;
   onTafsirChange?: (id: number) => void;
   tafsirPreferredLanguage?: TafsirLanguagePreference;
   onTafsirLanguageChange?: (lang: TafsirLanguagePreference) => void;
@@ -58,6 +59,7 @@ export function ReadingPreferencesSheet({
   onOpenTranslationLibrary,
   onOpenReciterLibrary,
   currentTafsirId,
+  currentTafsirName,
   onTafsirChange,
   tafsirPreferredLanguage,
   onTafsirLanguageChange,
@@ -192,7 +194,7 @@ export function ReadingPreferencesSheet({
               >
                 <div>
                   <p className="text-sm font-medium text-[var(--color-text)]">
-                    {currentTafsirId ? `Scholar #${currentTafsirId}` : copy.manageTafsirScholars || 'Browse Scholars'}
+                    {currentTafsirName || (currentTafsirId ? `Scholar #${currentTafsirId}` : copy.manageTafsirScholars || 'Browse Scholars')}
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                     {copy.manageTafsirScholars || 'Manage Tafsir Scholars'}
