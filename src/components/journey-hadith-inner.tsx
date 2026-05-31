@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getApiUrl } from '@/lib/api-url';
+import { fetchHadith } from '@/lib/hadith-cache';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
 
@@ -66,17 +66,14 @@ export function HadithContentInner({
     setLoading(true);
     let cancelled = false;
     
-    async function fetchHadith() {
+    async function fetchHadithData() {
       try {
-        const res = await fetch(
-          getApiUrl(
-            `/hadith?collection=${lesson.hadith_collection}&number=${lesson.hadith_number}&lang=${selectedLanguage}`
-          )
-        );
-        if (!res.ok) throw new Error('Failed to fetch hadith');
-        const data = await res.json();
+        const col = lesson.hadith_collection;
+        const num = lesson.hadith_number;
+        if (!col || !num) return;
+        const data = await fetchHadith(col, num);
         if (!cancelled) {
-          setHadith(data.hadith || null);
+          setHadith(data?.hadith || null);
         }
       } catch (err) {
         if (!cancelled) setHadith(null);
@@ -84,8 +81,8 @@ export function HadithContentInner({
         if (!cancelled) setLoading(false);
       }
     }
-    
-    fetchHadith();
+
+    fetchHadithData();
     return () => { cancelled = true; };
   }, [fetchKey]);
 

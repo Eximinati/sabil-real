@@ -3,7 +3,8 @@
 import { useState, useEffect, memo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyState } from './ui/empty-state';
-import { getCachedHadithCollections, getCachedHadith } from '@/lib/api-utils';
+import { getCachedHadithCollections } from '@/lib/api-utils';
+import { fetchHadith } from '@/lib/hadith-cache';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
 
@@ -109,7 +110,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
       setHadith(null);
       
       try {
-        const data = await getCachedHadith(collection, number) as unknown as { error?: string; hadith?: HadithData };
+        const data = await fetchHadith(collection, parseInt(number, 10));
         if (mounted) {
           if (data?.error) {
             setError(data.error);
