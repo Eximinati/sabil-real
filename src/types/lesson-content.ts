@@ -34,6 +34,9 @@ export interface LessonMetadata {
   description?: string;
   estimatedMinutes: number;
   isPublished: boolean;
+  default_tafsir_id?: number;
+  fallback_tafsir_id?: number;
+  enable_user_tafsir?: boolean;
 }
 
 export interface LessonContent {

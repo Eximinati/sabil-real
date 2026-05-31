@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { getRecentTafsirIds, addRecentTafsirId } from '@/lib/tafsir-preferences';
 import type { TafsirLanguagePreference } from '@/lib/tafsir-preferences';
 
 interface Tafsir {
@@ -31,19 +32,6 @@ interface TafsirLibrarySheetProps {
     arabic: string;
     noResults: string;
   };
-}
-
-const RECENT_KEY = 'sabil-recent-tafsirs';
-
-function getRecentIds(): number[] {
-  try {
-    const stored = localStorage.getItem(RECENT_KEY);
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed.map(Number).filter(Boolean) : [];
-  } catch {
-    return [];
-  }
 }
 
 export function TafsirLibrarySheet({
@@ -100,7 +88,7 @@ export function TafsirLibrarySheet({
 
   const recentIds = useMemo(() => {
     if (!isOpen) return [];
-    return getRecentIds();
+    return getRecentTafsirIds();
   }, [isOpen]);
 
   const recentlyUsedTafsirs = useMemo(
@@ -122,12 +110,7 @@ export function TafsirLibrarySheet({
 
   const handleSelect = useCallback(
     (t: Tafsir) => {
-      try {
-        const recent = getRecentIds().filter((id) => id !== t.id);
-        recent.unshift(t.id);
-        localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, 5)));
-      } catch {
-      }
+      addRecentTafsirId(t.id);
       handleClose();
       setTimeout(() => onSelect(t.id), 250);
     },
