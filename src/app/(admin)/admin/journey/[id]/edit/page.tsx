@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getLessonForEditing } from '@/lib/admin-journey-actions';
-import { LessonEditor } from '@/components/admin/lesson-editor';
+import { JourneyAuthoringStudio } from '@/components/admin/journey-authoring-studio';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -50,8 +50,8 @@ export default async function EditLessonPage({ params }: PageProps) {
           ← Back to Lessons
         </a>
       </div>
-      <LessonEditor 
-        initialData={lessonData}
+      <JourneyAuthoringStudio 
+        initialData={{ metadata: lessonData.metadata }}
         userId={user.id}
       />
     </div>

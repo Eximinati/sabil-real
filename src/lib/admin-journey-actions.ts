@@ -503,6 +503,73 @@ export async function getLessonForEditing(lessonId: string): Promise<LessonWithB
   }
 }
 
+export async function saveCanonicalLesson(
+  metadata: JourneyLessonMetadata,
+  userId: string
+): Promise<{ success: boolean; lessonId?: string; error?: string }> {
+  try {
+    const supabase = await supabaseServer();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+      .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    const isAdmin = adminEmails.length > 0
+      ? adminEmails.includes(user.email?.toLowerCase() || '')
+      : user.email?.endsWith('@quran.foundation');
+    if (!isAdmin) return { success: false, error: 'Not authorized' };
+
+    const now = new Date().toISOString();
+    let nextContentVersion = metadata.shared_metadata?.content_version || 1;
+
+    if (metadata.id) {
+      const { data: existing } = await supabase
+        .from('journey_lessons').select('shared_metadata').eq('id', metadata.id).single();
+      const currentVersion = ((existing?.shared_metadata as JourneySharedMetadata | null)?.content_version as number) || 1;
+      if ((metadata.shared_metadata?.content_version || 1) < currentVersion) {
+        return { success: false, error: 'This lesson was updated elsewhere. Please refresh before saving.' };
+      }
+      nextContentVersion = currentVersion + 1;
+    }
+
+    const lessonPayload: Record<string, unknown> = {
+      day_number: metadata.day_number,
+      title: metadata.title,
+      subtitle: metadata.subtitle || null,
+      topic: metadata.topic || '',
+      estimated_minutes: metadata.estimated_minutes,
+      is_published: metadata.is_published,
+      localized_content: metadata.localized_content || null,
+      translation_status: metadata.translation_status || { en: 'qa_approved', ur: 'untranslated' },
+      shared_metadata: {
+        ...(metadata.shared_metadata || {}),
+        content_version: nextContentVersion,
+      },
+      updated_at: now,
+    };
+
+    let lessonId = metadata.id;
+
+    if (lessonId) {
+      await supabase.from('journey_lessons').update(lessonPayload).eq('id', lessonId);
+    } else {
+      lessonPayload.created_by = userId;
+      lessonPayload.created_at = now;
+      const { data: newLesson, error: insertError } = await supabase
+        .from('journey_lessons').insert(lessonPayload).select('id').single();
+      if (insertError) return { success: false, error: insertError.message };
+      lessonId = newLesson.id;
+    }
+
+    revalidatePath('/admin/journey');
+    revalidatePath('/journey');
+    return { success: true, lessonId };
+  } catch (error) {
+    console.error('Error saving canonical lesson:', error);
+    return { success: false, error: 'Failed to save lesson' };
+  }
+}
+
 export async function getLatestDayNumber(): Promise<number> {
   const supabase = await supabaseServer();
   const { data, error } = await supabase
