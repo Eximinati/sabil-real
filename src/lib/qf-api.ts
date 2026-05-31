@@ -48,15 +48,6 @@ export interface Tafsir {
   language_name: string;
 }
 
-export interface HadithReference {
-  id: number;
-  collection?: string;
-  hadith_number?: string;
-  our_hadith_number?: number;
-  hadith_name?: string;
-  book_name?: string;
-}
-
 export interface VersesResponse {
   verses: Verse[];
   pagination: {
@@ -186,54 +177,6 @@ export async function getTafsirForSurah(
     `/content/api/v4/tafsirs/${tafsirId}/by_chapter/${chapterId}`,
     { per_page: '50', page: page.toString() }
   );
-}
-
-export async function getHadithReferences(verseKey: string): Promise<HadithReference[]> {
-  const data = await qfFetch<{ hadith_references: HadithReference[] }>(
-    `/content/api/v4/verses/${verseKey}/hadith-references`
-  );
-  return data.hadith_references ?? [];
-}
-
-export interface HadithBody {
-  lang: string;
-  chapterNumber: string;
-  chapterTitle: string;
-  body: string;
-  urn: number;
-  grades: Array<{
-    graded_by: string;
-    grade: string;
-  }>;
-}
-
-export interface Hadith {
-  urn: number;
-  collection: string;
-  bookNumber: string;
-  chapterId: string;
-  hadithNumber: string;
-  name: string;
-  hadith: HadithBody[];
-}
-
-export interface HadithsResponse {
-  hadiths: Hadith[];
-  page: number;
-  limit: number;
-  has_more: boolean;
-}
-
-export async function getHadiths(
-  verseKey: string,
-  page: number = 1,
-  language: string = 'en'
-): Promise<HadithsResponse> {
-  const data = await qfFetch<HadithsResponse>(
-    `/content/api/v4/verses/${verseKey}/hadiths`,
-    { page: page.toString(), limit: '5', language }
-  );
-  return data;
 }
 
 export interface SearchWord {

@@ -112,6 +112,7 @@ export async function GET(
     const urduItem = urduData?.hadiths?.[0];
     const baseItem = englishItem || urduItem || {};
     const metadata = englishData?.metadata || urduData?.metadata || {};
+    const grades = englishItem?.grades?.length ? englishItem.grades : urduItem?.grades;
 
     const englishText = pickFirstText(
       englishItem?.text,
@@ -144,6 +145,7 @@ export async function GET(
         collection: normalizedCollection,
         name: metadata?.name ?? getCollectionName(normalizedCollection),
         section: resolveSection(metadata),
+        grades: grades ?? [],
         available_languages: [
           ...(englishText ? ['english'] : []),
           ...(urduText ? ['urdu'] : []),

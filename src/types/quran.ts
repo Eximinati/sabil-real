@@ -46,37 +46,6 @@ export interface TafsirVerse {
   language_id?: number;
 }
 
-export interface HadithReference {
-  id: number;
-  collection?: string;
-  hadith_number?: string;
-  our_hadith_number?: number;
-  hadith_name?: string;
-  book_name?: string;
-}
-
-export interface Hadith {
-  urn: number;
-  collection: string;
-  bookNumber: string;
-  chapterId: string;
-  hadithNumber: string;
-  name: string;
-  hadith: HadithBody[];
-}
-
-export interface HadithBody {
-  lang: string;
-  chapterNumber: string;
-  chapterTitle: string;
-  body: string;
-  urn: number;
-  grades?: Array<{
-    graded_by: string;
-    grade: string;
-  }>;
-}
-
 export interface AudioFile {
   verse_key: string;
   url: string;

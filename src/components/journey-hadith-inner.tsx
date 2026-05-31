@@ -11,6 +11,7 @@ interface HadithData {
   arabic?: string;
   english?: string | null;
   urdu?: string | null;
+  grades?: Array<{ name: string; grade: string }>;
   available_languages?: string[];
   collection: string;
 }
@@ -175,6 +176,24 @@ export function HadithContentInner({
             #{hadith.number}
           </span>
         </div>
+        {hadith.grades && hadith.grades.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {hadith.grades.map((g, i) => (
+              <span
+                key={i}
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  g.grade.toLowerCase().includes('sahih')
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    : g.grade.toLowerCase().includes('daif') || g.grade.toLowerCase().includes('weak')
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
+                }`}
+              >
+                {g.name ? `${g.name}: ${g.grade}` : g.grade}
+              </span>
+            ))}
+          </div>
+        )}
         {hadith.arabic && (
           <div className="mb-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/55 p-4">
             <p className="text-xs font-medium text-[var(--color-primary)]">{frameCopy.sourceLabel}</p>
