@@ -1,4 +1,6 @@
+import { cache } from 'react';
 import { supabaseServer } from './supabase-server';
+import { journeyCache } from './journey-server-cache';
 import { DEFAULT_LANGUAGE, type LanguageCode } from '@/lib/i18n/config';
 import {
   localizeBlockContent,
@@ -20,6 +22,12 @@ import {
   type HadithLanguagePreference,
   type PreferenceLanguage,
 } from './user-preferences';
+
+const LOG_PREFIX = '[JourneyDB]';
+const IS_DEBUG = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_JOURNEY_DEBUG === '1';
+const log = IS_DEBUG
+  ? (msg: string, ...args: unknown[]) => console.log(`${LOG_PREFIX} ${msg}`, ...args)
+  : () => {};
 
 export interface JourneyLesson {
   id: string;
@@ -84,71 +92,182 @@ function localizeJourneyLesson(lesson: JourneyLesson, language: LanguageCode): J
   };
 }
 
-export async function getPublishedLessons(
+async function _getPublishedLessons(
   language: LanguageCode = DEFAULT_LANGUAGE
 ): Promise<JourneyLesson[]> {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase
-    .from('journey_lessons')
-    .select('*')
-    .eq('is_published', true)
-    .order('day_number', { ascending: true });
-  if (error) throw error;
+  const key = `journey:lessons:${language}`;
 
-  const lessons = (data ?? []) as JourneyLesson[];
-  return lessons.map((lesson) => localizeJourneyLesson(lesson, language));
+  const cached = journeyCache.get<JourneyLesson[]>(key);
+  if (cached) return cached;
+
+  const pending = journeyCache.getPending<JourneyLesson[]>(key);
+  if (pending) return pending;
+
+  const start = Date.now();
+  log(`getPublishedLessons ENTER lang=${language}`);
+
+  const promise = (async () => {
+    const supabase = await supabaseServer();
+    const { data, error } = await supabase
+      .from('journey_lessons')
+      .select('*')
+      .eq('is_published', true)
+      .order('day_number', { ascending: true });
+    if (error) throw error;
+
+    const lessons = (data ?? []) as JourneyLesson[];
+    const result = lessons.map((lesson) => localizeJourneyLesson(lesson, language));
+
+    const duration = Date.now() - start;
+    log(`getPublishedLessons EXIT count=${result.length} lang=${language} duration=${duration}ms`);
+
+    return result;
+  })();
+
+  journeyCache.setPending(key, promise);
+
+  try {
+    const result = await promise;
+    journeyCache.set(key, result);
+    return result;
+  } catch (error) {
+    log(`getPublishedLessons ERROR lang=${language}:`, error);
+    throw error;
+  } finally {
+    journeyCache.deletePending(key);
+  }
 }
 
-export async function getLessonByDay(
+export const getPublishedLessons = cache(_getPublishedLessons);
+
+async function _getLessonByDay(
   dayNumber: number,
   language: LanguageCode = DEFAULT_LANGUAGE
 ): Promise<JourneyLesson | null> {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase
-    .from('journey_lessons')
-    .select('*')
-    .eq('day_number', dayNumber)
-    .eq('is_published', true)
-    .single();
-  if (error) return null;
-  return localizeJourneyLesson(data as JourneyLesson, language);
+  const key = `journey:lesson:${dayNumber}:${language}:meta`;
+
+  const cached = journeyCache.get<JourneyLesson | null>(key);
+  if (cached !== null) return cached;
+
+  const pending = journeyCache.getPending<JourneyLesson | null>(key);
+  if (pending !== undefined) return pending;
+
+  const start = Date.now();
+  log(`getLessonByDay ENTER day=${dayNumber} lang=${language}`);
+
+  const promise = (async () => {
+    const supabase = await supabaseServer();
+    const { data, error } = await supabase
+      .from('journey_lessons')
+      .select('*')
+      .eq('day_number', dayNumber)
+      .eq('is_published', true)
+      .single();
+    if (error) {
+      const duration = Date.now() - start;
+      log(`getLessonByDay EXIT day=${dayNumber} lang=${language} found=false duration=${duration}ms`);
+      return null;
+    }
+
+    const result = localizeJourneyLesson(data as JourneyLesson, language);
+    const duration = Date.now() - start;
+    log(`getLessonByDay EXIT day=${dayNumber} lang=${language} found=true duration=${duration}ms`);
+
+    return result;
+  })();
+
+  journeyCache.setPending(key, promise);
+
+  try {
+    const result = await promise;
+    if (result !== null) {
+      journeyCache.set(key, result);
+    }
+    return result;
+  } catch (error) {
+    log(`getLessonByDay ERROR day=${dayNumber} lang=${language}:`, error);
+    throw error;
+  } finally {
+    journeyCache.deletePending(key);
+  }
 }
 
-export async function getLessonByDayWithBlocks(
+export const getLessonByDay = cache(_getLessonByDay);
+
+async function _getLessonByDayWithBlocks(
   dayNumber: number,
   language: LanguageCode = DEFAULT_LANGUAGE
 ): Promise<JourneyLessonWithBlocks | null> {
-  const supabase = await supabaseServer();
-  
-  const { data: lesson, error } = await supabase
-    .from('journey_lessons')
-    .select('*')
-    .eq('day_number', dayNumber)
-    .eq('is_published', true)
-    .single();
-  
-  if (error || !lesson) return null;
+  const key = `journey:lesson:${dayNumber}:${language}`;
 
-  const localizedLesson = localizeJourneyLesson(lesson as JourneyLesson, language);
-  const resolvedLanguage = localizedLesson.language_context?.resolved ?? DEFAULT_LANGUAGE;
+  const cached = journeyCache.get<JourneyLessonWithBlocks | null>(key);
+  if (cached !== null) return cached;
 
-  const { data: blocks, error: blocksError } = await supabase
-    .from('journey_lesson_blocks')
-    .select('id, lesson_id, order_index, block_type, content')
-    .eq('lesson_id', lesson.id)
-    .order('order_index', { ascending: true });
+  const pending = journeyCache.getPending<JourneyLessonWithBlocks | null>(key);
+  if (pending !== undefined) return pending;
 
-  return {
-    ...localizedLesson,
-    blocks: (blocks || []).map((block) => ({
-      ...block,
-      content: localizeBlockContent(
-        block.content as Record<string, unknown>,
-        resolvedLanguage
-      ),
-    })),
-  };
+  const start = Date.now();
+  log(`getLessonByDayWithBlocks ENTER day=${dayNumber} lang=${language}`);
+
+  const promise = (async () => {
+    const supabase = await supabaseServer();
+    
+    const { data: lesson, error } = await supabase
+      .from('journey_lessons')
+      .select('*')
+      .eq('day_number', dayNumber)
+      .eq('is_published', true)
+      .single();
+    
+    if (error || !lesson) {
+      const duration = Date.now() - start;
+      log(`getLessonByDayWithBlocks EXIT day=${dayNumber} lang=${language} found=false duration=${duration}ms`);
+      return null;
+    }
+
+    const localizedLesson = localizeJourneyLesson(lesson as JourneyLesson, language);
+    const resolvedLanguage = localizedLesson.language_context?.resolved ?? DEFAULT_LANGUAGE;
+
+    const { data: blocks, error: blocksError } = await supabase
+      .from('journey_lesson_blocks')
+      .select('id, lesson_id, order_index, block_type, content')
+      .eq('lesson_id', lesson.id)
+      .order('order_index', { ascending: true });
+
+    const result = {
+      ...localizedLesson,
+      blocks: (blocks || []).map((block) => ({
+        ...block,
+        content: localizeBlockContent(
+          block.content as Record<string, unknown>,
+          resolvedLanguage
+        ),
+      })),
+    };
+
+    const duration = Date.now() - start;
+    log(`getLessonByDayWithBlocks EXIT day=${dayNumber} lang=${language} blocks=${result.blocks.length} duration=${duration}ms`);
+
+    return result;
+  })();
+
+  journeyCache.setPending(key, promise);
+
+  try {
+    const result = await promise;
+    if (result !== null) {
+      journeyCache.set(key, result);
+    }
+    return result;
+  } catch (error) {
+    log(`getLessonByDayWithBlocks ERROR day=${dayNumber} lang=${language}:`, error);
+    throw error;
+  } finally {
+    journeyCache.deletePending(key);
+  }
 }
+
+export const getLessonByDayWithBlocks = cache(_getLessonByDayWithBlocks);
 
 export async function getUserProgress(
   userId: string

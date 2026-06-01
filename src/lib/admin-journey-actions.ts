@@ -3,6 +3,7 @@
 import { createHash } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { supabaseServer } from './supabase-server';
+import { journeyCache } from './journey-server-cache';
 import type { LessonWithBlocks, JourneyLessonMetadata, LessonBlock } from '@/types/admin-journey';
 import { EMOTIONAL_QA_CHECKLIST, validateDayTemplateContract } from './journey-day-template';
 import { analyzeCanonicalJourneyDraft } from './journey-canonical-qa';
@@ -434,6 +435,7 @@ export async function saveLesson(
 
     revalidatePath('/admin/journey');
     revalidatePath('/journey');
+    journeyCache.invalidatePattern('journey:');
     
     return { success: true, lessonId };
   } catch (error) {
@@ -563,6 +565,7 @@ export async function saveCanonicalLesson(
 
     revalidatePath('/admin/journey');
     revalidatePath('/journey');
+    journeyCache.invalidatePattern('journey:');
     return { success: true, lessonId };
   } catch (error) {
     console.error('Error saving canonical lesson:', error);
