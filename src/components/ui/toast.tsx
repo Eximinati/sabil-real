@@ -76,7 +76,7 @@ export function Toast({ toast }: ToastProps) {
       <button
         onClick={toast.onDismiss}
         aria-label="Dismiss"
-        className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors p-1 -m-1 rounded-lg hover:bg-[var(--color-border)]/50"
+        className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors p-3 -m-3 rounded-lg hover:bg-[var(--color-border)]/50"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

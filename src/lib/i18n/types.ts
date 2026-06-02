@@ -68,6 +68,7 @@ export interface AppCopy {
       quietLine: string;
       closeMenu: string;
       openMenu: string;
+      navMenuLabel: string;
     };
     nav: {
       today: string;
@@ -448,6 +449,16 @@ export interface AppCopy {
     siteTitle: string;
     siteDescription: string;
     ogLocale: string;
+  };
+  audio: {
+    playAria: string;
+    pauseAria: string;
+    previousAria: string;
+    nextAria: string;
+    minimizeAria: string;
+    expandAria: string;
+    closeAria: string;
+    seekAria: string;
   };
   buildNotice: {
     triggerLabel: string;

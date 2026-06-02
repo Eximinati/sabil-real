@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { JourneyTranslationSelector } from './journey-translation-selector';
 import { JourneyReciterSelector } from './journey-reciter-selector';
 import { TafsirLibrarySheet } from './tafsir-library-sheet';
+import { FocusTrap } from './focus-trap';
 import {
   getStoredHadithLanguage,
   setStoredHadithLanguage,
@@ -98,6 +99,15 @@ export function ReadingPreferencesSheet({
     }, 200);
   }, [onClose]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, handleClose]);
+
   if (!isOpen && !closing) return null;
 
   const styleOptions = [
@@ -114,18 +124,22 @@ export function ReadingPreferencesSheet({
         aria-label={copy.close}
       />
 
+      <FocusTrap active={isOpen && !closing}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reading-preferences-title"
         className={`fixed z-50 bg-[var(--color-surface)] border-[var(--color-border)] shadow-2xl overflow-y-auto overscroll-contain transition-all duration-200 ${
           closing ? 'opacity-0 scale-95 translate-y-4 md:translate-y-0' : 'opacity-100 scale-100 translate-y-0'
-        } bottom-0 left-0 right-0 max-h-[90vh] rounded-t-[28px] border-t md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto md:right-auto md:max-h-[85vh] md:w-[480px] md:max-w-[90vw] md:rounded-[24px] md:border`}
+        } safe-area-bottom bottom-0 left-0 right-0 max-h-[90vh] rounded-t-[28px] border-t md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto md:right-auto md:max-h-[85vh] md:w-[480px] md:max-w-[90vw] md:rounded-[24px] md:border`}
       >
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">
+          <h2 id="reading-preferences-title" className="text-lg font-semibold text-[var(--color-text)]">
             {copy.readingPreferences}
           </h2>
           <button
             onClick={handleClose}
-            className="rounded-full p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/50 transition-colors"
+            className="rounded-full p-3 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/50 transition-colors"
             aria-label={copy.close}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,6 +329,7 @@ export function ReadingPreferencesSheet({
           </button>
         </div>
       </div>
+      </FocusTrap>
 
       {onTafsirChange && (
         <TafsirLibrarySheet
@@ -325,6 +340,7 @@ export function ReadingPreferencesSheet({
           preferredLanguage={tafsirPreferredLanguage || 'auto'}
           onLanguageChange={onTafsirLanguageChange || (() => {})}
           copy={{
+            close: copy.close,
             tafsirLibrary: copy.tafsirLibrary || 'Tafsir Library',
             searchPlaceholder: copy.tafsirLibrary || 'Search language or scholar',
             currentScholar: copy.tafsir || 'Current Scholar',

@@ -58,6 +58,7 @@ export const EN_COPY: AppCopy = {
       quietLine: 'A quiet guided journey, with the Quran at the center.',
       closeMenu: 'Close menu',
       openMenu: 'Open navigation menu',
+      navMenuLabel: 'Navigation',
     },
     nav: {
       today: 'Today',
@@ -470,6 +471,16 @@ export const EN_COPY: AppCopy = {
     siteTitle: 'Sabil - A Gentle Guided Journey',
     siteDescription: 'A calm, beginner-friendly guided journey through Quran, Seerah, and reflection.',
     ogLocale: 'en_US',
+  },
+  audio: {
+    playAria: 'Play',
+    pauseAria: 'Pause',
+    previousAria: 'Previous verse',
+    nextAria: 'Next verse',
+    minimizeAria: 'Minimize',
+    expandAria: 'Expand',
+    closeAria: 'Close player',
+    seekAria: 'Seek through audio',
   },
   buildNotice: {
     triggerLabel: 'Build note',

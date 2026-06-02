@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, memo, useCallback } from 'react';
+import { useState, memo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useFocusMode } from './focus-mode-provider';
 import { LanguageSwitcher } from './language-switcher';
 import { useCopy } from '@/hooks/use-copy';
+import { FocusTrap } from './focus-trap';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -80,7 +81,7 @@ function DesktopSidebar({ email }: { email: string }) {
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-xs text-white/40 font-medium">{copy.appShell.sidebar.guidedJourney}</span>
+          <span className="text-xs text-white/45 font-medium">{copy.appShell.sidebar.guidedJourney}</span>
         </div>
         <NavItem href="/journey" isPrimary>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +96,7 @@ function DesktopSidebar({ email }: { email: string }) {
           {copy.appShell.nav.reflections}
         </NavItem>
         <div className="px-3 py-2 mt-4">
-          <span className="text-xs text-white/40 font-medium">{copy.appShell.sidebar.readAndExplore}</span>
+          <span className="text-xs text-white/45 font-medium">{copy.appShell.sidebar.readAndExplore}</span>
         </div>
         <NavItem href="/quran">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,10 +151,19 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
   const pathname = usePathname();
   const copy = useCopy();
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <aside className="absolute left-0 top-0 bottom-0 w-[260px] sidebar-bg text-white flex flex-col animate-fade-in">
+      <FocusTrap active={true}>
+      <aside role="dialog" aria-modal="true" aria-label={copy.appShell.sidebar.navMenuLabel} className="absolute left-0 top-0 bottom-0 w-[260px] sidebar-bg text-white flex flex-col animate-fade-in">
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-[20px] font-semibold">Sabil</h1>
@@ -162,7 +172,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
               {copy.appShell.sidebar.quietLine}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors" aria-label={copy.appShell.sidebar.closeMenu}>
+          <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors" aria-label={copy.appShell.sidebar.closeMenu}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -202,6 +212,7 @@ function MobileNav({ email, onClose }: { email: string; onClose: () => void }) {
           <SignOutButton />
         </div>
       </aside>
+      </FocusTrap>
     </div>
   );
 }
@@ -225,6 +236,12 @@ export function AppShell({ children, userEmail }: AppShellProps) {
 
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[var(--color-primary)] focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
+      >
+        Skip to content
+      </a>
       <DesktopSidebar email={userEmail} />
 
       <button

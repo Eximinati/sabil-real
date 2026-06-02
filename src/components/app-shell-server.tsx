@@ -53,7 +53,7 @@ export function SidebarSkeleton({ email }: { email: string }) {
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-xs text-white/40 font-medium">{copy.appShell.sidebar.guidedJourney}</span>
+          <span className="text-xs text-white/45 font-medium">{copy.appShell.sidebar.guidedJourney}</span>
         </div>
         <div className="flex items-center gap-[10px] px-4 py-[11px] rounded-lg text-white/90">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +68,7 @@ export function SidebarSkeleton({ email }: { email: string }) {
           {copy.appShell.nav.reflections}
         </div>
         <div className="px-3 py-2 mt-2">
-          <span className="text-xs text-white/40 font-medium">{copy.appShell.sidebar.readAndExplore}</span>
+          <span className="text-xs text-white/45 font-medium">{copy.appShell.sidebar.readAndExplore}</span>
         </div>
         <div className="flex items-center gap-[10px] px-4 py-[11px] rounded-lg text-white/60">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@ export const Sidebar = memo(function Sidebar({ userEmail: email, isFocusMode = f
 
       <nav className="flex-1 px-2 space-y-1">
         <div className="px-3 py-2">
-          <span className="text-xs text-white/40 font-medium">{copy.appShell.sidebar.guidedJourney}</span>
+          <span className="text-xs text-white/45 font-medium">{copy.appShell.sidebar.guidedJourney}</span>
         </div>
         
         {navItems.slice(0, 2).map((item) => {
@@ -173,7 +173,7 @@ export const Sidebar = memo(function Sidebar({ userEmail: email, isFocusMode = f
          })}
          
         <div className="px-3 py-2 mt-2">
-          <span className="text-xs text-white/40 font-medium">{copy.appShell.sidebar.readAndExplore}</span>
+          <span className="text-xs text-white/45 font-medium">{copy.appShell.sidebar.readAndExplore}</span>
         </div>
         
         {navItems.slice(2).map((item) => {

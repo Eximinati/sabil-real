@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import { useAudioPlayerContext, useAudioPlayerControls } from './audio-player-provider';
 import { reciters, SPEEDS } from '@/data/reciters';
 import { useFocusMode } from './focus-mode-provider';
+import { useCopy } from '@/hooks/use-copy';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -39,6 +40,7 @@ function AudioPlayerContent() {
   const currentTime = localControls.currentTime;
   const duration = localControls.duration;
   const isLoading = localControls.isLoading;
+  const copy = useCopy();
 
   const currentReciter = state.reciterId
     ? reciters.find(r => r.id === state.reciterId)
@@ -114,8 +116,8 @@ function AudioPlayerContent() {
                 <button
                   onClick={previousVerse}
                   disabled={!hasPrev || isLoading}
-                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-[var(--color-border)]/50 disabled:opacity-30 transition-colors"
-                  aria-label="Previous verse"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[var(--color-border)]/50 disabled:opacity-30 transition-colors"
+                  aria-label={copy.audio.previousAria}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -124,8 +126,8 @@ function AudioPlayerContent() {
                 <button
                   onClick={nextVerse}
                   disabled={!hasNext || isLoading}
-                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-[var(--color-border)]/50 disabled:opacity-30 transition-colors"
-                  aria-label="Next verse"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[var(--color-border)]/50 disabled:opacity-30 transition-colors"
+                  aria-label={copy.audio.nextAria}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -137,8 +139,8 @@ function AudioPlayerContent() {
             <button
               onClick={toggle}
               disabled={isLoading}
-              className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
-              aria-label={state.isPlaying ? 'Pause' : 'Play'}
+              className="min-w-[44px] min-h-[44px] md:w-12 md:h-12 flex items-center justify-center bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
+              aria-label={state.isPlaying ? copy.audio.pauseAria : copy.audio.playAria}
             >
               {isLoading ? (
                 <svg className="w-5 h-5 md:w-6 md:h-6 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -186,7 +188,7 @@ function AudioPlayerContent() {
                       value={currentTime}
                       onChange={(e) => seek(parseFloat(e.target.value))}
                       disabled={isLoading}
-                      aria-label="Seek through audio"
+                      aria-label={copy.audio.seekAria}
                       className="w-full h-1.5 md:h-2 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 md:[&::-webkit-slider-thumb]:w-4 md:[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[var(--color-primary)] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
                       style={{
                         background: `linear-gradient(to right, var(--color-primary) ${progress}%, var(--color-border) ${progress}%)`,
@@ -237,8 +239,8 @@ function AudioPlayerContent() {
               </div>
               <button
                 onClick={() => setMinimized(!minimized)}
-                className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)]/50 rounded-lg transition-colors"
-                aria-label={minimized ? 'Expand' : 'Minimize'}
+                className="p-3 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)]/50 rounded-lg transition-colors"
+                aria-label={minimized ? copy.audio.expandAria : copy.audio.minimizeAria}
               >
                 {minimized ? (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,8 +254,8 @@ function AudioPlayerContent() {
               </button>
               <button
                 onClick={handleClose}
-                className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)]/50 rounded-lg transition-colors"
-                aria-label="Close player"
+                className="p-3 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)]/50 rounded-lg transition-colors"
+                aria-label={copy.audio.closeAria}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { FocusTrap } from './focus-trap';
+import { useCopy } from '@/hooks/use-copy';
 
 interface Translation {
   id: number;
@@ -61,6 +63,7 @@ export function TranslationLibrarySheet({
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
+  const globalCopy = useCopy();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -118,6 +121,15 @@ export function TranslationLibrarySheet({
       onClose();
     }, 250);
   }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, handleClose]);
 
   const handleSelect = useCallback(
     (t: Translation) => {
@@ -183,23 +195,27 @@ export function TranslationLibrarySheet({
       <button
         className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:bg-black/30"
         onClick={handleClose}
-        aria-label="Close"
+        aria-label={globalCopy.common.labels.close}
       />
 
+      <FocusTrap active={isOpen && !closing}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="translation-library-title"
         className={`fixed z-50 bg-[var(--color-surface)] border-[var(--color-border)] shadow-2xl ${
           closing ? '' : 'animate-slide-up'
-        } md:bottom-0 md:right-0 md:top-0 md:w-[420px] md:max-w-[90vw] md:border-l md:animate-slide-in-right md:rounded-none bottom-0 left-0 right-0 max-h-[90vh] rounded-t-[28px] border-t`}
+        } safe-area-bottom md:bottom-0 md:right-0 md:top-0 md:w-[420px] md:max-w-[90vw] md:border-l md:animate-slide-in-right md:rounded-none bottom-0 left-0 right-0 max-h-[90vh] rounded-t-[28px] border-t`}
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">
+            <h2 id="translation-library-title" className="text-lg font-semibold text-[var(--color-text)]">
               {copy.translationLibrary}
             </h2>
             <button
               onClick={handleClose}
-              className="rounded-full p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/50"
-              aria-label="Close"
+              className="rounded-full p-3 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/50"
+              aria-label={globalCopy.common.labels.close}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -218,7 +234,7 @@ export function TranslationLibrarySheet({
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6">
+          <div aria-live="polite" aria-atomic="true" className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6">
             {loading ? (
               <div className="py-12 text-center text-sm text-[var(--color-text-muted)]">
                 Loading...
@@ -380,6 +396,7 @@ export function TranslationLibrarySheet({
           </div>
         </div>
       </div>
+      </FocusTrap>
     </>
   );
 }

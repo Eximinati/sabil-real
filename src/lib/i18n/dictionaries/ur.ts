@@ -56,6 +56,7 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       quietLine: 'ایک پُرسکون رہنمائی والا سفر، قرآن کو مرکز بنا کر۔',
       closeMenu: 'مینو بند کریں',
       openMenu: 'نیویگیشن مینو کھولیں',
+      navMenuLabel: 'نیویگیشن',
     },
     nav: {
       today: 'آج',
@@ -468,6 +469,16 @@ export const UR_COPY: DeepPartial<AppCopy> = {
     siteTitle: 'Sabil - ایک نرم رہنمائی والا سفر',
     siteDescription: 'قرآن، سیرت اور تامل کا ایک پرسکون اور نوآموز دوست رہنمائی والا سفر۔',
     ogLocale: 'ur_PK',
+  },
+  audio: {
+    playAria: 'چلائیں',
+    pauseAria: 'توقف',
+    previousAria: 'پچھلی آیت',
+    nextAria: 'اگلی آیت',
+    minimizeAria: 'چھوٹا کریں',
+    expandAria: 'بڑا کریں',
+    closeAria: 'پلیئر بند کریں',
+    seekAria: 'آڈیو میں سکرول کریں',
   },
   buildNotice: {
     triggerLabel: 'تعمیر نوٹ',

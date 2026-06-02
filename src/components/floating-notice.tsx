@@ -1,8 +1,9 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCopy } from '@/hooks/use-copy';
+import { FocusTrap } from './focus-trap';
 
 export function FloatingNotice() {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,8 +34,16 @@ export function FloatingNotice() {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsOpen(false)}>
-          <div 
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+          onClick={() => setIsOpen(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setIsOpen(false); }}
+        >
+          <FocusTrap active={isOpen}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="build-notice-title"
             className="bg-[var(--color-surface)] rounded-2xl max-w-lg w-full overflow-hidden border border-[var(--color-border)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -45,12 +54,13 @@ export function FloatingNotice() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-[var(--color-text)] font-semibold">{copy.buildNotice.modalTitle}</h2>
+                <h2 id="build-notice-title" className="text-[var(--color-text)] font-semibold">{copy.buildNotice.modalTitle}</h2>
                 <p className="text-[var(--color-text-muted)] text-sm">{copy.buildNotice.modalSubtitle}</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
                 className="ml-auto p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)] rounded-lg transition-colors"
+                aria-label={copy.common.labels.close}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -82,6 +92,7 @@ export function FloatingNotice() {
               </button>
             </div>
           </div>
+          </FocusTrap>
         </div>
       )}
     </>
