@@ -19,7 +19,7 @@ export function validateRedirectPath(
     return '/journey';
   }
 
-  if (!ALLOWED_REDIRECT_PATHS.some((p) => path === p || path.startsWith(p + '/'))) {
+  if (!ALLOWED_REDIRECT_PATHS.some((p) => path === p || path.startsWith(p + '/') || path.startsWith(p + '?'))) {
     return '/journey';
   }
 
