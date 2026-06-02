@@ -61,7 +61,8 @@ export function ReflectionProvider({
             dayNumber,
             reflectionText: currentText,
           });
-          navigator.sendBeacon('/api/journey/reflection', payload);
+          const blob = new Blob([payload], { type: 'application/json' });
+          navigator.sendBeacon('/api/journey/reflection', blob);
         } catch {
         }
       }
@@ -87,64 +88,72 @@ export function ReflectionProvider({
     };
   }, [text]);
 
-  useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        const currentText = textRef.current;
-        if (currentText !== lastSavedRef.current) {
-          performSave(currentText);
-        }
+  const performSaveInternal = useCallback(async (saveText: string) => {
+    setStatus('saving');
+    try {
+      const res = await fetch('/api/journey/reflection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId, dayNumber, reflectionText: saveText }),
+      });
+      if (res.ok) {
+        lastSavedRef.current = saveText;
+        setStatus('saved');
+        if (savedFlashRef.current) clearTimeout(savedFlashRef.current);
+        savedFlashRef.current = setTimeout(() => {
+          if (mountedRef.current) setStatus('idle');
+        }, SAVED_FLASH_MS);
+        return true;
       }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, []);
+      setStatus('error');
+      return false;
+    } catch {
+      setStatus('error');
+      return false;
+    }
+  }, [lessonId, dayNumber]);
 
   const performSave = useCallback(async (saveText: string): Promise<boolean> => {
-    if (savePromiseRef.current) return savePromiseRef.current;
-
     if (!saveText.trim()) {
       lastSavedRef.current = saveText;
       setStatus('idle');
       return true;
     }
 
-    const promise = (async () => {
-      setStatus('saving');
-      try {
-        const res = await fetch('/api/journey/reflection', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lessonId, dayNumber, reflectionText: saveText }),
-        });
-        if (res.ok) {
-          lastSavedRef.current = saveText;
-          setStatus('saved');
-          if (savedFlashRef.current) clearTimeout(savedFlashRef.current);
-          savedFlashRef.current = setTimeout(() => {
-            if (mountedRef.current) setStatus('idle');
-          }, SAVED_FLASH_MS);
-          return true;
-        }
-        setStatus('error');
-        return false;
-      } catch {
-        setStatus('error');
-        return false;
-      } finally {
-        savePromiseRef.current = null;
-      }
-    })();
+    if (savePromiseRef.current) {
+      await savePromiseRef.current;
+      if (saveText === lastSavedRef.current) return true;
+    }
 
+    const promise = performSaveInternal(saveText).finally(() => {
+      savePromiseRef.current = null;
+    });
     savePromiseRef.current = promise;
     return promise;
-  }, [lessonId, dayNumber]);
+  }, [performSaveInternal]);
 
   const save = useCallback(async (): Promise<boolean> => {
     const currentText = textRef.current;
     if (currentText === lastSavedRef.current) return true;
-    if (savePromiseRef.current) return savePromiseRef.current;
     return performSave(currentText);
+  }, [performSave]);
+
+  useEffect(() => {
+    const onSave = () => {
+      const currentText = textRef.current;
+      if (currentText !== lastSavedRef.current) {
+        performSave(currentText);
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') onSave();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', onSave);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', onSave);
+    };
   }, [performSave]);
 
   const updateText = useCallback((newText: string) => {
