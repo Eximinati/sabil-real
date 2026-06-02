@@ -338,6 +338,32 @@ export interface AppCopy {
       signIn: string;
       noAccount: string;
       register: string;
+      forgotPassword: string;
+    };
+    forgotPassword: {
+      title: string;
+      description: string;
+      emailPlaceholder: string;
+      submit: string;
+      submitting: string;
+      successTitle: string;
+      successDescription: string;
+      backToLogin: string;
+      errorGeneric: string;
+    };
+    resetPassword: {
+      title: string;
+      description: string;
+      newPasswordPlaceholder: string;
+      confirmPasswordPlaceholder: string;
+      submit: string;
+      submitting: string;
+      successTitle: string;
+      successDescription: string;
+      backToLogin: string;
+      errorGeneric: string;
+      errorMismatch: string;
+      errorMinLength: string;
     };
     register: {
       createAccount: string;

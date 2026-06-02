@@ -1,20 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { signInWithGoogle } from '@/lib/google-auth';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import { isValidRedirectPath } from '@/lib/redirect-utils';
 
 export default function LoginPage() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const copy = useCopy();
   const { setLanguage, language } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const redirectParam = useMemo(() => {
+    const raw = searchParams.get('redirect');
+    return raw && isValidRedirectPath(raw) ? raw : null;
+  }, [searchParams]);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -34,35 +40,41 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      // Check onboarding status after successful login
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
-      
-      if (user) {
-        const { data: prefs } = await supabaseBrowser
-          .from('user_preferences')
-          .select('onboarding_completed, ui_language')
-          .eq('user_id', user.id)
-          .single();
+      let targetUrl: string;
 
-        const preferredLanguage =
-          prefs?.ui_language === 'en' || prefs?.ui_language === 'ur'
-            ? prefs.ui_language
-            : language;
+      try {
+        const { data: { user } } = await supabaseBrowser.auth.getUser();
 
-        setLanguage(preferredLanguage);
-        
-        // Redirect based on onboarding status
-        if (!prefs?.onboarding_completed) {
-          router.push('/onboarding');
+        if (user) {
+          const { data: prefs } = await supabaseBrowser
+            .from('user_preferences')
+            .select('onboarding_completed, ui_language')
+            .eq('user_id', user.id)
+            .single();
+
+          const preferredLanguage =
+            prefs?.ui_language === 'en' || prefs?.ui_language === 'ur'
+              ? prefs.ui_language
+              : language;
+
+          setLanguage(preferredLanguage);
+
+          if (!prefs?.onboarding_completed) {
+            targetUrl = '/onboarding';
+          } else if (redirectParam) {
+            targetUrl = redirectParam;
+          } else {
+            targetUrl = '/journey';
+          }
         } else {
-          router.push('/journey');
+          targetUrl = redirectParam || '/journey';
         }
-      } else {
-        router.push('/journey');
+      } catch {
+        targetUrl = redirectParam || '/journey';
       }
-      
-      router.refresh();
+
       setLoading(false);
+      window.location.href = targetUrl;
     }
   };
 
@@ -132,6 +144,15 @@ export default function LoginPage() {
             copy.auth.login.signIn
           )}
         </button>
+
+        <div className="text-center mt-3">
+          <a
+            href="/forgot-password"
+            className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+          >
+            {copy.auth.login.forgotPassword}
+          </a>
+        </div>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">

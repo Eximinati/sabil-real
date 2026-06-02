@@ -5,10 +5,13 @@ export async function signInWithGoogle() {
   const state = generateOAuthState();
   storeOAuthStateClient(state);
 
+  const currentPath = window.location.pathname + window.location.search;
+  const redirectTo = `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(currentPath)}`;
+
   return supabaseBrowser.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/api/auth/callback?next=/journey`,
+      redirectTo,
       queryParams: { state },
     },
   });

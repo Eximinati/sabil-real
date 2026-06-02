@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
+import { validateRedirectPath } from './redirect-utils';
 
 const OAUTH_STATE_COOKIE = 'oauth-state';
-const ALLOWED_REDIRECT_PATHS = ['/journey', '/onboarding'];
 
 export async function validateOAuthState(
   stateParam: string | null
@@ -29,26 +29,4 @@ export async function validateOAuthState(
   return { valid: true };
 }
 
-export function validateRedirectPath(
-  path: string | null
-): string {
-  if (!path) return '/journey';
-
-  if (!path.startsWith('/')) {
-    return '/journey';
-  }
-
-  if (path.includes('..') || path.includes('//') || path.includes(':')) {
-    return '/journey';
-  }
-
-  if (path.length > 200) {
-    return '/journey';
-  }
-
-  if (!ALLOWED_REDIRECT_PATHS.includes(path)) {
-    return '/journey';
-  }
-
-  return path;
-}
+export { validateRedirectPath };

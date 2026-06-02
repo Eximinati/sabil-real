@@ -102,11 +102,11 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
-  const publicPaths = ['/', '/login', '/register'];
-  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith('/api/auth'));
+  const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+  const isPublicPath = publicPaths.some(path => pathname === path || pathname === path + '/' || pathname.startsWith('/api/auth'));
 
   if (!user) {
-    const protectedPaths = ['/journey', '/quran', '/search', '/tafsir', '/hadith', '/settings'];
+    const protectedPaths = ['/journey', '/quran', '/search', '/tafsir', '/hadith', '/settings', '/bookmarks'];
     const isProtected = protectedPaths.some(path => pathname.startsWith(path));
 
     if (pathname.startsWith('/admin')) {
@@ -114,7 +114,12 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!isPublicPath && isProtected) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      const loginUrl = new URL('/login', request.url);
+      const originalPath = request.nextUrl.pathname + request.nextUrl.search;
+      if (originalPath !== '/login' && originalPath !== '/register') {
+        loginUrl.searchParams.set('redirect', originalPath);
+      }
+      return NextResponse.redirect(loginUrl);
     }
   }
 

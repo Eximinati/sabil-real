@@ -60,16 +60,21 @@ export function ReflectionProvider({
       const currentText = textRef.current;
       if (currentText !== lastSavedRef.current) {
         try {
-          const payload = JSON.stringify({
-            lessonId,
-            dayNumber,
-            reflectionText: currentText,
-            lastUpdatedAt: updatedAtRef.current,
+          fetch('/api/journey/reflection', {
+            method: 'POST',
+            keepalive: true,
+            headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+            body: JSON.stringify({
+              lessonId,
+              dayNumber,
+              reflectionText: currentText,
+              lastUpdatedAt: updatedAtRef.current,
+            }),
+          }).catch((e) => {
+            console.error('Unload reflection save failed:', e);
           });
-          const blob = new Blob([payload], { type: 'application/json' });
-          navigator.sendBeacon('/api/journey/reflection', blob);
         } catch (e) {
-          console.error('sendBeacon failed for reflection save:', e);
+          console.error('Unload reflection save failed:', e);
         }
       }
     };

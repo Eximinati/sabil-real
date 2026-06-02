@@ -1,10 +1,19 @@
+import { redirect } from 'next/navigation';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { supabaseServer } from '@/lib/supabase-server';
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect('/journey');
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] p-4 relative">
       <div className="absolute right-4 top-4">
