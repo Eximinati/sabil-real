@@ -58,6 +58,7 @@ export function JourneyVerseContentInner({
         audioFailed: 'آڈیو چل نہیں سکی',
         errorTitle: 'آیات لوڈ نہیں ہو سکیں',
         errorDescription: 'براہ کرم کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+        retry: 'دوبارہ کوشش کریں',
         empty: 'اس سبق کے لیے ابھی آیات دستیاب نہیں۔',
       }
     : {
@@ -67,6 +68,7 @@ export function JourneyVerseContentInner({
         audioFailed: 'Failed to play audio',
         errorTitle: 'Unable to load verses',
         errorDescription: 'Please check your connection and try again.',
+        retry: 'Try Again',
         empty: 'No verses available for this lesson.',
       };
   const [verses, setVerses] = useState<VerseRenderItem[]>([]);
@@ -78,6 +80,7 @@ export function JourneyVerseContentInner({
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [reciterId, setReciterId] = useState<number>(5);
   const toast = useToast();
+  const [retryCount, setRetryCount] = useState(0);
   const prevKeyRef = useRef('');
   const audioUrlRef = useRef<Record<string, string>>({});
 
@@ -135,7 +138,7 @@ export function JourneyVerseContentInner({
     }
 
     loadVerses();
-  }, [verseKeysParam, currentTranslation, reciterId, uiCopy.fetchFailed]);
+  }, [verseKeysParam, currentTranslation, reciterId, uiCopy.fetchFailed, retryCount]);
 
   const sectionTitle = title || uiCopy.sectionTitle;
   const isUrduIntro = /[\u0600-\u06FF]/.test(intro || '') || language === 'ur';
@@ -232,7 +235,13 @@ export function JourneyVerseContentInner({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <p className="text-[var(--color-text)] font-medium mb-1">{uiCopy.errorTitle}</p>
-          <p className="text-sm text-[var(--color-text-muted)]">{uiCopy.errorDescription}</p>
+          <p className="text-sm text-[var(--color-text-muted)] mb-4">{uiCopy.errorDescription}</p>
+          <button
+            onClick={() => setRetryCount(c => c + 1)}
+            className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90 transition-opacity"
+          >
+            {uiCopy.retry}
+          </button>
         </div>
       </div>
     );
