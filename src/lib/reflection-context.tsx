@@ -29,11 +29,13 @@ export function ReflectionProvider({
   lessonId,
   dayNumber,
   initialReflection = '',
+  initialReflectionUpdatedAt,
   children,
 }: {
   lessonId: string;
   dayNumber: number;
   initialReflection?: string;
+  initialReflectionUpdatedAt?: string | null;
   children: ReactNode;
 }) {
   const [text, setText] = useState(initialReflection);
@@ -45,6 +47,7 @@ export function ReflectionProvider({
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const mountedRef = useRef(true);
   const savedFlashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updatedAtRef = useRef<string | null>(initialReflectionUpdatedAt ?? null);
 
   textRef.current = text;
 
@@ -61,10 +64,12 @@ export function ReflectionProvider({
             lessonId,
             dayNumber,
             reflectionText: currentText,
+            lastUpdatedAt: updatedAtRef.current,
           });
           const blob = new Blob([payload], { type: 'application/json' });
           navigator.sendBeacon('/api/journey/reflection', blob);
-        } catch {
+        } catch (e) {
+          console.error('sendBeacon failed for reflection save:', e);
         }
       }
     };
@@ -82,7 +87,9 @@ export function ReflectionProvider({
     if (text === lastSavedRef.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      performSave(textRef.current);
+      performSave(textRef.current).catch((e) => {
+        console.error('Autosave failed:', e);
+      });
     }, AUTOSAVE_MS);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -95,14 +102,28 @@ export function ReflectionProvider({
       const res = await fetch('/api/journey/reflection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...csrfHeader() },
-        body: JSON.stringify({ lessonId, dayNumber, reflectionText: saveText }),
+        body: JSON.stringify({
+          lessonId,
+          dayNumber,
+          reflectionText: saveText,
+          lastUpdatedAt: updatedAtRef.current,
+        }),
       });
       if (res.status === 401) {
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
         return false;
       }
+      if (res.status === 409) {
+        setStatus('error');
+        console.error('Conflict: reflection was modified by another session');
+        return false;
+      }
       if (res.ok) {
+        const body = await res.json();
         lastSavedRef.current = saveText;
+        if (body.updatedAt) {
+          updatedAtRef.current = body.updatedAt;
+        }
         setStatus('saved');
         if (savedFlashRef.current) clearTimeout(savedFlashRef.current);
         savedFlashRef.current = setTimeout(() => {
@@ -121,7 +142,29 @@ export function ReflectionProvider({
   const performSave = useCallback(async (saveText: string): Promise<boolean> => {
     if (!saveText.trim()) {
       lastSavedRef.current = saveText;
+      updatedAtRef.current = null;
       setStatus('idle');
+      try {
+        const res = await fetch('/api/journey/reflection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+          body: JSON.stringify({
+            lessonId,
+            dayNumber,
+            reflectionText: saveText,
+            lastUpdatedAt: updatedAtRef.current,
+          }),
+        });
+        if (res.ok) {
+          const body = await res.json();
+          if (body.updatedAt) {
+            updatedAtRef.current = body.updatedAt;
+          }
+        }
+      } catch {
+        setStatus('error');
+        return false;
+      }
       return true;
     }
 
@@ -135,7 +178,7 @@ export function ReflectionProvider({
     });
     savePromiseRef.current = promise;
     return promise;
-  }, [performSaveInternal]);
+  }, [performSaveInternal, lessonId, dayNumber]);
 
   const save = useCallback(async (): Promise<boolean> => {
     const currentText = textRef.current;
@@ -147,7 +190,9 @@ export function ReflectionProvider({
     const onSave = () => {
       const currentText = textRef.current;
       if (currentText !== lastSavedRef.current) {
-        performSave(currentText);
+        performSave(currentText).catch((e) => {
+          console.error('Pagehide/visibility save failed:', e);
+        });
       }
     };
     const onVisibilityChange = () => {

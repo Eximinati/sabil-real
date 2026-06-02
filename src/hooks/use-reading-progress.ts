@@ -28,6 +28,36 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
   const [loading, setLoading] = useState(true);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(false);
+  const pendingRef = useRef<{
+    verseNumber: number;
+    scrollPosition: number;
+  } | null>(null);
+
+  const doFetch = useCallback(async (verseNumber: number, scrollPosition: number) => {
+    if (!chapterId) return;
+    try {
+      const res = await fetch('/api/reading-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+        body: JSON.stringify({
+          surah_id: chapterId,
+          verse_number: verseNumber,
+          scroll_position: scrollPosition,
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.progress) {
+        setProgress(data.progress);
+      }
+      
+      if (data.positions && Array.isArray(data.positions)) {
+        setPositions(data.positions);
+      }
+    } catch (error) {
+      console.error('Error updating reading progress:', error);
+    }
+  }, [chapterId]);
 
   const fetchPositions = useCallback(async () => {
     try {
@@ -51,41 +81,30 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
     fetchPositions();
     return () => {
       mountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (pendingRef.current && chapterId) {
+        doFetch(pendingRef.current.verseNumber, pendingRef.current.scrollPosition);
+      }
     };
-  }, [fetchPositions]);
+  }, [fetchPositions, chapterId, doFetch]);
 
   const updateProgress = useCallback((verseNumber: number, scrollPosition: number = 0) => {
     if (!chapterId || !mountedRef.current) return;
+
+    pendingRef.current = { verseNumber, scrollPosition };
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch('/api/reading-progress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...csrfHeader() },
-          body: JSON.stringify({
-            surah_id: chapterId,
-            verse_number: verseNumber,
-            scroll_position: scrollPosition,
-          }),
-        });
-        const data = await res.json();
-        
-        if (data.progress) {
-          setProgress(data.progress);
-        }
-        
-        if (data.positions && Array.isArray(data.positions)) {
-          setPositions(data.positions);
-        }
-      } catch (error) {
-        console.error('Error updating reading progress:', error);
-      }
+      pendingRef.current = null;
+      await doFetch(verseNumber, scrollPosition);
     }, DEBOUNCE_MS);
-  }, [chapterId]);
+  }, [chapterId, doFetch]);
 
   useEffect(() => {
     return () => {

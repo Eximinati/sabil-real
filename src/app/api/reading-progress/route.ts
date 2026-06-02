@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { validateCsrf, csrfErrorResponse } from '@/lib/csrf';
 
+const MAX_POSITIONS = 25;
+
+function parsePositiveIntParam(value: string | null, fallback: number): number {
+  if (value === null) return fallback;
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+function parseIntParamStrict(value: string | null): number | null {
+  if (value === null) return null;
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await supabaseServer();
@@ -12,8 +28,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const surahId = searchParams.get('surah_id');
+    const limit = parsePositiveIntParam(searchParams.get('limit'), 10);
+    const surahId = parseIntParamStrict(searchParams.get('surah_id'));
 
     let query = supabase
       .from('reading_positions')
@@ -22,8 +38,8 @@ export async function GET(request: NextRequest) {
       .order('updated_at', { ascending: false })
       .limit(limit);
 
-    if (surahId) {
-      query = query.eq('surah_id', parseInt(surahId));
+    if (surahId !== null) {
+      query = query.eq('surah_id', surahId);
     }
 
     const { data: positions, error } = await query;
@@ -66,19 +82,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { surah_id, verse_number, scroll_position } = await request.json();
+    const body = await request.json();
+    const { surah_id, verse_number, scroll_position } = body;
 
-    if (!surah_id || verse_number === undefined) {
+    const parsedSurahId = parseInt(surah_id, 10);
+    const parsedVerseNumber = parseInt(verse_number, 10);
+
+    if (isNaN(parsedSurahId) || isNaN(parsedVerseNumber)) {
+      return NextResponse.json({ error: 'Invalid surah_id or verse_number' }, { status: 400 });
+    }
+
+    if (!parsedSurahId || parsedVerseNumber === undefined || isNaN(parsedVerseNumber)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const safeScrollPosition = typeof scroll_position === 'number'
+      ? Math.floor(scroll_position)
+      : parseInt(scroll_position, 10) || 0;
 
     const { data: position, error } = await supabase
       .from('reading_positions')
       .upsert({
         user_id: user.id,
-        surah_id,
-        verse_number,
-        scroll_position: scroll_position || 0,
+        surah_id: parsedSurahId,
+        verse_number: parsedVerseNumber,
+        scroll_position: safeScrollPosition,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,surah_id' })
       .select()
@@ -86,7 +114,6 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    const MAX_POSITIONS = 25;
     const { data: allPositions } = await supabase
       .from('reading_positions')
       .select('id, updated_at')
@@ -98,13 +125,27 @@ export async function POST(request: NextRequest) {
         .slice(MAX_POSITIONS)
         .map(p => p.id);
       
-      await supabase
+      const { error: deleteError } = await supabase
         .from('reading_positions')
         .delete()
         .in('id', idsToDelete);
+
+      if (deleteError) {
+        console.error('Reading position cleanup error:', deleteError);
+      }
     }
 
-    return NextResponse.json({ progress: position, positions: [position] });
+    const { data: refreshedPositions } = await supabase
+      .from('reading_positions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(MAX_POSITIONS);
+
+    return NextResponse.json({
+      progress: position,
+      positions: refreshedPositions || [position],
+    });
   } catch (error) {
     console.error('Error updating reading progress:', error);
     return NextResponse.json({ error: 'Failed to update progress' }, { status: 500 });
@@ -125,17 +166,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const surahId = searchParams.get('surah_id');
+    const surahId = parseIntParamStrict(searchParams.get('surah_id'));
 
-    if (!surahId) {
-      return NextResponse.json({ error: 'Missing surah_id parameter' }, { status: 400 });
+    if (surahId === null) {
+      return NextResponse.json({ error: 'Missing or invalid surah_id parameter' }, { status: 400 });
     }
 
     const { error } = await supabase
       .from('reading_positions')
       .delete()
       .eq('user_id', user.id)
-      .eq('surah_id', parseInt(surahId));
+      .eq('surah_id', surahId);
 
     if (error) throw error;
 

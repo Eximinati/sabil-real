@@ -343,13 +343,18 @@ export async function startLesson(
   dayNumber: number
 ): Promise<void> {
   const supabase = await supabaseServer();
-  await supabase.from('user_journey_progress').upsert({
+  const { error } = await supabase.from('user_journey_progress').upsert({
     user_id: userId,
     lesson_id: lessonId,
     day_number: dayNumber,
     status: 'in_progress',
     started_at: new Date().toISOString(),
   }, { onConflict: 'user_id,lesson_id' });
+
+  if (error) {
+    console.error('startLesson error:', error);
+    throw new Error(`Failed to start lesson: ${error.message}`);
+  }
 }
 
 export async function completeLesson(
@@ -358,41 +363,83 @@ export async function completeLesson(
   dayNumber: number
 ): Promise<void> {
   const supabase = await supabaseServer();
-  await supabase.from('user_journey_progress').upsert({
+  const { error } = await supabase.from('user_journey_progress').upsert({
     user_id: userId,
     lesson_id: lessonId,
     day_number: dayNumber,
     status: 'completed',
     completed_at: new Date().toISOString(),
   }, { onConflict: 'user_id,lesson_id' });
+
+  if (error) {
+    console.error('completeLesson error:', error);
+    throw new Error(`Failed to complete lesson: ${error.message}`);
+  }
 }
 
 export async function saveReflection(
   userId: string,
   lessonId: string,
   dayNumber: number,
-  reflectionText: string
+  reflectionText: string,
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   const supabase = await supabaseServer();
-  await supabase.from('user_reflections').upsert({
+
+  if (!reflectionText.trim()) {
+    const { error: deleteError } = await supabase
+      .from('user_reflections')
+      .delete()
+      .eq('user_id', userId)
+      .eq('lesson_id', lessonId);
+
+    if (deleteError) {
+      console.error('saveReflection delete error:', deleteError);
+      throw new Error(`Failed to delete reflection: ${deleteError.message}`);
+    }
+    return;
+  }
+
+  if (expectedUpdatedAt) {
+    const { data: existing } = await supabase
+      .from('user_reflections')
+      .select('updated_at')
+      .eq('user_id', userId)
+      .eq('lesson_id', lessonId)
+      .single();
+
+    if (existing && existing.updated_at !== expectedUpdatedAt) {
+      throw new Error('Reflection was modified by another session. Refresh and try again.');
+    }
+  }
+
+  const { error } = await supabase.from('user_reflections').upsert({
     user_id: userId,
     lesson_id: lessonId,
     day_number: dayNumber,
     reflection_text: reflectionText,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,lesson_id' });
+
+  if (error) {
+    console.error('saveReflection error:', error);
+    throw new Error(`Failed to save reflection: ${error.message}`);
+  }
 }
 
 export async function getUserReflection(
   userId: string,
   lessonId: string
-): Promise<string | null> {
+): Promise<{ text: string | null; updatedAt: string | null }> {
   const supabase = await supabaseServer();
   const { data } = await supabase
     .from('user_reflections')
-    .select('reflection_text')
+    .select('reflection_text, updated_at')
     .eq('user_id', userId)
     .eq('lesson_id', lessonId)
     .single();
-  return data?.reflection_text ?? null;
+  return {
+    text: data?.reflection_text ?? null,
+    updatedAt: data?.updated_at ?? null,
+  };
 }

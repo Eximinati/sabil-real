@@ -63,7 +63,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
     );
   }
 
-  const [progress, initialReflection] = await Promise.all([
+  const [progress, reflectionData] = await Promise.all([
     getUserProgress(user.id),
     getUserReflection(user.id, lessonWithBlocks.id)
   ]);
@@ -85,7 +85,8 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       lesson={lessonWithBlocks}
       blocks={lessonWithBlocks.blocks}
       canonicalPlan={canonicalPlan}
-      initialReflection={initialReflection || ''}
+      initialReflection={reflectionData.text || ''}
+      initialReflectionUpdatedAt={reflectionData.updatedAt}
       isCompleted={isCompleted}
       translationId={translationId}
       tafsirId={tafsirId}

@@ -58,6 +58,7 @@ interface StreamingLessonClientProps {
   blocks?: LessonBlock[];
   canonicalPlan?: CanonicalJourneyPlan;
   initialReflection: string;
+  initialReflectionUpdatedAt?: string | null;
   isCompleted: boolean;
   translationId: number;
   tafsirId?: number;
@@ -346,6 +347,7 @@ export function StreamingLessonShell({
   blocks,
   canonicalPlan,
   initialReflection, 
+  initialReflectionUpdatedAt,
   isCompleted, 
   translationId,
   tafsirId,
@@ -387,6 +389,7 @@ export function StreamingLessonShell({
       lessonId={lesson.id}
       dayNumber={lesson.day_number}
       initialReflection={initialReflection}
+      initialReflectionUpdatedAt={initialReflectionUpdatedAt}
     >
     <div
       className={`reading-screen px-4 md:px-6 pt-7 md:pt-12 pb-20 md:pb-16 ${containerClass}`}
