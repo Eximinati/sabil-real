@@ -69,8 +69,8 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   ]);
 
   const lessonProgress = progress.find(p => p.lesson_id === lessonWithBlocks.id);
-  const status = lessonProgress?.status || 'not_started';
-  const isCompleted = status === 'completed';
+  const progressStatus = lessonProgress?.status || 'not_started';
+  const isCompleted = progressStatus === 'completed';
   const translationId = parsePositiveInt(urlTranslation) || preferences.translation_id;
   const tafsirId = preferences.tafsir_id;
   const hadithLanguage = preferences.hadith_language;
@@ -88,6 +88,12 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
     ? await fetchVersesForBlocks(blockVerseKeys, translationId)
     : {};
 
+  const hasReflectionSection = !!(
+    lessonWithBlocks.reflection_prompt ||
+    lessonWithBlocks.blocks?.some(b => b.block_type === 'reflection') ||
+    canonicalPlan?.sections?.some(s => s.id === 'reflection-prompt')
+  );
+
   return (
     <StreamingLessonShell
       lesson={lessonWithBlocks}
@@ -103,6 +109,8 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       urlTranslation={urlTranslation}
       hasNextDay={!!nextLesson}
       initialVerseData={initialVerseData}
+      progressStatus={progressStatus}
+      hasReflectionSection={hasReflectionSection}
     />
   );
 }

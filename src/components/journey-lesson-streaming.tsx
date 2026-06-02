@@ -17,6 +17,7 @@ import { useCopy } from '@/hooks/use-copy';
 import { useFocusMode } from './focus-mode-provider';
 import { csrfHeader } from '@/lib/csrf-client';
 import { DayOneCanonicalExperience } from './journey-day-one-canonical';
+import { GlobalJourneyProgress } from './global-journey-progress';
 
 const JourneyTafsirStreaming = dynamic(() => import('./journey-tafsir-streaming').then(m => ({ default: m.JourneyTafsirStreaming })), { ssr: false });
 const TranslationLibrarySheet = dynamic(() => import('./translation-library-sheet').then(m => ({ default: m.TranslationLibrarySheet })), { ssr: false });
@@ -77,6 +78,8 @@ interface StreamingLessonClientProps {
   urlTranslation?: string | null;
   hasNextDay?: boolean;
   initialVerseData?: Record<string, VerseWithData>;
+  progressStatus?: 'not_started' | 'in_progress' | 'completed';
+  hasReflectionSection?: boolean;
 }
 
 const REQUIRED_CANONICAL_SECTION_ORDER: Array<CanonicalJourneyPlan['sections'][number]['id']> = [
@@ -366,7 +369,9 @@ export function StreamingLessonShell({
   journeyLanguage = 'auto',
   urlTranslation,
   hasNextDay,
-  initialVerseData
+  initialVerseData,
+  progressStatus = 'not_started',
+  hasReflectionSection: hasReflectionSectionProp
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
   const copy = useCopy();
@@ -440,6 +445,12 @@ export function StreamingLessonShell({
         initialReflection={initialReflection}
         initialReflectionUpdatedAt={initialReflectionUpdatedAt}
       >
+        <GlobalJourneyProgress
+          status={progressStatus}
+          hasReflectionSection={hasReflectionSectionProp ?? false}
+          lessonTitle={lesson.title}
+          dayNumber={lesson.day_number}
+        />
       {canUseCanonicalExperience ? (
         <>
           {shouldShowLanguageFallback && (
