@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     const translationId = rawTranslation ? parseInt(rawTranslation, 10) : null;
     const reciterId = parseInt(searchParams.get('reciter') || '5', 10);
     const versesOnly = searchParams.get('verses_only') === 'true';
+    const includeAudio = searchParams.get('include_audio') !== 'false';
 
     if (verseKeys.length === 0) {
       return NextResponse.json({ verses: [] });
@@ -97,17 +98,19 @@ export async function GET(request: Request) {
     const allChapterIds = [...new Set(chapterResults.map((r) => r.chapterId))];
 
     let audioFiles: any[] = [];
-    try {
-      const audioPromises = allChapterIds.map((chapterId) =>
-        getChapterRecitationAudio(reciterId, chapterId)
-          .then((files) => files.map((f) => ({ ...f, chapterId })))
-          .catch(() => [])
-      );
+    if (includeAudio) {
+      try {
+        const audioPromises = allChapterIds.map((chapterId) =>
+          getChapterRecitationAudio(reciterId, chapterId)
+            .then((files) => files.map((f) => ({ ...f, chapterId })))
+            .catch(() => [])
+        );
 
-      const audioResults = await Promise.all(audioPromises);
-      audioFiles = audioResults.flat();
-    } catch (e) {
-      console.error('Audio fetch error:', e);
+        const audioResults = await Promise.all(audioPromises);
+        audioFiles = audioResults.flat();
+      } catch (e) {
+        console.error('Audio fetch error:', e);
+      }
     }
 
     const versesResult: any[] = [];

@@ -329,7 +329,7 @@ async function ensureTranslations(keys: string[], tid: number): Promise<void> {
 
   const param = stillMissing.join(',');
   log(`API miss ${stillMissing.length} trans ${tid}: ${param}`);
-  const data = await dedupedFetch(`/verses?verse_keys=${param}&translation=${tid}`);
+  const data = await dedupedFetch(`/verses?verse_keys=${param}&translation=${tid}&include_audio=false`);
 
   if (!data.verses) return;
 
@@ -425,8 +425,10 @@ export async function fetchVerses(
   const allCached = memAllVerses(verseKeys) && memAllTrans(verseKeys, translationId);
 
   if (!allCached) {
-    await ensureVerses(verseKeys, reciterId);
-    await ensureTranslations(verseKeys, translationId);
+    await Promise.all([
+      ensureVerses(verseKeys, reciterId),
+      ensureTranslations(verseKeys, translationId),
+    ]);
   }
 
   const verses = verseKeys.map((vk) => {
