@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/i18n/context';
 import { useCopy } from '@/hooks/use-copy';
 import { useReflection } from '@/lib/reflection-context';
+import { csrfHeader } from '@/lib/csrf-client';
 
 interface LessonCompleteButtonProps {
   lessonId: string;
@@ -79,7 +80,7 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
 
       const res = await fetch('/api/journey/progress', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({ lessonId, dayNumber, action: 'complete' }),
       });
       if (res.status === 401) {

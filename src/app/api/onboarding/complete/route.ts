@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { validateCsrf, csrfErrorResponse } from '@/lib/csrf';
 import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from '@/lib/i18n/config';
 import {
   DEFAULT_TAFSIR_ID,
@@ -88,6 +89,10 @@ async function upsertPreferencesWithCompat(
 }
 
 export async function POST(request: Request) {
+  if (!validateCsrf(request).valid) {
+    return csrfErrorResponse();
+  }
+
   try {
     const supabase = await supabaseServer();
     const { data: { user } } = await supabase.auth.getUser();

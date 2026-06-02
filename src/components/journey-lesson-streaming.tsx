@@ -18,6 +18,7 @@ import { ReflectionProvider } from '@/lib/reflection-context';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useFocusMode } from './focus-mode-provider';
+import { csrfHeader } from '@/lib/csrf-client';
 import { AudioPlayer } from './audio-player';
 import { DayOneCanonicalExperience } from './journey-day-one-canonical';
 import { WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
@@ -197,7 +198,7 @@ function JourneyLessonHeader({
     try {
       const res = await fetch('/api/user/preferences', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({ journeyLanguage: value }),
       });
 

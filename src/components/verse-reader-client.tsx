@@ -13,6 +13,7 @@ import { useBookmarks } from '@/hooks/use-bookmarks';
 import { CopyButton } from './copy-button';
 import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
 import { FocusModeToggle } from './focus-mode-toggle';
+import { csrfHeader } from '@/lib/csrf-client';
 import { SurahControls } from './surah-controls';
 import { AudioPlayer } from './audio-player';
 import { ReadingPreferencesSheet } from './reading-preferences-sheet';
@@ -322,7 +323,7 @@ handlePlayVerse(verseKey, files);
       const method = isCurrentlyBookmarked ? 'DELETE' : 'POST';
       await fetch('/api/bookmarks', {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({ surah_id: chapterId, verse_number: verseNumber }),
       });
       toast.success(isCurrentlyBookmarked ? copy.quran.bookmarkRemoved : copy.quran.bookmarkAdded);

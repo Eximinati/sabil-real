@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { validateCsrf, csrfErrorResponse } from '@/lib/csrf';
 import { getUserPreferences } from '@/lib/journey';
 import {
   DEFAULT_REMINDER_TIME,
@@ -132,6 +133,10 @@ async function upsertPreferencesWithCompat(
 }
 
 export async function POST(request: Request) {
+  if (!validateCsrf(request).valid) {
+    return csrfErrorResponse();
+  }
+
   try {
     const supabase = await supabaseServer();
     const { data: { user } } = await supabase.auth.getUser();

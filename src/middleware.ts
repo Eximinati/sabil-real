@@ -6,6 +6,7 @@ import {
   isSupportedLanguage,
   normalizeLanguage,
 } from '@/lib/i18n/config';
+import { generateCsrfToken, setCsrfCookie } from '@/lib/csrf';
 
 function resolveRequestLanguage(request: NextRequest) {
   const queryLanguage = request.nextUrl.searchParams.get('lang');
@@ -52,6 +53,10 @@ export async function middleware(request: NextRequest) {
   });
 
   setLanguageCookie(supabaseResponse, requestLanguage);
+
+  if (!request.cookies.get('csrf-token')?.value) {
+    setCsrfCookie(supabaseResponse, generateCsrfToken());
+  }
 
   if (request.nextUrl.searchParams.has('lang')) {
     const redirectedUrl = request.nextUrl.clone();
@@ -112,6 +117,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
+
+  return supabaseResponse;
 }
 
 export const config = {

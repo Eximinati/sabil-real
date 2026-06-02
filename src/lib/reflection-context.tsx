@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { csrfHeader } from '@/lib/csrf-client';
 
 export type SaveStatus = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
 
@@ -93,7 +94,7 @@ export function ReflectionProvider({
     try {
       const res = await fetch('/api/journey/reflection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({ lessonId, dayNumber, reflectionText: saveText }),
       });
       if (res.status === 401) {

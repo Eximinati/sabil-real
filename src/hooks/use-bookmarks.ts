@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useToast } from '@/hooks/use-toast';
+import { csrfHeader } from '@/lib/csrf-client';
 
 interface Bookmark {
   id: string;
@@ -68,7 +69,7 @@ export function useBookmarks(options?: UseBookmarksOptions) {
       if (exists) {
         await fetch('/api/bookmarks', {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeader() },
           body: JSON.stringify({ surah_id: surahId, verse_number: verseNumber }),
         });
         setBookmarks(prev => prev.filter(
@@ -78,7 +79,7 @@ export function useBookmarks(options?: UseBookmarksOptions) {
       } else {
         const res = await fetch('/api/bookmarks', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeader() },
           body: JSON.stringify({ surah_id: surahId, verse_number: verseNumber }),
         });
         const data = await res.json();

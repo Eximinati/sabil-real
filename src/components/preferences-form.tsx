@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import { csrfHeader } from '@/lib/csrf-client';
 
 interface Translation {
   id: number;
@@ -73,7 +74,7 @@ export function PreferencesForm({
     try {
       const res = await fetch('/api/user/preferences', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({
           translationId: parseInt(translationId, 10),
           tafsirId: parseInt(tafsirId, 10),

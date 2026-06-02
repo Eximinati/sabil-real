@@ -2,13 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import { useCopy } from '@/hooks/use-copy';
+import { csrfHeader } from '@/lib/csrf-client';
 
 export function SignOutButton() {
   const router = useRouter();
   const copy = useCopy();
 
   const handleSignOut = async () => {
-    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {});
+    await fetch('/api/auth/signout', { method: 'POST', headers: { ...csrfHeader() } }).catch(() => {});
     router.push('/login');
     router.refresh();
   };

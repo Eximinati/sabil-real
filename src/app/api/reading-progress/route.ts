@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { validateCsrf, csrfErrorResponse } from '@/lib/csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,6 +54,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!validateCsrf(request).valid) {
+    return csrfErrorResponse();
+  }
+
   try {
     const supabase = await supabaseServer();
     const { data: { user } } = await supabase.auth.getUser();
@@ -107,6 +112,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!validateCsrf(request).valid) {
+    return csrfErrorResponse();
+  }
+
   try {
     const supabase = await supabaseServer();
     const { data: { user } } = await supabase.auth.getUser();

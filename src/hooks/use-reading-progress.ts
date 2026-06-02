@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { csrfHeader } from '@/lib/csrf-client';
 
 interface ReadingPosition {
   surah_id: number;
@@ -64,7 +65,7 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
       try {
         const res = await fetch('/api/reading-progress', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeader() },
           body: JSON.stringify({
             surah_id: chapterId,
             verse_number: verseNumber,
@@ -107,6 +108,7 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
     try {
       await fetch(`/api/reading-progress?surah_id=${surahId}`, {
         method: 'DELETE',
+        headers: { ...csrfHeader() },
       });
       setPositions(prev => prev.filter(p => p.surah_id !== surahId));
       if (progress?.surah_id === surahId) {

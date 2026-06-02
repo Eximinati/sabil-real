@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { hydrateVerses, startPeriodicCleanup } from '@/lib/quran-cache-service';
+import { csrfHeader } from '@/lib/csrf-client';
 
 interface EnrichedBookmark {
   id: string;
@@ -41,7 +42,7 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
     try {
       await fetch('/api/bookmarks', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({ surah_id: surahId, verse_number: verseNumber }),
       });
       setBookmarks(prev => prev.filter(

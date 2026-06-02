@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import { csrfHeader } from '@/lib/csrf-client';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function OnboardingPage() {
       try {
         const response = await fetch('/api/onboarding/complete', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeader() },
           body: JSON.stringify({ completed: true, languageCode: language }),
         });
         if (!response.ok) {
@@ -45,7 +46,7 @@ export default function OnboardingPage() {
     try {
       const response = await fetch('/api/onboarding/complete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
         body: JSON.stringify({ completed: true, languageCode: language }),
       });
       if (!response.ok) {
