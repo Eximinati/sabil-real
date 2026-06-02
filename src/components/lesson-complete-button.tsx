@@ -82,6 +82,10 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId, dayNumber, action: 'complete' }),
       });
+      if (res.status === 401) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
       if (res.ok) {
         toast.success(uiCopy.success);
         router.refresh();

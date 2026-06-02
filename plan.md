@@ -1,431 +1,584 @@
-Yes. For Sabil, I would absolutely use a **Phase → Audit → Fix Gaps → Re-Audit → Lock Phase → Next Phase** approach.
+# SABIL PROJECT MASTER ROADMAP
 
-The mistake most teams make is implementing 5 caching systems at once and then having no idea which layer caused bugs.
-
-For Sabil, every phase should end with a **Cache Validation Gate** before moving forward.
-
----
-
-# SABIL CACHE ROADMAP V1
-
-## Phase 1 — Journey Content Cache Foundation
-
-### Goal
-
-Cache all global curriculum content.
-
-This is the biggest win with lowest risk.
-
-### Scope
-
-```text
-journey_lessons
-journey_lesson_blocks
-```
-
-### Implement
-
-#### Server
-
-* Cache lesson list
-* Cache lesson blocks
-* Add cache keys
-* Add TTL strategy
-
-#### Client
-
-* IndexedDB journey-cache
-* Memory cache
-* Lesson hydration
-
-#### Versioning
-
-```text
-journey:version
-```
-
-for future invalidation.
+Version: 1.0
+Status: LOCKED
+Date: 2026-06-02
 
 ---
 
-### Success Criteria
+# PURPOSE
 
-When user opens:
+This document is the official execution roadmap for the Sabil codebase.
 
-```text
-/ journey
-/ journey/1
-/ journey/143
-```
+The objective is to:
 
-lesson content should not require Supabase every time.
+* Prevent random bug-fixing
+* Prevent phase mixing
+* Prevent architectural drift
+* Prevent duplicate audits
+* Ensure every change is verified
+* Ensure every phase is independently shippable
 
----
-
-### Re-Audit Gate
-
-Ask AI:
-
-```text
-PHASE 1 RE-AUDIT
-
-Verify:
-
-1. journey_lessons cache implemented?
-2. journey_lesson_blocks cache implemented?
-3. Cache hit rate?
-4. Cache miss flow?
-5. IndexedDB structure?
-6. TTL values?
-7. Invalidation logic?
-8. Admin publish invalidation?
-9. Duplicate fetches?
-10. Any stale-content risks?
-
-Output PASS / FAIL.
-
-If FAIL:
-Generate remediation tasks.
-
-If PASS:
-Approve Phase 1 completion.
-```
+No implementation should begin outside this roadmap.
 
 ---
 
-# Phase 2 — User Preferences Cache
+# EXECUTION RULES
 
-### Goal
+## Rule 1 — No New Audits During Active Phase
 
-Remove repeated preference queries.
+While a phase is being executed:
 
-Current audit shows preferences are fetched nearly everywhere.
+* No new product-wide audits
+* No new feature audits
+* No searching for additional bugs
 
-### Scope
-
-```text
-user_preferences
-```
-
-### Implement
-
-#### Memory Cache
-
-```text
-preferences:{userId}
-```
-
-#### IndexedDB
-
-```text
-preferences:{userId}
-```
-
-#### Cookie Sync
-
-Keep:
-
-```text
-ui_language
-journey_language
-```
-
-aligned.
+Only phase-specific verification is allowed.
 
 ---
 
-### Success Criteria
+## Rule 2 — Verify Before Implementing
 
-User preferences should be fetched once and reused.
+Every phase follows:
 
----
+1. Verification Audit
+2. Root Cause Confirmation
+3. Implementation Plan
+4. Implementation
+5. Verification
+6. Re-Audit
+7. Phase Lock
 
-### Re-Audit Gate
-
-Verify:
-
-```text
-Preferences cache
-Invalidation
-Language switching
-Translation switching
-Tafsir switching
-Reciter switching
-Cookie sync
-Cross-page consistency
-```
-
-PASS / FAIL.
+Never implement directly from assumptions.
 
 ---
 
-# Phase 3 — Reflection Safety Layer
+## Rule 3 — One Active Phase Only
 
-### Goal
+Allowed:
 
-Never lose user reflections.
+P1 → Complete → P2
 
-Not full offline sync.
+Not allowed:
 
-Just safety.
+P1 + P2 + P3 simultaneously
 
-### Scope
+Exception:
 
-```text
-user_reflections
-```
-
-### Implement
-
-#### Draft Persistence
-
-```text
-reflection-draft:{lessonId}
-```
-
-autosave.
-
-#### Recovery
-
-User closes browser.
-
-Returns.
-
-Draft restored.
+P5 Accessibility may be executed in parallel by a separate engineer because it has minimal overlap.
 
 ---
 
-### Do NOT Yet Build
+## Rule 4 — Root Cause Driven
 
-```text
-offline queue
-background sync
-conflict resolution
-```
+Work is organized by root causes.
 
-Too early.
+Never work issue-by-issue.
 
----
+Example:
 
-### Success Criteria
+Wrong:
 
-Reflection text can never disappear accidentally.
+* Fix bug A
+* Fix bug B
+* Fix bug C
 
----
+Correct:
 
-### Re-Audit Gate
-
-Verify:
-
-```text
-Autosave interval
-Draft recovery
-Multi-tab behavior
-Cleanup after save
-Storage growth
-Failure scenarios
-```
-
-PASS / FAIL.
+* Fix RC3
+* Verify RC3 resolved
+* Close RC3
 
 ---
 
-# Phase 4 — Smart Prefetch Engine
+## Rule 5 — Every Phase Must End With
 
-### Goal
+A final report containing:
 
-Make Sabil feel instant.
+* Files changed
+* Risks removed
+* Regressions checked
+* Build verification
+* Remaining issues
 
-This phase will likely create more perceived speed than any cache.
-
-### Scope
-
-#### Prefetch Next Lesson
-
-User on:
-
-```text
-Day 143
-```
-
-Prefetch:
-
-```text
-Day 144
-```
+Then phase is marked LOCKED.
 
 ---
 
-#### Prefetch Lesson Assets
+# PHASE OVERVIEW
 
-Referenced:
+P0 → Immediate Hotfix
 
-```text
-verses
-translations
-hadith
-tafsir
-```
+P1 → Admin Security Lockdown
 
-for next lesson.
+P2 → Session Infrastructure
 
----
+P3 → Auth Security Hardening
 
-### Success Criteria
+P4A → Data Integrity Core
 
-Most navigation becomes cache-hit driven.
+P4B → Reflection Integrity
 
----
+P5 → Accessibility Foundation
 
-### Re-Audit Gate
+P6 → Infrastructure Resilience
 
-Verify:
-
-```text
-Next lesson preload
-Verse preload
-Hadith preload
-Bandwidth usage
-Memory impact
-Cache pollution
-Wasted prefetch %
-```
-
-PASS / FAIL.
+P7 → UX Quality
 
 ---
 
-# Phase 5 — Advanced Offline & Sync Layer
+# P0 — IMMEDIATE HOTFIX
 
-### Goal
+Status: READY
 
-Turn Sabil into a resilient transformation platform.
+Root Cause:
 
-Only after everything above is stable.
+* RC8
 
-### Scope
+Objective:
+Restore correct mobile rendering.
 
-```text
-user_progress
-bookmarks
-reading_positions
-reflections
-```
+Includes:
 
----
+* Missing viewport metadata
 
-### Implement
+Expected Result:
 
-#### Local Queue
+* Proper mobile scaling
+* Proper responsive rendering
 
-```text
-pending-writes
-```
+Risk:
+Very Low
 
----
+Ship Blocker:
+YES
 
-#### Sync Manager
+Completion Criteria:
 
-```text
-online
-↓
-flush queue
-↓
-confirm
-↓
-cleanup
-```
+* Viewport metadata added
+* Mobile rendering verified
+* Build passes
+
+Phase Lock Condition:
+Mobile rendering confirmed correct.
 
 ---
 
-#### Offline Journey Access
+# P1 — ADMIN SECURITY LOCKDOWN
 
-Previously viewed lessons.
+Status: READY
 
-Previously loaded Quran.
+Root Causes:
 
-Previously loaded Hadith.
+* RC1
 
-Previously loaded Tafsir.
+Findings:
 
----
+* F01
+* F02
+* F03
+* F17
+* F18
 
-### Success Criteria
+Objective:
+Restore authorization boundaries.
 
-User can continue learning even with unstable internet.
+Users must not gain admin access without authorization.
 
----
+Includes:
 
-### Re-Audit Gate
+* Server-side admin checks
+* Admin API protection
+* Admin page protection
+* RLS correction
+* Remove public admin exposure
+* Remove client-side-only trust model
 
-Verify:
+Expected Result:
 
-```text
-Offline writes
-Sync recovery
-Duplicate writes
-Conflict handling
-Queue corruption
-Data loss scenarios
-Reconnect flow
-```
+* Non-admin users blocked
+* Admin APIs protected
+* Admin pages protected
+* RLS restored
 
-PASS / FAIL.
+Ship Blocker:
+YES
 
----
+Risk Reduction:
+Maximum
 
-# Master Rule For Every Phase
+Verification Required Before Coding:
+YES
 
-Before starting the next phase, require the AI to generate:
+Phase Lock Criteria:
 
-### 1. Architecture Audit
-
-```text
-What was implemented?
-```
-
-### 2. Gap Audit
-
-```text
-What is missing?
-```
-
-### 3. Risk Audit
-
-```text
-What can break?
-```
-
-### 4. Performance Audit
-
-```text
-Actual improvement?
-```
-
-### 5. Production Readiness Score
-
-```text
-0-100
-```
-
-Only proceed if:
-
-```text
-Production Readiness ≥ 90
-No Critical Risks
-No Data Loss Risk
-```
+* Non-admin cannot access admin pages
+* Non-admin cannot call admin APIs
+* RLS verified
+* Build passes
 
 ---
 
-If this were my project, I would estimate the value like this:
+# P2 — SESSION INFRASTRUCTURE
 
-| Phase                           | Effort | Impact         |
-| ------------------------------- | ------ | -------------- |
-| Phase 1 (Journey Content Cache) | Medium | Very High      |
-| Phase 2 (Preferences Cache)     | Low    | Medium         |
-| Phase 3 (Reflection Safety)     | Low    | High           |
-| Phase 4 (Prefetch Engine)       | Medium | Extremely High |
-| Phase 5 (Offline Sync)          | High   | Medium–High    |
+Status: PENDING
 
-I would start Phase 1 immediately and not touch offline synchronization until Phases 1–4 are completely audited and stable.
+Root Causes:
+
+* RC4
+
+Findings:
+
+* F12
+* F13
+
+Objective:
+Make authentication and sessions reliable.
+
+Includes:
+
+* Cookie propagation verification
+* Middleware session handling
+* Session expiry handling
+* Reflection save recovery
+* 401 recovery flows
+
+Expected Result:
+
+* Sessions remain stable
+* Session expiry handled gracefully
+* No silent session loss
+
+Ship Blocker:
+YES
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* Session persistence verified
+* Expiry recovery verified
+* No random logout behavior
+
+---
+
+# P3 — AUTH SECURITY HARDENING
+
+Status: PENDING
+
+Root Causes:
+
+* RC5
+
+Findings:
+
+* F09
+* F10
+* F11
+
+Objective:
+Protect authentication flows.
+
+Includes:
+
+* CSRF protection
+* OAuth state validation
+* Redirect validation
+
+Expected Result:
+
+* Login CSRF eliminated
+* Redirect abuse prevented
+* Mutation endpoints protected
+
+Ship Blocker:
+YES
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* CSRF verified
+* OAuth state verified
+* Redirect validation verified
+
+---
+
+# P4A — DATA INTEGRITY CORE
+
+Status: PENDING
+
+Root Causes:
+
+* RC2
+* RC3
+
+Findings:
+
+* F05
+* F06
+* F07
+* F19
+* F20
+* F23
+* F27
+
+Objective:
+Eliminate silent data loss.
+
+Includes:
+
+Journey:
+
+* Save reliability
+* Progress reliability
+
+Reading:
+
+* Progress corruption
+* Navigation loss
+* State consistency
+
+Expected Result:
+
+* Writes verified
+* Progress preserved
+* No silent corruption
+
+Ship Blocker:
+YES
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* Progress preserved
+* Writes validated
+* Error handling verified
+
+---
+
+# P4B — REFLECTION INTEGRITY
+
+Status: PENDING
+
+Root Causes:
+
+* RC10
+
+Findings:
+
+* F21
+* F22
+
+Objective:
+Make reflection data trustworthy.
+
+Includes:
+
+* Reflection deletion behavior
+* Reflection conflict handling
+* Reflection consistency
+
+Expected Result:
+
+* Reflections removable
+* Multi-tab behavior predictable
+
+Ship Blocker:
+HIGH PRIORITY
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* Reflection deletion works
+* Reflection consistency verified
+
+---
+
+# P5 — ACCESSIBILITY FOUNDATION
+
+Status: PENDING
+
+Root Causes:
+
+* RC7
+* RC9
+
+Findings:
+
+* F15
+* F16
+* F29
+* F30
+* F31
+* F32
+* F33
+
+Objective:
+Make the application usable for keyboard and screen-reader users.
+
+Includes:
+
+* Focus trapping
+* Dialog semantics
+* Focus restoration
+* Skip-to-content
+* Aria-live
+* Localized accessibility labels
+* Contrast improvements
+
+Expected Result:
+
+* Accessible overlays
+* Accessible navigation
+* Accessible search
+
+Ship Blocker:
+YES
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* Keyboard navigation verified
+* Screen reader audit passes
+* Overlay accessibility verified
+
+---
+
+# P6 — INFRASTRUCTURE RESILIENCE
+
+Status: PENDING
+
+Root Causes:
+
+* RC6
+* RC14
+
+Findings:
+
+* F04
+* F08
+* F26
+* F36
+
+Objective:
+Increase reliability and fault tolerance.
+
+Includes:
+
+* Cache deadlock prevention
+* Cache policy correction
+* Transaction safety
+* Offline fallback
+
+Expected Result:
+
+* No poisoned cache entries
+* Correct cache behavior
+* Safer admin sync operations
+
+Ship Blocker:
+NO
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* Cache verified
+* Transactions verified
+* Resilience tests pass
+
+---
+
+# P7 — UX QUALITY
+
+Status: PENDING
+
+Root Causes:
+
+* RC11
+* RC12
+* RC13
+* RC15
+
+Findings:
+
+* F24
+* F25
+* F28
+* F35
+* F37
+
+Objective:
+Polish user experience and remove remaining quality issues.
+
+Includes:
+
+* Registration feedback
+* Settings stability
+* Progress tracking cleanup
+* Cross-tab synchronization
+
+Expected Result:
+
+* Better onboarding
+* Stable settings
+* Consistent multi-tab experience
+
+Ship Blocker:
+NO
+
+Verification Required:
+YES
+
+Phase Lock Criteria:
+
+* UX regressions checked
+* Settings verified
+* Cross-tab behavior verified
+
+---
+
+# OFFICIAL EXECUTION ORDER
+
+1. P0 — Immediate Hotfix
+2. P1 — Admin Security Lockdown
+3. P2 — Session Infrastructure
+4. P3 — Auth Security Hardening
+5. P4A — Data Integrity Core
+6. P4B — Reflection Integrity
+7. P5 — Accessibility Foundation
+8. P6 — Infrastructure Resilience
+9. P7 — UX Quality
+
+---
+
+# NEXT ACTION
+
+DO NOT IMPLEMENT YET.
+
+Next task:
+
+"P1 Verification Audit"
+
+Scope:
+
+* RC1
+* F01
+* F02
+* F03
+* F17
+* F18
+
+Goal:
+
+Prove every finding with execution traces, file references, authorization flow diagrams, and impact validation before touching code.

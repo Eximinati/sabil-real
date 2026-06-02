@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/admin-auth';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { SyncContentButton } from '@/components/admin/sync-content-button';
 import {
   analyzeArcRisks,
@@ -34,7 +35,7 @@ interface LessonRow {
 }
 
 async function getLessons(): Promise<LessonRow[]> {
-  const supabase = await supabaseServer();
+  const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from('journey_lessons')
     .select('id, day_number, title, topic, is_published, created_at, translation_status, shared_metadata')
@@ -48,6 +49,7 @@ async function getLessons(): Promise<LessonRow[]> {
 }
 
 export default async function AdminJourneyPage() {
+  await requireAdmin();
   const lessons = await getLessons();
   const riskReport = analyzeArcRisks(DAY_IDENTITY_30);
 

@@ -73,10 +73,6 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value);
           });
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          setLanguageCookie(supabaseResponse, requestLanguage);
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options);
           });
@@ -92,37 +88,30 @@ export async function middleware(request: NextRequest) {
       .from('user_preferences')
       .select('ui_language')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (isSupportedLanguage(preferences?.ui_language) && preferences.ui_language !== requestLanguage) {
+    if (preferences?.ui_language && isSupportedLanguage(preferences.ui_language) && preferences.ui_language !== requestLanguage) {
       requestLanguage = preferences.ui_language;
-      request.cookies.set(LANGUAGE_COOKIE_NAME, requestLanguage);
       setLanguageCookie(supabaseResponse, requestLanguage);
     }
   }
 
+  const { pathname } = request.nextUrl;
+  const publicPaths = ['/', '/login', '/register'];
+  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith('/api/auth'));
+
   if (!user) {
-    const { pathname } = request.nextUrl;
-    
-    const publicPaths = ['/', '/login', '/register', '/test'];
-    const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith('/api/auth'));
-    
     const protectedPaths = ['/journey', '/quran', '/search', '/tafsir', '/hadith', '/settings'];
     const isProtected = protectedPaths.some(path => pathname.startsWith(path));
-    
-    const adminPaths = ['/admin'];
-    const isAdminPath = adminPaths.some(path => pathname.startsWith(path));
-    
-    if (isAdminPath && !user) {
+
+    if (pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    
+
     if (!isPublicPath && isProtected) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
-
-  return supabaseResponse;
 }
 
 export const config = {

@@ -238,14 +238,14 @@ export async function saveLesson(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+    const adminEmails = (process.env.ADMIN_EMAILS || '')
       .split(',')
       .map(e => e.trim().toLowerCase())
       .filter(Boolean);
     
     const isAdmin = adminEmails.length > 0 
       ? adminEmails.includes(user.email?.toLowerCase() || '')
-      : user.email?.endsWith('@quran.foundation');
+      : false;
 
     if (!isAdmin) {
       return { success: false, error: 'Not authorized' };
@@ -514,11 +514,11 @@ export async function saveCanonicalLesson(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+    const adminEmails = (process.env.ADMIN_EMAILS || '')
       .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
     const isAdmin = adminEmails.length > 0
       ? adminEmails.includes(user.email?.toLowerCase() || '')
-      : user.email?.endsWith('@quran.foundation');
+      : false;
     if (!isAdmin) return { success: false, error: 'Not authorized' };
 
     const now = new Date().toISOString();

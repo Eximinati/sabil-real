@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/admin-auth';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import {
   CROSS_LANGUAGE_CONSISTENCY_CHECKS,
   EMOTIONAL_LOCALIZATION_REVIEW_CHECKLIST,
@@ -36,7 +37,7 @@ interface LessonQaRow {
 }
 
 async function getLessons(): Promise<LessonQaRow[]> {
-  const supabase = await supabaseServer();
+  const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from('journey_lessons')
     .select('id, day_number, title, is_published, translation_status, shared_metadata')
@@ -54,6 +55,7 @@ function summarizeMissing(map: Record<string, boolean>, expectedIds: string[]): 
 }
 
 export default async function LocalizationQaPage() {
+  await requireAdmin();
   const lessons = await getLessons();
 
   const rows = lessons.map((lesson) => {

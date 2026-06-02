@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireAdminApi } from '@/lib/admin-auth';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST() {
+  const auth = await requireAdminApi();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
+
   try {
-    const supabase = await supabaseServer();
+    const supabase = supabaseAdmin();
 
     const day1Lesson = {
       day_number: 1,
@@ -210,7 +215,8 @@ Every day of this journey will build on today. You have now:
 The journey of a thousand miles begins with a single step. Today, that step is simply this: Turn to God, knowing He is Ahad, As-Samad, Ar-Rahman, Ar-Rahim, and Al-Malik — and watch how everything else falls into its proper place.`,
       reflection_prompt: 'Take a moment today to audit your heart: What do I turn to first when I face a problem? What keeps me awake at night? Who or what do I most fear losing? — Reflect on where your trust truly lies.',
       estimated_minutes: 30,
-      is_published: true
+      is_published: true,
+      created_by: userId,
     };
 
     const { data, error } = await supabase

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireAdminApi } from '@/lib/admin-auth';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { parseMarkdownToBlocks } from '@/lib/markdown-importer';
 import { getDayIdentity } from '@/lib/journey-emotional-arc';
 import { loadJourneyDayBundles } from '@/lib/journey-content-files';
@@ -185,27 +186,11 @@ function mergeLocalizedBlocks(
 
 export async function POST() {
   try {
-    const supabase = await supabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const auth = await requireAdminApi();
+    if (auth instanceof NextResponse) return auth;
+    const { userId } = auth;
 
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
-      .split(',')
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean);
-
-    const isAdmin = adminEmails.length > 0
-      ? adminEmails.includes(user.email?.toLowerCase() || '')
-      : user.email?.endsWith('@quran.foundation');
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
-    }
+    const supabase = supabaseAdmin();
 
     const dayBundles = await loadJourneyDayBundles(1, 30);
     if (dayBundles.length === 0) {
@@ -336,7 +321,7 @@ export async function POST() {
           }),
           shared_metadata: dayBundle.metadata,
           is_published: false,
-          created_by: user.id,
+          created_by: userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

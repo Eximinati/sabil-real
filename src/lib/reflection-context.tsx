@@ -96,6 +96,10 @@ export function ReflectionProvider({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId, dayNumber, reflectionText: saveText }),
       });
+      if (res.status === 401) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return false;
+      }
       if (res.ok) {
         lastSavedRef.current = saveText;
         setStatus('saved');

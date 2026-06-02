@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation';
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { getLessonForEditing } from '@/lib/admin-journey-actions';
 import { JourneyAuthoringStudio } from '@/components/admin/journey-authoring-studio';
 
@@ -9,26 +8,7 @@ interface PageProps {
 
 export default async function EditLessonPage({ params }: PageProps) {
   const { id } = await params;
-  
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
-    .split(',')
-    .map(e => e.trim().toLowerCase())
-    .filter(Boolean);
-  
-  const isAdmin = adminEmails.length > 0 
-    ? adminEmails.includes(user.email?.toLowerCase() || '')
-    : user.email?.endsWith('@quran.foundation');
-
-  if (!isAdmin) {
-    redirect('/journey');
-  }
+  const { userId } = await requireAdmin();
 
   const lessonData = await getLessonForEditing(id);
 
@@ -52,7 +32,7 @@ export default async function EditLessonPage({ params }: PageProps) {
       </div>
       <JourneyAuthoringStudio 
         initialData={{ metadata: lessonData.metadata }}
-        userId={user.id}
+        userId={userId}
       />
     </div>
   );

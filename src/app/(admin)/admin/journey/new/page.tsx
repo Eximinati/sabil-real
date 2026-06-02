@@ -1,28 +1,9 @@
-import { redirect } from 'next/navigation';
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { getLatestDayNumber } from '@/lib/admin-journey-actions';
 import { JourneyAuthoringStudio } from '@/components/admin/journey-authoring-studio';
 
 export default async function NewLessonPage() {
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
-    .split(',')
-    .map(e => e.trim().toLowerCase())
-    .filter(Boolean);
-  
-  const isAdmin = adminEmails.length > 0 
-    ? adminEmails.includes(user.email?.toLowerCase() || '')
-    : user.email?.endsWith('@quran.foundation');
-
-  if (!isAdmin) {
-    redirect('/journey');
-  }
+  const { userId } = await requireAdmin();
 
   const nextDayNumber = await getLatestDayNumber();
 
@@ -47,7 +28,7 @@ export default async function NewLessonPage() {
             shared_metadata: {},
           },
         }}
-        userId={user.id}
+        userId={userId}
       />
     </div>
   );
