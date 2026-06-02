@@ -1,5 +1,7 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { supabaseServer } from './supabase-server';
+import { supabaseAdmin } from './supabase-admin';
 import { journeyCache } from './journey-server-cache';
 import { DEFAULT_LANGUAGE, type LanguageCode } from '@/lib/i18n/config';
 import {
@@ -92,22 +94,12 @@ function localizeJourneyLesson(lesson: JourneyLesson, language: LanguageCode): J
   };
 }
 
-async function _getPublishedLessons(
-  language: LanguageCode = DEFAULT_LANGUAGE
-): Promise<JourneyLesson[]> {
-  const key = `journey:lessons:${language}`;
+const _queryPublishedLessons = unstable_cache(
+  async (language: LanguageCode): Promise<JourneyLesson[]> => {
+    const start = Date.now();
+    log(`getPublishedLessons ENTER lang=${language}`);
 
-  const cached = journeyCache.get<JourneyLesson[]>(key);
-  if (cached) return cached;
-
-  const pending = journeyCache.getPending<JourneyLesson[]>(key);
-  if (pending) return pending;
-
-  const start = Date.now();
-  log(`getPublishedLessons ENTER lang=${language}`);
-
-  const promise = (async () => {
-    const supabase = await supabaseServer();
+    const supabase = supabaseAdmin();
     const { data, error } = await supabase
       .from('journey_lessons')
       .select('id, day_number, title, subtitle, topic, description, verse_keys, lesson_text, hadith_text, hadith_source, hadith_collection, hadith_number, reflection_prompt, estimated_minutes, is_published, localized_content, translation_status, shared_metadata')
@@ -122,7 +114,23 @@ async function _getPublishedLessons(
     log(`getPublishedLessons EXIT count=${result.length} lang=${language} duration=${duration}ms`);
 
     return result;
-  })();
+  },
+  ['published-lessons'],
+  { revalidate: 300 }
+);
+
+async function _getPublishedLessons(
+  language: LanguageCode = DEFAULT_LANGUAGE
+): Promise<JourneyLesson[]> {
+  const key = `journey:lessons:${language}`;
+
+  const cached = journeyCache.get<JourneyLesson[]>(key);
+  if (cached) return cached;
+
+  const pending = journeyCache.getPending<JourneyLesson[]>(key);
+  if (pending) return pending;
+
+  const promise = _queryPublishedLessons(language);
 
   journeyCache.setPending(key, promise);
 
@@ -140,23 +148,12 @@ async function _getPublishedLessons(
 
 export const getPublishedLessons = cache(_getPublishedLessons);
 
-async function _getLessonByDay(
-  dayNumber: number,
-  language: LanguageCode = DEFAULT_LANGUAGE
-): Promise<JourneyLesson | null> {
-  const key = `journey:lesson:${dayNumber}:${language}:meta`;
+const _queryLessonByDay = unstable_cache(
+  async (dayNumber: number, language: LanguageCode): Promise<JourneyLesson | null> => {
+    const start = Date.now();
+    log(`getLessonByDay ENTER day=${dayNumber} lang=${language}`);
 
-  const cached = journeyCache.get<JourneyLesson | null>(key);
-  if (cached !== null) return cached;
-
-  const pending = journeyCache.getPending<JourneyLesson | null>(key);
-  if (pending !== undefined) return pending;
-
-  const start = Date.now();
-  log(`getLessonByDay ENTER day=${dayNumber} lang=${language}`);
-
-  const promise = (async () => {
-    const supabase = await supabaseServer();
+    const supabase = supabaseAdmin();
     const { data, error } = await supabase
       .from('journey_lessons')
       .select('id, day_number, title, subtitle, topic, description, verse_keys, lesson_text, hadith_text, hadith_source, hadith_collection, hadith_number, reflection_prompt, estimated_minutes, is_published, localized_content, translation_status, shared_metadata')
@@ -174,7 +171,24 @@ async function _getLessonByDay(
     log(`getLessonByDay EXIT day=${dayNumber} lang=${language} found=true duration=${duration}ms`);
 
     return result;
-  })();
+  },
+  ['lesson-by-day'],
+  { revalidate: 300 }
+);
+
+async function _getLessonByDay(
+  dayNumber: number,
+  language: LanguageCode = DEFAULT_LANGUAGE
+): Promise<JourneyLesson | null> {
+  const key = `journey:lesson:${dayNumber}:${language}:meta`;
+
+  const cached = journeyCache.get<JourneyLesson | null>(key);
+  if (cached !== null) return cached;
+
+  const pending = journeyCache.getPending<JourneyLesson | null>(key);
+  if (pending !== undefined) return pending;
+
+  const promise = _queryLessonByDay(dayNumber, language);
 
   journeyCache.setPending(key, promise);
 
@@ -194,23 +208,12 @@ async function _getLessonByDay(
 
 export const getLessonByDay = cache(_getLessonByDay);
 
-async function _getLessonByDayWithBlocks(
-  dayNumber: number,
-  language: LanguageCode = DEFAULT_LANGUAGE
-): Promise<JourneyLessonWithBlocks | null> {
-  const key = `journey:lesson:${dayNumber}:${language}`;
+const _queryLessonByDayWithBlocks = unstable_cache(
+  async (dayNumber: number, language: LanguageCode): Promise<JourneyLessonWithBlocks | null> => {
+    const start = Date.now();
+    log(`getLessonByDayWithBlocks ENTER day=${dayNumber} lang=${language}`);
 
-  const cached = journeyCache.get<JourneyLessonWithBlocks | null>(key);
-  if (cached !== null) return cached;
-
-  const pending = journeyCache.getPending<JourneyLessonWithBlocks | null>(key);
-  if (pending !== undefined) return pending;
-
-  const start = Date.now();
-  log(`getLessonByDayWithBlocks ENTER day=${dayNumber} lang=${language}`);
-
-  const promise = (async () => {
-    const supabase = await supabaseServer();
+    const supabase = supabaseAdmin();
     
     const { data: lesson, error } = await supabase
       .from('journey_lessons')
@@ -249,7 +252,24 @@ async function _getLessonByDayWithBlocks(
     log(`getLessonByDayWithBlocks EXIT day=${dayNumber} lang=${language} blocks=${result.blocks.length} duration=${duration}ms`);
 
     return result;
-  })();
+  },
+  ['lesson-day-blocks'],
+  { revalidate: 300 }
+);
+
+async function _getLessonByDayWithBlocks(
+  dayNumber: number,
+  language: LanguageCode = DEFAULT_LANGUAGE
+): Promise<JourneyLessonWithBlocks | null> {
+  const key = `journey:lesson:${dayNumber}:${language}`;
+
+  const cached = journeyCache.get<JourneyLessonWithBlocks | null>(key);
+  if (cached !== null) return cached;
+
+  const pending = journeyCache.getPending<JourneyLessonWithBlocks | null>(key);
+  if (pending !== undefined) return pending;
+
+  const promise = _queryLessonByDayWithBlocks(dayNumber, language);
 
   journeyCache.setPending(key, promise);
 

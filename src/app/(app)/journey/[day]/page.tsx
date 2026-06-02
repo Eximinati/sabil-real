@@ -8,6 +8,7 @@ import { getServerDictionary } from '@/lib/i18n/server';
 import { buildCanonicalJourneyPlan } from '@/lib/journey-canonical';
 import { resolveLanguagePreference, type PreferenceLanguage } from '@/lib/user-preferences';
 import { JOURNEY_LANGUAGE_COOKIE_NAME } from '@/lib/i18n/config';
+import { fetchVersesForBlocks } from '@/lib/fetch-verses-server';
 
 interface PageProps {
   params: Promise<{ day: string }>;
@@ -79,6 +80,14 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   });
   const nextLesson = await getLessonByDay(dayNumber + 1, journeyLanguage);
 
+  const blockVerseKeys = (lessonWithBlocks.blocks || [])
+    .filter((b) => b.block_type === 'verse')
+    .map((b) => b.content.verse_key as string)
+    .filter(Boolean);
+  const initialVerseData = blockVerseKeys.length > 0
+    ? await fetchVersesForBlocks(blockVerseKeys, translationId)
+    : {};
+
   return (
     <StreamingLessonShell
       lesson={lessonWithBlocks}
@@ -93,6 +102,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
       journeyLanguage={preferences.journey_language}
       urlTranslation={urlTranslation}
       hasNextDay={!!nextLesson}
+      initialVerseData={initialVerseData}
     />
   );
 }

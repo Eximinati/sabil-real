@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { JourneyVerseContentInner } from './journey-verse-content-inner';
-import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
 import { ReflectionInput } from './reflection-input';
+
+const JourneyTafsirStreaming = dynamic(() => import('./journey-tafsir-streaming').then(m => ({ default: m.JourneyTafsirStreaming })), { ssr: false });
 import { LessonCompleteButton } from './lesson-complete-button';
 import { HadithContentInner } from './journey-hadith-inner';
 import { useLanguage } from '@/lib/i18n/context';

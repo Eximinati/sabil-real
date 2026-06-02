@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
@@ -55,6 +55,14 @@ interface LessonBlock {
   content: Record<string, unknown>;
 }
 
+interface VerseWithData {
+  verse_key: string;
+  text_uthmani: string;
+  chapter_name?: string;
+  translations?: Array<{ resource_name: string; text: string }>;
+  audio_url?: string;
+}
+
 interface StreamingLessonClientProps {
   lesson: LessonData;
   blocks?: LessonBlock[];
@@ -68,6 +76,7 @@ interface StreamingLessonClientProps {
   journeyLanguage?: 'auto' | 'en' | 'ur';
   urlTranslation?: string | null;
   hasNextDay?: boolean;
+  initialVerseData?: Record<string, VerseWithData>;
 }
 
 const REQUIRED_CANONICAL_SECTION_ORDER: Array<CanonicalJourneyPlan['sections'][number]['id']> = [
@@ -356,7 +365,8 @@ export function StreamingLessonShell({
   hadithLanguage,
   journeyLanguage = 'auto',
   urlTranslation,
-  hasNextDay
+  hasNextDay,
+  initialVerseData
 }: StreamingLessonClientProps) {
   const { isFocusMode } = useFocusMode();
   const copy = useCopy();
@@ -565,7 +575,7 @@ export function StreamingLessonShell({
           )}
 
           {blocks && blocks.length > 0 && (
-            <BlockContent blocks={blocks} translationId={translationId} />
+            <BlockContent blocks={blocks} translationId={translationId} initialVerseData={initialVerseData} />
           )}
 
           <Suspense fallback={<HadithSectionSkeleton />}>
@@ -616,22 +626,20 @@ function LessonTextContent({ lessonText }: { lessonText: string | null }) {
   return <LessonTextInner lessonText={lessonText} />;
 }
 
-interface VerseWithData {
-  verse_key: string;
-  text_uthmani: string;
-  chapter_name?: string;
-  translations?: Array<{ resource_name: string; text: string }>;
-  audio_url?: string;
-}
-
-function BlockContent({ blocks, translationId }: { blocks?: LessonBlock[]; translationId: number }) {
-  const [verseDataMap, setVerseDataMap] = useState<Record<string, VerseWithData>>({});
+function BlockContent({ blocks, translationId, initialVerseData }: { blocks?: LessonBlock[]; translationId: number; initialVerseData?: Record<string, VerseWithData> }) {
+  const [verseDataMap, setVerseDataMap] = useState<Record<string, VerseWithData>>(initialVerseData ?? {});
   const [loadingVerses, setLoadingVerses] = useState(false);
   const copy = useCopy();
+  const initialConsumed = useRef(!!initialVerseData);
 
   useEffect(() => {
     const verseBlocks = blocks?.filter(b => b.block_type === 'verse') || [];
     if (verseBlocks.length === 0) return;
+
+    if (initialConsumed.current) {
+      initialConsumed.current = false;
+      return;
+    }
 
     setLoadingVerses(true);
     
