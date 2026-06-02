@@ -14,6 +14,7 @@ import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
 import { TranslationLibrarySheet } from './translation-library-sheet';
 import { ReciterLibrarySheet } from './reciter-library-sheet';
 import { ReadingPreferencesSheet } from './reading-preferences-sheet';
+import { ReflectionProvider } from '@/lib/reflection-context';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useFocusMode } from './focus-mode-provider';
@@ -381,6 +382,11 @@ export function StreamingLessonShell({
   const containerClass = isFocusMode ? 'max-w-[860px] mx-auto' : 'max-w-[760px] mx-auto';
 
   return (
+    <ReflectionProvider
+      lessonId={lesson.id}
+      dayNumber={lesson.day_number}
+      initialReflection={initialReflection}
+    >
     <div
       className={`reading-screen px-4 md:px-6 pt-7 md:pt-12 pb-20 md:pb-16 ${containerClass}`}
       data-script-direction={scriptDirection}
@@ -579,6 +585,7 @@ export function StreamingLessonShell({
 
       <AudioPlayer />
     </div>
+    </ReflectionProvider>
   );
 }
 

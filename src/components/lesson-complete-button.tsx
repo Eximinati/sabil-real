@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/i18n/context';
+import { useCopy } from '@/hooks/use-copy';
+import { useReflection } from '@/lib/reflection-context';
 
 interface LessonCompleteButtonProps {
   lessonId: string;
@@ -15,7 +17,9 @@ interface LessonCompleteButtonProps {
 export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: LessonCompleteButtonProps) {
   const router = useRouter();
   const toast = useToast();
+  const copy = useCopy();
   const { language } = useLanguage();
+  const { save, status: reflectionStatus } = useReflection();
   const [loading, setLoading] = useState(false);
   const isUrdu = language === 'ur';
   const uiCopy = isUrdu
@@ -66,6 +70,13 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
   const handleComplete = async () => {
     setLoading(true);
     try {
+      const reflectionSaved = await save();
+      if (!reflectionSaved) {
+        toast.error(copy.reflectionInput.toastError);
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/journey/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,6 +99,11 @@ export function LessonCompleteButton({ lessonId, dayNumber, isCompleted }: Lesso
       <p className="mb-4 text-sm leading-relaxed text-[var(--color-text-muted)]">
         {uiCopy.prompt}
       </p>
+      {reflectionStatus === 'error' && (
+        <p className="mb-3 text-xs text-red-500">
+          {copy.reflectionInput.toastError}
+        </p>
+      )}
       <button
         onClick={handleComplete}
         disabled={loading}
