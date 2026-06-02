@@ -364,6 +364,15 @@ export function StreamingLessonShell({
     getStoredTafsirId() || tafsirId || 169
   );
 
+  useEffect(() => {
+    if (isCompleted) return;
+    fetch('/api/journey/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ lessonId: lesson.id, dayNumber: lesson.day_number, action: 'start' }),
+    }).catch(() => {});
+  }, []);
+
   const canUseCanonicalExperience =
     lesson.day_number >= 1 && lesson.day_number <= 5 && isCanonicalPlanComplete(canonicalPlan);
   const shouldShowCanonicalIncompleteWarning =

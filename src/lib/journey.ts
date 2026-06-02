@@ -314,6 +314,7 @@ export async function getUserPreferences(
 
   return {
     ...merged,
+    reminder_time: merged.reminder_time ?? DEFAULT_REMINDER_TIME,
     hadith_language: parseHadithLanguagePreference(merged.hadith_language),
     ui_language: parsePreferenceLanguage(merged.ui_language),
     journey_language: parsePreferenceLanguage(merged.journey_language),

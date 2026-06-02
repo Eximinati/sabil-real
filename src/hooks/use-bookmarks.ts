@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+
+const BOOKMARK_SYNC_KEY = 'sabil-bookmarks-sync';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useToast } from '@/hooks/use-toast';
 import { csrfHeader } from '@/lib/csrf-client';
@@ -52,6 +54,17 @@ export function useBookmarks(options?: UseBookmarksOptions) {
     fetchBookmarks();
   }, [initialBookmarks, fetchBookmarks]);
 
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === BOOKMARK_SYNC_KEY && e.newValue) {
+        hasFetchedRef.current = false;
+        fetchBookmarks();
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [fetchBookmarks]);
+
   const checkBookmark = useCallback((surahId: number, verseNumber: number) => {
     const exists = bookmarks.some(
       b => b.surah_id === surahId && b.verse_number === verseNumber
@@ -88,6 +101,9 @@ export function useBookmarks(options?: UseBookmarksOptions) {
           toast.success('Verse bookmarked');
         }
       }
+      try {
+        localStorage.setItem(BOOKMARK_SYNC_KEY, JSON.stringify({ surah_id: surahId, verse_number: verseNumber, t: Date.now() }));
+      } catch { /* cross-tab signal, non-critical */ }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
       toast.error('Failed to update bookmark');

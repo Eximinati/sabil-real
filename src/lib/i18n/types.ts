@@ -350,6 +350,9 @@ export interface AppCopy {
       createAccountButton: string;
       haveAccount: string;
       signIn: string;
+      confirmationTitle: string;
+      confirmationGuide: string;
+      confirmationEmailSent: string;
     };
     onboarding: {
       stepLabel: string;

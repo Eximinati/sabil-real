@@ -349,6 +349,9 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       createAccountButton: 'اکاؤنٹ بنائیں',
       haveAccount: 'پہلے سے اکاؤنٹ ہے؟',
       signIn: 'سائن ان',
+      confirmationTitle: 'اپنا ای میل چیک کریں',
+      confirmationGuide: 'ہم آپ کے ای میل پتے پر تصدیقی لنک بھیج چکے ہیں۔ اکاؤنٹ کی تصدیق کے لیے لنک پر کلک کریں، پھر سائن ان کریں۔',
+      confirmationEmailSent: 'ای میل بھیج دی گئی',
     },
     onboarding: {
       stepLabel: 'مرحلہ {step} از 3',

@@ -351,6 +351,9 @@ export const EN_COPY: AppCopy = {
       createAccountButton: 'Create Account',
       haveAccount: 'Already have an account?',
       signIn: 'Sign In',
+      confirmationTitle: 'Check your email',
+      confirmationGuide: 'We sent a confirmation link to your email address. Click the link to verify your account, then sign in to begin your journey.',
+      confirmationEmailSent: 'Email sent to',
     },
     onboarding: {
       stepLabel: 'Step {step} of 3',

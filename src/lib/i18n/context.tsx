@@ -58,6 +58,19 @@ export function LanguageProvider({
     setIsHydrated(true);
   }, [initialLanguage]);
 
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === LANGUAGE_STORAGE_KEY && e.newValue) {
+        const lang = normalizeLanguage(e.newValue);
+        if (lang !== language) {
+          setLanguage(lang);
+        }
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [language]);
+
   const setLanguage = (nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage);
     setDocumentLanguage(nextLanguage);

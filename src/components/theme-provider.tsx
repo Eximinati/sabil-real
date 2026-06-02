@@ -53,6 +53,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applyTheme]);
 
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === 'sabil-theme' && e.newValue) {
+        setTheme(e.newValue as Theme);
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [setTheme]);
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       {children}

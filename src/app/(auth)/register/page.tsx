@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   const handleSubmit = async () => {
     setError('');
@@ -55,10 +56,7 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message);
     } else if (data.user) {
-      // For email signup, show confirmation message
-      // User will confirm via email link and then be redirected
-      setError('');
-      // alert('Check your email to confirm your account, then sign in.');
+      setRegistered(true);
     }
   };
 
@@ -84,6 +82,29 @@ export default function RegisterPage() {
       <p className="text-[var(--color-text)] font-medium mb-1">{copy.auth.register.createAccount}</p>
       <p className="text-[var(--color-text-muted)] text-sm mb-6">{copy.auth.register.beginJourney}</p>
 
+      {registered ? (
+        <div className="rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-6 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
+            <svg className="h-7 w-7 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">{copy.auth.register.confirmationTitle}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {copy.auth.register.confirmationGuide}
+          </p>
+          <p className="mt-4 text-xs text-[var(--color-text-muted)]">
+            {copy.auth.register.confirmationEmailSent}: {email}
+          </p>
+          <a
+            href="/login"
+            className="mt-6 inline-block rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-[var(--color-primary-hover)]"
+          >
+            {copy.auth.register.signIn}
+          </a>
+        </div>
+      ) : (
+        <>
       {error && (
         <div className="mb-4 text-sm text-[var(--color-error)] animate-fade-in">
           {error}
@@ -172,6 +193,8 @@ export default function RegisterPage() {
           {copy.auth.shared.continueWithGoogle}
         </button>
       </div>
+        </>
+      )}
 
       <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
         {copy.auth.register.haveAccount}{' '}
