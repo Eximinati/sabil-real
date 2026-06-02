@@ -424,6 +424,12 @@ export function StreamingLessonShell({
         </div>
       </div>
 
+      <ReflectionProvider
+        lessonId={lesson.id}
+        dayNumber={lesson.day_number}
+        initialReflection={initialReflection}
+        initialReflectionUpdatedAt={initialReflectionUpdatedAt}
+      >
       {canUseCanonicalExperience ? (
         <>
           {shouldShowLanguageFallback && (
@@ -571,13 +577,7 @@ export function StreamingLessonShell({
             </StreamSectionLogger>
           </Suspense>
 
-          <ReflectionProvider
-            lessonId={lesson.id}
-            dayNumber={lesson.day_number}
-            initialReflection={initialReflection}
-            initialReflectionUpdatedAt={initialReflectionUpdatedAt}
-          >
-            <Suspense fallback={<ReflectionSectionSkeleton />}>
+          <Suspense fallback={<ReflectionSectionSkeleton />}>
               <StreamSectionLogger name="ReflectionContent">
                 <ReflectionContent 
                   lesson={lesson}
@@ -595,9 +595,9 @@ export function StreamingLessonShell({
                 />
               </StreamSectionLogger>
             </Suspense>
-          </ReflectionProvider>
         </>
       )}
+      </ReflectionProvider>
 
       <AudioPlayer />
     </div>
