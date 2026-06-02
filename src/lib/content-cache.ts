@@ -38,12 +38,11 @@ const stats: CacheStats = {
   saves: 0,
 };
 
-function getCacheEntry<T>(cache: Map<string | number, CacheEntry<T>>, key: string | number): { data: T | null; expired: boolean } {
+function getCacheEntry<T>(cache: Map<string | number, CacheEntry<T>>, key: string | number, cacheType: keyof typeof CACHE_TTL): { data: T | null; expired: boolean } {
   const entry = cache.get(key);
   if (!entry) return { data: null, expired: true };
   
-  const ttlKey = typeof key === 'number' ? key.toString() : key;
-  const isExpired = Date.now() - entry.timestamp > (CACHE_TTL[ttlKey as keyof typeof CACHE_TTL] || 86400000);
+  const isExpired = Date.now() - entry.timestamp > CACHE_TTL[cacheType];
   if (isExpired) {
     cache.delete(key);
     return { data: null, expired: true };
@@ -78,7 +77,7 @@ function getCacheKey(...parts: (string | number)[]): string {
 }
 
 export async function fetchCachedChapter(chapterId: number): Promise<any> {
-  const cached = getCacheEntry(contentCache.chapters, chapterId);
+  const cached = getCacheEntry(contentCache.chapters, chapterId, 'chapters');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -92,21 +91,24 @@ export async function fetchCachedChapter(chapterId: number): Promise<any> {
   const promise = fetch(getApiUrl(`/chapters`)).then(res => res.json());
   pendingRequests.set(`chapter:${chapterId}`, promise);
   
-  const data = await promise;
-  const chapters = Array.isArray(data) ? data : (data.chapters || []);
-  const chapter = chapters.find((c: any) => c.id === chapterId);
-  
-  if (chapter) {
-    setCacheEntry(contentCache.chapters, chapterId, chapter);
+  try {
+    const data = await promise;
+    const chapters = Array.isArray(data) ? data : (data.chapters || []);
+    const chapter = chapters.find((c: any) => c.id === chapterId);
+    
+    if (chapter) {
+      setCacheEntry(contentCache.chapters, chapterId, chapter);
+    }
+    
+    return chapter;
+  } finally {
+    pendingRequests.delete(`chapter:${chapterId}`);
   }
-  
-  pendingRequests.delete(`chapter:${chapterId}`);
-  return chapter;
 }
 
 export async function fetchCachedChapters(): Promise<any[]> {
   const key = 'all';
-  const cached = getCacheEntry(contentCache.chapters, key);
+  const cached = getCacheEntry(contentCache.chapters, key, 'chapters');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -123,21 +125,24 @@ export async function fetchCachedChapters(): Promise<any[]> {
   
   pendingRequests.set('chapters:all', promise);
   
-  const data = await promise;
-  const chapters = Array.isArray(data) ? data : (data.chapters || []);
-  
-  for (const chapter of chapters) {
-    setCacheEntry(contentCache.chapters, chapter.id, chapter);
+  try {
+    const data = await promise;
+    const chapters = Array.isArray(data) ? data : (data.chapters || []);
+    
+    for (const chapter of chapters) {
+      setCacheEntry(contentCache.chapters, chapter.id, chapter);
+    }
+    setCacheEntry(contentCache.chapters, key, chapters);
+    
+    return chapters;
+  } finally {
+    pendingRequests.delete('chapters:all');
   }
-  setCacheEntry(contentCache.chapters, key, chapters);
-  
-  pendingRequests.delete('chapters:all');
-  return chapters;
 }
 
 export async function fetchCachedTranslations(): Promise<any[]> {
   const key = 'all';
-  const cached = getCacheEntry(contentCache.translations, key);
+  const cached = getCacheEntry(contentCache.translations, key, 'translations');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -154,12 +159,15 @@ export async function fetchCachedTranslations(): Promise<any[]> {
   
   pendingRequests.set('translations:all', promise);
   
-  const data = await promise;
-  const translations = Array.isArray(data) ? data : (data.translations || []);
-  
-  setCacheEntry(contentCache.translations, key, translations);
-  pendingRequests.delete('translations:all');
-  return translations;
+  try {
+    const data = await promise;
+    const translations = Array.isArray(data) ? data : (data.translations || []);
+    
+    setCacheEntry(contentCache.translations, key, translations);
+    return translations;
+  } finally {
+    pendingRequests.delete('translations:all');
+  }
 }
 
 export async function fetchCachedVerse(
@@ -167,7 +175,7 @@ export async function fetchCachedVerse(
   translationId: number = DEFAULT_TRANSLATION_ID
 ): Promise<any> {
   const cacheKey = getCacheKey(verseKey, translationId);
-  const cached = getCacheEntry(contentCache.verses, cacheKey);
+  const cached = getCacheEntry(contentCache.verses, cacheKey, 'verses');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -185,10 +193,13 @@ export async function fetchCachedVerse(
   
   pendingRequests.set(`verse:${cacheKey}`, promise);
   
-  const data = await promise;
-  setCacheEntry(contentCache.verses, cacheKey, data);
-  pendingRequests.delete(`verse:${cacheKey}`);
-  return data;
+  try {
+    const data = await promise;
+    setCacheEntry(contentCache.verses, cacheKey, data);
+    return data;
+  } finally {
+    pendingRequests.delete(`verse:${cacheKey}`);
+  }
 }
 
 export async function fetchCachedVerses(
@@ -202,7 +213,7 @@ export async function fetchCachedVerses(
   
   cacheKeys.forEach((key, idx) => {
     const entry = contentCache.verses.get(key);
-    if (entry && !getCacheEntry(contentCache.verses, key).expired) {
+    if (entry && !getCacheEntry(contentCache.verses, key, 'verses').expired) {
       cached[idx] = entry.data;
     } else {
       missing.push({ key: verseKeys[idx], idx });
@@ -236,7 +247,7 @@ export async function fetchCachedVerses(
 
 export async function fetchCachedAudio(reciterId: number, chapterId: number): Promise<any[]> {
   const cacheKey = getCacheKey(reciterId, chapterId);
-  const cached = getCacheEntry(contentCache.audio, cacheKey);
+  const cached = getCacheEntry(contentCache.audio, cacheKey, 'audio');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -254,16 +265,19 @@ export async function fetchCachedAudio(reciterId: number, chapterId: number): Pr
   
   pendingRequests.set(`audio:${cacheKey}`, promise);
   
-  const data = await promise;
-  const audioFiles = data.audio_files || [];
-  setCacheEntry(contentCache.audio, cacheKey, audioFiles);
-  pendingRequests.delete(`audio:${cacheKey}`);
-  return audioFiles;
+  try {
+    const data = await promise;
+    const audioFiles = data.audio_files || [];
+    setCacheEntry(contentCache.audio, cacheKey, audioFiles);
+    return audioFiles;
+  } finally {
+    pendingRequests.delete(`audio:${cacheKey}`);
+  }
 }
 
 export async function fetchCachedTafsir(tafsirId: number, chapterId: number): Promise<any> {
   const cacheKey = getCacheKey(tafsirId, chapterId);
-  const cached = getCacheEntry(contentCache.tafsirs, cacheKey);
+  const cached = getCacheEntry(contentCache.tafsirs, cacheKey, 'tafsirs');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -281,15 +295,18 @@ export async function fetchCachedTafsir(tafsirId: number, chapterId: number): Pr
   
   pendingRequests.set(`tafsir:${cacheKey}`, promise);
   
-  const data = await promise;
-  setCacheEntry(contentCache.tafsirs, cacheKey, data);
-  pendingRequests.delete(`tafsir:${cacheKey}`);
-  return data;
+  try {
+    const data = await promise;
+    setCacheEntry(contentCache.tafsirs, cacheKey, data);
+    return data;
+  } finally {
+    pendingRequests.delete(`tafsir:${cacheKey}`);
+  }
 }
 
 export async function fetchCachedHadith(collection: string, number: number): Promise<any> {
   const cacheKey = getCacheKey(collection, number);
-  const cached = getCacheEntry(contentCache.hadith, cacheKey);
+  const cached = getCacheEntry(contentCache.hadith, cacheKey, 'hadith');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -304,10 +321,13 @@ export async function fetchCachedHadith(collection: string, number: number): Pro
   
   pendingRequests.set(`hadith:${cacheKey}`, promise);
   
-  const data = await promise;
-  setCacheEntry(contentCache.hadith, cacheKey, data);
-  pendingRequests.delete(`hadith:${cacheKey}`);
-  return data;
+  try {
+    const data = await promise;
+    setCacheEntry(contentCache.hadith, cacheKey, data);
+    return data;
+  } finally {
+    pendingRequests.delete(`hadith:${cacheKey}`);
+  }
 }
 
 export async function fetchCachedHadithByLanguage(
@@ -316,7 +336,7 @@ export async function fetchCachedHadithByLanguage(
   language: 'english' | 'urdu' = 'english'
 ): Promise<any> {
   const cacheKey = getCacheKey(collection, number, language);
-  const cached = getCacheEntry(contentCache.hadith, cacheKey);
+  const cached = getCacheEntry(contentCache.hadith, cacheKey, 'hadith');
   if (cached.data) {
     stats.hits++;
     return cached.data;
@@ -331,10 +351,13 @@ export async function fetchCachedHadithByLanguage(
 
   pendingRequests.set(`hadith:${cacheKey}`, promise);
 
-  const data = await promise;
-  setCacheEntry(contentCache.hadith, cacheKey, data);
-  pendingRequests.delete(`hadith:${cacheKey}`);
-  return data;
+  try {
+    const data = await promise;
+    setCacheEntry(contentCache.hadith, cacheKey, data);
+    return data;
+  } finally {
+    pendingRequests.delete(`hadith:${cacheKey}`);
+  }
 }
 
 export function getCacheSizes() {

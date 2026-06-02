@@ -342,11 +342,6 @@ export async function POST() {
           throw new Error('Missing lesson id after upsert');
         }
 
-        await supabase
-          .from('journey_lesson_blocks')
-          .delete()
-          .eq('lesson_id', lessonId);
-
         if (mergedBlocks.length > 0) {
           const blockPayload = mergedBlocks.map((block, index) => ({
             lesson_id: lessonId,
@@ -362,6 +357,7 @@ export async function POST() {
             .insert(blockPayload);
 
           if (blockInsertError) {
+            await supabase.from('journey_lessons').delete().eq('id', lessonId);
             throw new Error(blockInsertError.message);
           }
         }

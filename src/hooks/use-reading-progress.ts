@@ -21,6 +21,22 @@ interface UseReadingProgressResult {
 }
 
 const DEBOUNCE_MS = 2000;
+const STORAGE_KEY = 'quran-reading-progress';
+
+function saveProgressCache(data: { progress: ReadingPosition | null; positions: ReadingPosition[] }) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch { /* quota exceeded */ }
+}
+
+function loadProgressCache(): { progress: ReadingPosition | null; positions: ReadingPosition[] } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export function useReadingProgress(chapterId: number | null): UseReadingProgressResult {
   const [progress, setProgress] = useState<ReadingPosition | null>(null);
@@ -53,11 +69,47 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
       
       if (data.positions && Array.isArray(data.positions)) {
         setPositions(data.positions);
+        saveProgressCache({ progress: data.progress || null, positions: data.positions });
       }
     } catch (error) {
       console.error('Error updating reading progress:', error);
+      const fallback: ReadingPosition = {
+        surah_id: chapterId,
+        verse_number: verseNumber,
+        scroll_position: scrollPosition,
+        updated_at: new Date().toISOString(),
+      };
+      setProgress(fallback);
+      setPositions(prev => {
+        const filtered = prev.filter(p => p.surah_id !== chapterId);
+        const updated = [fallback, ...filtered];
+        saveProgressCache({ progress: fallback, positions: updated });
+        return updated;
+      });
     }
   }, [chapterId]);
+
+  const pushPosition = useCallback(async (surahId: number, verseNumber: number, scrollPosition: number) => {
+    try {
+      const res = await fetch('/api/reading-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+        body: JSON.stringify({
+          surah_id: surahId,
+          verse_number: verseNumber,
+          scroll_position: scrollPosition,
+        }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.positions) {
+        setPositions(data.positions);
+        saveProgressCache({ progress: data.progress || null, positions: data.positions });
+      }
+    } catch {
+      /* local cache preserves data — retry on next reconcile */
+    }
+  }, []);
 
   const fetchPositions = useCallback(async () => {
     try {
@@ -68,9 +120,15 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
       }
       if (data.positions && Array.isArray(data.positions)) {
         setPositions(data.positions);
+        saveProgressCache({ progress: data.progress || null, positions: data.positions });
       }
     } catch (error) {
       console.error('Error fetching reading progress:', error);
+      const local = loadProgressCache();
+      if (local) {
+        if (local.progress) setProgress(local.progress);
+        if (local.positions.length > 0) setPositions(local.positions);
+      }
     } finally {
       setLoading(false);
     }
