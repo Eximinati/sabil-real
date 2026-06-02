@@ -115,12 +115,24 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
     try {
       const res = await fetch('/api/reading-progress?limit=10');
       const data = await res.json();
-      if (data.progress) {
-        setProgress(data.progress);
-      }
-      if (data.positions && Array.isArray(data.positions)) {
-        setPositions(data.positions);
-        saveProgressCache({ progress: data.progress || null, positions: data.positions });
+
+      if (data.progress) setProgress(data.progress);
+      if (data.positions) setPositions(data.positions);
+
+      const localCache = loadProgressCache();
+      if (localCache && localCache.positions.length > 0 && data.positions) {
+        const stale = localCache.positions.filter(local => {
+          const server = data.positions.find(
+            (s: ReadingPosition) => s.surah_id === local.surah_id
+          );
+          return !server || new Date(local.updated_at) > new Date(server.updated_at);
+        });
+
+        if (stale.length > 0) {
+          await Promise.allSettled(
+            stale.map(pos => pushPosition(pos.surah_id, pos.verse_number, pos.scroll_position))
+          );
+        }
       }
     } catch (error) {
       console.error('Error fetching reading progress:', error);
@@ -132,7 +144,7 @@ export function useReadingProgress(chapterId: number | null): UseReadingProgress
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [pushPosition]);
 
   useEffect(() => {
     mountedRef.current = true;
