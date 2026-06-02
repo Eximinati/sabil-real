@@ -69,7 +69,7 @@ export function getMemoryCacheSize(): number {
 
 /* ─── Level 2: Browser Cache (localForage) ──────────────────── */
 
-import localforage from 'localforage';
+import lf from './browser-cache';
 
 const HADITH_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -79,25 +79,12 @@ interface StoreEntry {
   ttl: number;
 }
 
-let lf: typeof localforage | null = null;
-
-function lfStore(): typeof localforage {
-  if (!lf) {
-    lf = localforage.createInstance({
-      name: 'hadith-cache',
-      version: 1,
-      storeName: 'hadith',
-    });
-  }
-  return lf;
-}
-
 async function lfGet(collection: string, number: number): Promise<HadithCacheEntry | null> {
   try {
-    const entry = await lfStore().getItem<StoreEntry>(cacheKey(collection, number));
+    const entry = await lf.getItem<StoreEntry>(cacheKey(collection, number));
     if (!entry) return null;
     if (Date.now() - entry.ts > entry.ttl) {
-      await lfStore().removeItem(cacheKey(collection, number));
+      await lf.removeItem(cacheKey(collection, number));
       return null;
     }
     return entry.data;
@@ -108,7 +95,7 @@ async function lfGet(collection: string, number: number): Promise<HadithCacheEnt
 
 async function lfSet(entry: HadithCacheEntry): Promise<void> {
   try {
-    await lfStore().setItem(cacheKey(entry.collection, entry.number), {
+    await lf.setItem(cacheKey(entry.collection, entry.number), {
       data: entry,
       ts: Date.now(),
       ttl: entry.ttl || HADITH_TTL,
@@ -245,10 +232,10 @@ export function stopPeriodicCleanup(): void {
 export function clearExpiredBrowserEntries(): Promise<number> {
   return new Promise((resolve) => {
     let cleared = 0;
-    lfStore()
+    lf
       .iterate<StoreEntry, void>((value, key) => {
         if (Date.now() - value.ts > value.ttl) {
-          lfStore().removeItem(key);
+          lf.removeItem(key);
           cleared++;
         }
       })
@@ -259,7 +246,7 @@ export function clearExpiredBrowserEntries(): Promise<number> {
 
 export function clearAllCaches(): void {
   resetMemoryCache();
-  lfStore()
+  lf
     .clear()
     .catch(() => {});
 }

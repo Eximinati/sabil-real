@@ -1,12 +1,6 @@
 import { DEFAULT_LANGUAGE, type LanguageCode } from './config';
 import { EN_COPY } from './dictionaries/en';
-import { UR_COPY } from './dictionaries/ur';
-import type { AppCopy, DeepPartial, TranslationDictionary } from './types';
-
-const DICTIONARIES: TranslationDictionary = {
-  en: EN_COPY,
-  ur: UR_COPY,
-};
+import type { AppCopy, DeepPartial } from './types';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -49,10 +43,11 @@ function mergeDeep<T>(base: T, partial?: DeepPartial<T>): T {
   return merged as T;
 }
 
-export function getDictionary(language: LanguageCode): AppCopy {
+export async function getDictionary(language: LanguageCode): Promise<AppCopy> {
   if (language === DEFAULT_LANGUAGE) {
     return EN_COPY;
   }
 
-  return mergeDeep(EN_COPY, DICTIONARIES[language] as DeepPartial<AppCopy>);
+  const { UR_COPY } = await import('./dictionaries/ur');
+  return mergeDeep(EN_COPY, UR_COPY as DeepPartial<AppCopy>);
 }

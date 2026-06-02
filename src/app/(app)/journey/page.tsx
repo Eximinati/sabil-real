@@ -133,7 +133,7 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
   const resolvedNotice = requestedNotice ?? inferAbsenceNotice(preferences.last_active_at);
   const noticeText = getNoticeText(resolvedNotice, copy);
 
-  await touchUserLastActive(user.id);
+  touchUserLastActive(user.id).catch(() => {});
 
   const currentLesson = getCurrentLesson(lessons, progress);
   const currentDay = currentLesson?.day_number || 1;

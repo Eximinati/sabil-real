@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -10,17 +11,18 @@ import {
   CompleteButtonSkeleton,
   TafsirSectionSkeleton
 } from './journey-lesson-skeleton';
-import { JourneyTafsirStreaming } from './journey-tafsir-streaming';
-import { TranslationLibrarySheet } from './translation-library-sheet';
-import { ReciterLibrarySheet } from './reciter-library-sheet';
-import { ReadingPreferencesSheet } from './reading-preferences-sheet';
 import { ReflectionProvider } from '@/lib/reflection-context';
 import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useFocusMode } from './focus-mode-provider';
 import { csrfHeader } from '@/lib/csrf-client';
-import { AudioPlayer } from './audio-player';
 import { DayOneCanonicalExperience } from './journey-day-one-canonical';
+
+const JourneyTafsirStreaming = dynamic(() => import('./journey-tafsir-streaming').then(m => ({ default: m.JourneyTafsirStreaming })), { ssr: false });
+const TranslationLibrarySheet = dynamic(() => import('./translation-library-sheet').then(m => ({ default: m.TranslationLibrarySheet })), { ssr: false });
+const ReciterLibrarySheet = dynamic(() => import('./reciter-library-sheet').then(m => ({ default: m.ReciterLibrarySheet })), { ssr: false });
+const ReadingPreferencesSheet = dynamic(() => import('./reading-preferences-sheet').then(m => ({ default: m.ReadingPreferencesSheet })), { ssr: false });
+const AudioPlayer = dynamic(() => import('./audio-player').then(m => ({ default: m.AudioPlayer })), { ssr: false });
 import { WEEKLY_EMOTIONAL_ARCS, getWeekForDay } from '@/lib/journey-emotional-arc';
 import type { JourneyLanguageContext } from '@/types/journey-localization';
 import { useLanguage } from '@/lib/i18n/context';
@@ -394,12 +396,6 @@ export function StreamingLessonShell({
   const containerClass = isFocusMode ? 'max-w-[860px] mx-auto' : 'max-w-[760px] mx-auto';
 
   return (
-    <ReflectionProvider
-      lessonId={lesson.id}
-      dayNumber={lesson.day_number}
-      initialReflection={initialReflection}
-      initialReflectionUpdatedAt={initialReflectionUpdatedAt}
-    >
     <div
       className={`reading-screen px-4 md:px-6 pt-7 md:pt-12 pb-20 md:pb-16 ${containerClass}`}
       data-script-direction={scriptDirection}
@@ -575,30 +571,36 @@ export function StreamingLessonShell({
             </StreamSectionLogger>
           </Suspense>
 
-          <Suspense fallback={<ReflectionSectionSkeleton />}>
-            <StreamSectionLogger name="ReflectionContent">
-              <ReflectionContent 
-                lesson={lesson}
-                initialReflection={initialReflection}
-              />
-            </StreamSectionLogger>
-          </Suspense>
+          <ReflectionProvider
+            lessonId={lesson.id}
+            dayNumber={lesson.day_number}
+            initialReflection={initialReflection}
+            initialReflectionUpdatedAt={initialReflectionUpdatedAt}
+          >
+            <Suspense fallback={<ReflectionSectionSkeleton />}>
+              <StreamSectionLogger name="ReflectionContent">
+                <ReflectionContent 
+                  lesson={lesson}
+                  initialReflection={initialReflection}
+                />
+              </StreamSectionLogger>
+            </Suspense>
 
-          <Suspense fallback={<CompleteButtonSkeleton />}>
-            <StreamSectionLogger name="CompleteButton">
-              <CompleteButton 
-                lessonId={lesson.id}
-                dayNumber={lesson.day_number}
-                isCompleted={isCompleted}
-              />
-            </StreamSectionLogger>
-          </Suspense>
+            <Suspense fallback={<CompleteButtonSkeleton />}>
+              <StreamSectionLogger name="CompleteButton">
+                <CompleteButton 
+                  lessonId={lesson.id}
+                  dayNumber={lesson.day_number}
+                  isCompleted={isCompleted}
+                />
+              </StreamSectionLogger>
+            </Suspense>
+          </ReflectionProvider>
         </>
       )}
 
       <AudioPlayer />
     </div>
-    </ReflectionProvider>
   );
 }
 

@@ -14,7 +14,6 @@ interface PageProps {
   searchParams: Promise<{ translation?: string }>;
 }
 
-export const dynamic = 'force-dynamic';
 
 function parsePositiveInt(value: string | undefined): number | null {
   if (!value) {

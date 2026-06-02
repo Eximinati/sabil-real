@@ -24,7 +24,6 @@ async function getReflections(userId: string): Promise<Reflection[]> {
   return reflections || [];
 }
 
-export const dynamic = 'force-dynamic';
 
 export default async function ReflectionsPage() {
   const { dictionary: copy, language } = await getServerDictionary();

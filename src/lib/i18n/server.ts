@@ -85,6 +85,6 @@ export async function getServerDictionary(acceptLanguageHeader?: string | null) 
   const language = await getServerLanguage(acceptLanguageHeader);
   return {
     language,
-    dictionary: getDictionary(normalizeLanguage(language)),
+    dictionary: await getDictionary(normalizeLanguage(language)),
   };
 }

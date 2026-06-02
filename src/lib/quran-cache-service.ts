@@ -147,7 +147,7 @@ export function getMemoryCacheSizes() {
 
 /* ─── Level 2: Browser Cache (localForage) ──────────────────── */
 
-import localforage from 'localforage';
+import lf from './browser-cache';
 
 const AR_TTL = 30 * 24 * 60 * 60 * 1000;
 const TRANS_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -159,24 +159,12 @@ interface StoreEntry {
   ttl: number;
 }
 
-let lf: typeof localforage | null = null;
-function lfStore(): typeof localforage {
-  if (!lf) {
-    lf = localforage.createInstance({
-      name: 'quran-cache',
-      version: 1,
-      storeName: 'verses',
-    });
-  }
-  return lf;
-}
-
 async function lfGet<T>(k: string): Promise<T | null> {
   try {
-    const entry = await lfStore().getItem<StoreEntry>(k);
+    const entry = await lf.getItem<StoreEntry>(k);
     if (!entry) return null;
     if (Date.now() - entry.ts > entry.ttl) {
-      await lfStore().removeItem(k);
+      await lf.removeItem(k);
       return null;
     }
     return entry.data as T;
@@ -187,7 +175,7 @@ async function lfGet<T>(k: string): Promise<T | null> {
 
 async function lfSet(k: string, data: unknown, ttl: number): Promise<void> {
   try {
-    await lfStore().setItem(k, { data, ts: Date.now(), ttl });
+    await lf.setItem(k, { data, ts: Date.now(), ttl });
   } catch {
     /* silent */
   }
@@ -195,7 +183,7 @@ async function lfSet(k: string, data: unknown, ttl: number): Promise<void> {
 
 async function lfRemove(k: string): Promise<void> {
   try {
-    await lfStore().removeItem(k);
+    await lf.removeItem(k);
   } catch {
     /* silent */
   }
@@ -535,10 +523,10 @@ export function hydrateTranslation(
 export function clearExpiredBrowserEntries(): Promise<number> {
   return new Promise((resolve) => {
     let cleared = 0;
-    lfStore()
+    lf
       .iterate<StoreEntry, void>((value, key) => {
         if (Date.now() - value.ts > value.ttl) {
-          lfStore().removeItem(key);
+          lf.removeItem(key);
           cleared++;
         }
       })
@@ -549,7 +537,7 @@ export function clearExpiredBrowserEntries(): Promise<number> {
 
 export function clearAllCaches(): void {
   resetMemoryCache();
-  lfStore()
+  lf
     .clear()
     .catch(() => {});
 }

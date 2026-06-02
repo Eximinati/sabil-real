@@ -29,6 +29,7 @@
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.7",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35"
   }

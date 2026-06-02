@@ -110,7 +110,7 @@ async function _getPublishedLessons(
     const supabase = await supabaseServer();
     const { data, error } = await supabase
       .from('journey_lessons')
-      .select('*')
+      .select('id, day_number, title, subtitle, topic, description, verse_keys, lesson_text, hadith_text, hadith_source, hadith_collection, hadith_number, reflection_prompt, estimated_minutes, is_published, localized_content, translation_status, shared_metadata')
       .eq('is_published', true)
       .order('day_number', { ascending: true });
     if (error) throw error;
@@ -159,7 +159,7 @@ async function _getLessonByDay(
     const supabase = await supabaseServer();
     const { data, error } = await supabase
       .from('journey_lessons')
-      .select('*')
+      .select('id, day_number, title, subtitle, topic, description, verse_keys, lesson_text, hadith_text, hadith_source, hadith_collection, hadith_number, reflection_prompt, estimated_minutes, is_published, localized_content, translation_status, shared_metadata')
       .eq('day_number', dayNumber)
       .eq('is_published', true)
       .single();
@@ -214,7 +214,7 @@ async function _getLessonByDayWithBlocks(
     
     const { data: lesson, error } = await supabase
       .from('journey_lessons')
-      .select('*')
+      .select('id, day_number, title, subtitle, topic, description, verse_keys, lesson_text, hadith_text, hadith_source, hadith_collection, hadith_number, reflection_prompt, estimated_minutes, is_published, localized_content, translation_status, shared_metadata')
       .eq('day_number', dayNumber)
       .eq('is_published', true)
       .single();
@@ -269,9 +269,7 @@ async function _getLessonByDayWithBlocks(
 
 export const getLessonByDayWithBlocks = cache(_getLessonByDayWithBlocks);
 
-export async function getUserProgress(
-  userId: string
-): Promise<UserProgress[]> {
+export const getUserProgress = cache(async (userId: string): Promise<UserProgress[]> => {
   const supabase = await supabaseServer();
   const { data, error } = await supabase
     .from('user_journey_progress')
@@ -279,11 +277,9 @@ export async function getUserProgress(
     .eq('user_id', userId);
   if (error) return [];
   return data ?? [];
-}
+});
 
-export async function getUserPreferences(
-  userId: string
-): Promise<UserPreferences> {
+export const getUserPreferences = cache(async (userId: string): Promise<UserPreferences> => {
   const supabase = await supabaseServer();
   const { data } = await supabase
     .from('user_preferences')
@@ -320,9 +316,19 @@ export async function getUserPreferences(
     journey_language: parsePreferenceLanguage(merged.journey_language),
     reminder_language: parsePreferenceLanguage(merged.reminder_language),
   };
-}
+});
+
+const touchCooldowns = new Map<string, number>();
+const TOUCH_COOLDOWN_MS = 5 * 60 * 1000;
 
 export async function touchUserLastActive(userId: string): Promise<void> {
+  const now = Date.now();
+  const last = touchCooldowns.get(userId);
+  if (last && now - last < TOUCH_COOLDOWN_MS) {
+    return;
+  }
+  touchCooldowns.set(userId, now);
+
   const supabase = await supabaseServer();
   const timestamp = new Date().toISOString();
 
@@ -428,10 +434,10 @@ export async function saveReflection(
   }
 }
 
-export async function getUserReflection(
+export const getUserReflection = cache(async (
   userId: string,
   lessonId: string
-): Promise<{ text: string | null; updatedAt: string | null }> {
+): Promise<{ text: string | null; updatedAt: string | null }> => {
   const supabase = await supabaseServer();
   const { data } = await supabase
     .from('user_reflections')
@@ -443,4 +449,4 @@ export async function getUserReflection(
     text: data?.reflection_text ?? null,
     updatedAt: data?.updated_at ?? null,
   };
-}
+});

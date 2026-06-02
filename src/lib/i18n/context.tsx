@@ -34,11 +34,14 @@ function writeLanguageCookie(language: LanguageCode) {
 export function LanguageProvider({
   children,
   initialLanguage,
+  initialDictionary,
 }: {
   children: React.ReactNode;
   initialLanguage: LanguageCode;
+  initialDictionary: AppCopy;
 }) {
   const [language, setLanguageState] = useState<LanguageCode>(initialLanguage);
+  const [dictionary, setDictionary] = useState<AppCopy>(initialDictionary);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -71,6 +74,14 @@ export function LanguageProvider({
     return () => window.removeEventListener('storage', handler);
   }, [language]);
 
+  useEffect(() => {
+    let cancelled = false;
+    getDictionary(language).then((dict) => {
+      if (!cancelled) setDictionary(dict);
+    });
+    return () => { cancelled = true; };
+  }, [language]);
+
   const setLanguage = (nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage);
     setDocumentLanguage(nextLanguage);
@@ -80,10 +91,10 @@ export function LanguageProvider({
 
   const value = useMemo<LanguageContextValue>(() => ({
     language,
-    dictionary: getDictionary(language),
+    dictionary,
     isHydrated,
     setLanguage,
-  }), [isHydrated, language]);
+  }), [dictionary, isHydrated, language, setLanguage]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

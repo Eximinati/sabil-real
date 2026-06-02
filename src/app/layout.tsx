@@ -9,6 +9,7 @@ import { FocusModeProvider } from '@/components/focus-mode-provider';
 import { FloatingNotice } from '@/components/floating-notice';
 import { LanguageProvider } from '@/lib/i18n/context';
 import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from '@/lib/i18n/config';
+import { getDictionary } from '@/lib/i18n/dictionary';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -63,6 +64,7 @@ export default async function RootLayout({
 }) {
   const cookieStore = await cookies();
   const initialLanguage = normalizeLanguage(cookieStore.get(LANGUAGE_COOKIE_NAME)?.value);
+  const initialDictionary = await getDictionary(initialLanguage);
 
   const themeScript = `
     (function() {
@@ -109,7 +111,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: languageScript }} />
       </head>
       <body>
-        <LanguageProvider initialLanguage={initialLanguage}>
+        <LanguageProvider initialLanguage={initialLanguage} initialDictionary={initialDictionary}>
           <ThemeProvider>
             <ToastProvider>
               <AudioPlayerProvider>
