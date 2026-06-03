@@ -7,6 +7,7 @@ import { ToastProvider } from '@/components/ui/toast-provider';
 import { AudioPlayerProvider } from '@/components/audio-player-provider';
 import { FocusModeProvider } from '@/components/focus-mode-provider';
 import { FloatingNotice } from '@/components/floating-notice';
+import { GlobalRouteProgress } from '@/components/global-route-progress';
 import { LanguageProvider } from '@/lib/i18n/context';
 import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionary';
@@ -117,6 +118,7 @@ export default async function RootLayout({
               <AudioPlayerProvider>
                 <FocusModeProvider>
                   {children}
+                  <GlobalRouteProgress />
                   <FloatingNotice />
                 </FocusModeProvider>
               </AudioPlayerProvider>

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { AppShell } from '@/components/app-shell';
+import { PageProgress } from '@/components/page-progress';
 
 export default async function AppLayout({
   children,
@@ -14,5 +15,10 @@ export default async function AppLayout({
     redirect('/login');
   }
 
-  return <AppShell userEmail={user.email || ''}>{children}</AppShell>;
+  return (
+    <>
+      <PageProgress />
+      <AppShell userEmail={user.email || ''}>{children}</AppShell>
+    </>
+  );
 }
