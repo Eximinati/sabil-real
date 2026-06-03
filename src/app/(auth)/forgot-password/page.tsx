@@ -20,6 +20,14 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError('');
 
+    const rateCheck = await fetch('/api/auth/check-rate-limit', { method: 'POST' });
+    if (!rateCheck.ok) {
+      const rateData = await rateCheck.json();
+      setError(rateData.error || 'Too many attempts. Please try again later.');
+      setLoading(false);
+      return;
+    }
+
     const { error: resetError } = await supabaseBrowser.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { validateCsrf, csrfErrorResponse } from '@/lib/csrf';
+import { withRateLimit } from '@/lib/rate-limit';
 
 export async function GET() {
   try {
@@ -26,7 +27,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+const postHandler = async (request: Request) => {
   if (!validateCsrf(request).valid) {
     return csrfErrorResponse();
   }
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+const deleteHandler = async (request: Request) => {
   if (!validateCsrf(request).valid) {
     return csrfErrorResponse();
   }
@@ -96,4 +97,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Error deleting bookmark:', error);
     return NextResponse.json({ error: 'Failed to delete bookmark' }, { status: 500 });
   }
-}
+};
+
+export const POST = withRateLimit(postHandler, 'bookmark');
+export const DELETE = withRateLimit(deleteHandler, 'bookmark');

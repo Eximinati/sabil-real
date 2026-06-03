@@ -39,6 +39,14 @@ export default function RegisterPage() {
 
     setLoading(true);
 
+    const rateCheck = await fetch('/api/auth/check-rate-limit', { method: 'POST' });
+    if (!rateCheck.ok) {
+      const rateData = await rateCheck.json();
+      setError(rateData.error || 'Too many attempts. Please try again later.');
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabaseBrowser.auth.signUp({
       email,
       password,

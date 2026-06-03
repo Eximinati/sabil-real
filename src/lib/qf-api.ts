@@ -58,7 +58,34 @@ export interface VersesResponse {
   };
 }
 
+const qfCache = new Map<string, { data: any; expiresAt: number }>();
+const QF_CACHE_TTL = 60000;
+
+function getCached<T>(key: string): T | null {
+  const entry = qfCache.get(key);
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.data as T;
+  }
+  qfCache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: unknown): void {
+  if (qfCache.size > 500) {
+    const firstKey = qfCache.keys().next().value;
+    if (firstKey) qfCache.delete(firstKey);
+  }
+  qfCache.set(key, { data, expiresAt: Date.now() + QF_CACHE_TTL });
+}
+
+const QF_FETCH_TIMEOUT = 8000;
+
 async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn401 = true): Promise<T> {
+  const cached = getCached<T>(path);
+  if (cached) {
+    return cached;
+  }
+
   const token = await getQFToken();
 
   const url = new URL(QF_API_BASE + path);
@@ -68,12 +95,26 @@ async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn
     });
   }
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      'x-auth-token': token,
-      'x-client-id': QF_CLIENT_ID,
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), QF_FETCH_TIMEOUT);
+
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      signal: controller.signal,
+      headers: {
+        'x-auth-token': token,
+        'x-client-id': QF_CLIENT_ID,
+      },
+    });
+  } catch (fetchError) {
+    clearTimeout(timeoutId);
+    if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+      throw new Error(`QF API timeout after ${QF_FETCH_TIMEOUT}ms: ${path}`);
+    }
+    throw fetchError;
+  }
+  clearTimeout(timeoutId);
 
   if (response.status === 401 && retryOn401) {
     clearCachedToken();
@@ -100,7 +141,9 @@ async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn
     throw new Error(`QF API error: ${response.status} ${errorText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  setCache(path, data);
+  return data;
 }
 
 export async function getChapters(): Promise<Chapter[]> {

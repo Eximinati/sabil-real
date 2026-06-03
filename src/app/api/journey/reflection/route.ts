@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { validateCsrf, csrfErrorResponse } from '@/lib/csrf';
+import { withRateLimit } from '@/lib/rate-limit';
 
-export async function POST(request: Request) {
+const handler = async (request: Request) => {
   if (!validateCsrf(request).valid) {
     return csrfErrorResponse();
   }
@@ -72,4 +73,6 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : 'Failed to save reflection';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+};
+
+export const POST = withRateLimit(handler, 'reflection');

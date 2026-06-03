@@ -31,6 +31,14 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
+    const rateCheck = await fetch('/api/auth/check-rate-limit', { method: 'POST' });
+    if (!rateCheck.ok) {
+      const rateData = await rateCheck.json();
+      setError(rateData.error || 'Too many attempts. Please try again later.');
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabaseBrowser.auth.signInWithPassword({
       email,
       password,

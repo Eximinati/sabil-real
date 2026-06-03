@@ -5,11 +5,9 @@ import {
   normalizeApiErrorMessage,
   shouldFallbackFromError,
 } from '@/lib/qf-fallbacks';
+import { withRateLimit } from '@/lib/rate-limit';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export async function GET(request: Request) {
+const handler = async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const verseKeys = (searchParams.get('verse_keys')?.split(',') || [])
@@ -147,4 +145,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: message, verses: [] }, { status: 500 });
   }
-}
+};
+
+export const GET = withRateLimit(handler, 'default');

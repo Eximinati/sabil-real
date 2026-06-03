@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { searchQuran } from '@/lib/qf-api';
+import { withRateLimit } from '@/lib/rate-limit';
 
-export async function GET(request: Request) {
+const handler = async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
@@ -25,4 +26,6 @@ export async function GET(request: Request) {
     const message = error instanceof Error ? error.message : 'Search failed';
     return NextResponse.json({ results: [], total: 0, error: message });
   }
-}
+};
+
+export const GET = withRateLimit(handler, 'search');
