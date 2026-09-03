@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { supabaseServer } from '@/lib/supabase-server';
+import { getAuthUser } from '@/lib/supabase-server';
 import { getLessonByDay, getLessonByDayWithBlocks, getUserProgress, getUserReflection, getUserPreferences } from '@/lib/journey';
 import { StreamingLessonShell } from '@/components/journey-lesson-streaming';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -35,8 +35,7 @@ export default async function LessonPage({ params, searchParams }: PageProps) {
   const dayNumber = parseInt(day, 10);
   const { dictionary: copy, language } = await getServerDictionary();
 
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect('/login');

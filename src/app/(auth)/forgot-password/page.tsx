@@ -11,7 +11,9 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!email) {
       setError(copy.auth.errors.fillAllFields);
       return;
@@ -78,10 +80,14 @@ export default function ForgotPasswordPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor="forgot-password-email" className="sr-only">{copy.auth.forgotPassword.emailPlaceholder}</label>
           <input
+            id="forgot-password-email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={copy.auth.forgotPassword.emailPlaceholder}
@@ -90,13 +96,13 @@ export default function ForgotPasswordPage() {
         </div>
 
         <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading}
           className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all disabled:opacity-50"
         >
           {loading ? copy.auth.forgotPassword.submitting : copy.auth.forgotPassword.submit}
         </button>
-      </div>
+      </form>
 
       <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
         <a href="/login" className="text-[var(--color-accent)] hover:underline">

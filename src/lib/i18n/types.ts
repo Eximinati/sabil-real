@@ -220,6 +220,7 @@ export interface AppCopy {
     emptyDescription: string;
     openTodayJourney: string;
     viewLesson: string;
+    dayLabel: string;
   };
   quran: {
     pageSubtitle: string;

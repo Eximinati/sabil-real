@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { supabaseServer } from '@/lib/supabase-server';
+import { getAuthUser } from '@/lib/supabase-server';
 import {
   getPublishedLessons,
   getUserPreferences,
@@ -108,8 +108,7 @@ export const revalidate = 60;
 export default async function JourneyPage({ searchParams }: JourneyPageProps) {
   const { notice } = await searchParams;
   const { dictionary: copy, language } = await getServerDictionary();
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect('/login');

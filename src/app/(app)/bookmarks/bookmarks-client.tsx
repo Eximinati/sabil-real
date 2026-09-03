@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCopy, useI18nText } from '@/hooks/use-copy';
 import { hydrateVerses, startPeriodicCleanup } from '@/lib/quran-cache-service';
 import { csrfHeader } from '@/lib/csrf-client';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface EnrichedBookmark {
   id: string;
@@ -24,6 +25,7 @@ interface BookmarksClientProps {
 
 export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClientProps) {
   const [bookmarks, setBookmarks] = useState(initialBookmarks);
+  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const toast = useToast();
   const copy = useCopy();
   const { interpolate } = useI18nText();
@@ -38,7 +40,10 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
     startPeriodicCleanup();
   }, []);
 
-  const removeBookmark = async (surahId: number, verseNumber: number) => {
+  const removeBookmark = async (bookmarkId: string, surahId: number, verseNumber: number) => {
+    if (removingIds.has(bookmarkId)) return;
+    setRemovingIds(prev => new Set(prev).add(bookmarkId));
+
     try {
       await fetch('/api/bookmarks', {
         method: 'DELETE',
@@ -51,6 +56,11 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
       toast.info(copy.bookmarks.toastRemoved);
     } catch {
       toast.error(copy.bookmarks.toastError);
+      setRemovingIds(prev => {
+        const next = new Set(prev);
+        next.delete(bookmarkId);
+        return next;
+      });
     }
   };
 
@@ -73,25 +83,13 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
           <h1 className="font-arabic text-[36px] text-[var(--color-accent)]" dir="rtl">المفضلة</h1>
           <p className="text-[var(--color-text-muted)] text-sm mt-2">{copy.bookmarks.emptySubtitle}</p>
         </div>
-        <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-          <div className="w-20 h-20 mb-6 rounded-full bg-[var(--color-border)]/50 flex items-center justify-center text-[var(--color-text-muted)]">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">
-            {copy.bookmarks.emptyTitle}
-          </h3>
-          <p className="text-sm text-[var(--color-text-muted)] max-w-sm">
-            {copy.bookmarks.emptyDescription}
-          </p>
-          <Link
-            href="/quran"
-            className="mt-6 px-5 py-2 bg-[var(--color-primary)] text-white rounded-full hover:opacity-90 transition-opacity text-sm font-medium"
-          >
-            {copy.bookmarks.openQuran}
-          </Link>
-        </div>
+        <EmptyState
+          icon="bookmark"
+          title={copy.bookmarks.emptyTitle}
+          description={copy.bookmarks.emptyDescription}
+          actionLabel={copy.bookmarks.openQuran}
+          actionHref="/quran"
+        />
       </div>
     );
   }
@@ -158,8 +156,9 @@ export function BookmarksClient({ bookmarks: initialBookmarks }: BookmarksClient
                         {copy.bookmarks.returnToVerse}
                       </Link>
                       <button
-                        onClick={() => removeBookmark(bookmark.surah_id, bookmark.verse_number)}
-                        className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-lg text-xs hover:bg-[var(--color-border)]/50 transition-colors"
+                        onClick={() => removeBookmark(bookmark.id, bookmark.surah_id, bookmark.verse_number)}
+                        disabled={removingIds.has(bookmark.id)}
+                        className="px-3 py-1.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-lg text-xs hover:bg-[var(--color-border)]/50 transition-colors disabled:opacity-50"
                       >
                         {copy.bookmarks.remove}
                       </button>

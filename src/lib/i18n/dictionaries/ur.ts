@@ -219,6 +219,7 @@ export const UR_COPY: DeepPartial<AppCopy> = {
     emptyDescription: 'جوں جوں آپ لکھیں گے، آپ کے تاملات یہاں نرمی سے جمع ہوتے جائیں گے۔',
     openTodayJourney: 'آج کا سفر کھولیں',
     viewLesson: 'سبق دیکھیں',
+    dayLabel: 'دن',
   },
   quran: {
     pageSubtitle: 'قرآن کا مطالعہ ساتھی',

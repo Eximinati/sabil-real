@@ -28,7 +28,8 @@ export default function ResetPasswordPage() {
     }
   }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
 
     if (!password || !confirmPassword) {
@@ -106,10 +107,14 @@ export default function ResetPasswordPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor="reset-password-new" className="sr-only">{copy.auth.resetPassword.newPasswordPlaceholder}</label>
           <input
+            id="reset-password-new"
+            name="password"
             type="password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={copy.auth.resetPassword.newPasswordPlaceholder}
@@ -118,8 +123,12 @@ export default function ResetPasswordPage() {
         </div>
 
         <div>
+          <label htmlFor="reset-password-confirm" className="sr-only">{copy.auth.resetPassword.confirmPasswordPlaceholder}</label>
           <input
+            id="reset-password-confirm"
+            name="confirmPassword"
             type="password"
+            autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder={copy.auth.resetPassword.confirmPasswordPlaceholder}
@@ -128,13 +137,13 @@ export default function ResetPasswordPage() {
         </div>
 
         <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading}
           className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all disabled:opacity-50"
         >
           {loading ? copy.auth.resetPassword.submitting : copy.auth.resetPassword.submit}
         </button>
-      </div>
+      </form>
 
       <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
         <a href="/login" className="text-[var(--color-accent)] hover:underline">

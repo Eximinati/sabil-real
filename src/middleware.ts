@@ -66,6 +66,16 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
+  const { pathname } = request.nextUrl;
+
+  // API routes perform their own auth checks server-side and don't render
+  // UI, so the auth lookup + language-preference query below (which only
+  // exist to gate page navigation and sync the language cookie for
+  // rendering) would be pure overhead on every fetch() call. Skip them.
+  if (pathname.startsWith('/api')) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -101,9 +111,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const { pathname } = request.nextUrl;
   const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
-  const isPublicPath = publicPaths.some(path => pathname === path || pathname === path + '/' || pathname.startsWith('/api/auth'));
+  const isPublicPath = publicPaths.some(path => pathname === path || pathname === path + '/');
 
   if (!user) {
     const protectedPaths = ['/journey', '/quran', '/search', '/tafsir', '/hadith', '/settings', '/bookmarks'];

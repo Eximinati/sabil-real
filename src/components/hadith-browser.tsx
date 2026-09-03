@@ -33,19 +33,21 @@ interface HadithData {
 interface HadithBrowserProps {
   initialCollection?: string;
   initialNumber?: string;
+  initialCollections?: HadithCollection[];
 }
 
 const HadithBrowserInner = memo(function HadithBrowserInner({
   initialCollection,
   initialNumber,
+  initialCollections,
 }: HadithBrowserProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const copy = useCopy();
   const { interpolate } = useI18nText();
   const { language } = useLanguage();
-  const [collections, setCollections] = useState<HadithCollection[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [collections, setCollections] = useState<HadithCollection[]>(initialCollections || []);
+  const [loading, setLoading] = useState(!initialCollections);
   const [hadith, setHadith] = useState<HadithData | null>(null);
   const [hadithLoading, setHadithLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +90,10 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
   );
 
   useEffect(() => {
+    if (initialCollections) return;
+
     let mounted = true;
-    
+
     async function loadCollections() {
       try {
         const data = await getCachedHadithCollections();
@@ -112,7 +116,7 @@ const HadithBrowserInner = memo(function HadithBrowserInner({
     return () => {
       mounted = false;
     };
-  }, [copy.hadith.couldNotLoadCollections]);
+  }, [copy.hadith.couldNotLoadCollections, initialCollections]);
 
   useEffect(() => {
     if (!collection || !number) return;

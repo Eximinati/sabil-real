@@ -80,7 +80,9 @@ function setCache(key: string, data: unknown): void {
 
 const QF_FETCH_TIMEOUT = 8000;
 
-async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn401 = true): Promise<T> {
+const QF_MAX_429_RETRIES = 3;
+
+async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn401 = true, retriesOn429 = 0): Promise<T> {
   const cached = getCached<T>(path);
   if (cached) {
     return cached;
@@ -132,8 +134,11 @@ async function qfFetch<T>(path: string, params?: Record<string, string>, retryOn
   }
 
   if (response.status === 429) {
+    if (retriesOn429 >= QF_MAX_429_RETRIES) {
+      throw new Error(`QF API rate limited after ${QF_MAX_429_RETRIES} retries: ${path}`);
+    }
     await new Promise(resolve => setTimeout(resolve, 2000));
-    return qfFetch<T>(path, params, retryOn401);
+    return qfFetch<T>(path, params, retryOn401, retriesOn429 + 1);
   }
 
   if (!response.ok) {

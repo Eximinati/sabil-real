@@ -5,19 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
 import { csrfHeader } from '@/lib/csrf-client';
-
-interface Translation {
-  id: number;
-  name: string;
-  author_name: string;
-  language_name: string;
-}
-
-interface Tafsir {
-  id: number;
-  name: string;
-  author_name: string;
-}
+import type { Translation, Tafsir } from '@/lib/api-utils';
 
 interface PreferencesFormProps {
   initialTranslationId: number;
@@ -28,6 +16,8 @@ interface PreferencesFormProps {
   initialRemindersEnabled: boolean;
   initialReminderTime: string;
   initialReminderLanguage: 'auto' | 'en' | 'ur';
+  initialTranslations?: Translation[];
+  initialTafsirs?: Tafsir[];
 }
 
 export function PreferencesForm({
@@ -39,10 +29,12 @@ export function PreferencesForm({
   initialRemindersEnabled,
   initialReminderTime,
   initialReminderLanguage,
+  initialTranslations,
+  initialTafsirs,
 }: PreferencesFormProps) {
-  const [translations, setTranslations] = useState<Translation[]>([]);
-  const [tafsirs, setTafsirs] = useState<Tafsir[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [translations, setTranslations] = useState<Translation[]>(initialTranslations || []);
+  const [tafsirs, setTafsirs] = useState<Tafsir[]>(initialTafsirs || []);
+  const [loading, setLoading] = useState(!initialTranslations || !initialTafsirs);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const toast = useToast();
@@ -59,6 +51,8 @@ export function PreferencesForm({
   const [reminderLanguage, setReminderLanguage] = useState<'auto' | 'en' | 'ur'>(initialReminderLanguage);
 
   useEffect(() => {
+    if (initialTranslations && initialTafsirs) return;
+
     Promise.all([
       fetch('/api/translations').then(res => res.json()),
       fetch('/api/tafsirs').then(res => res.json()),
@@ -67,7 +61,7 @@ export function PreferencesForm({
       setTafsirs(tafsData.tafsirs || tafsData || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [initialTranslations, initialTafsirs]);
 
   const handleSave = async () => {
     setSaving(true);

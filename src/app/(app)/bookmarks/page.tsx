@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { supabaseServer } from '@/lib/supabase-server';
+import { supabaseServer, getAuthUser } from '@/lib/supabase-server';
 import { getApiUrl } from '@/lib/api-url';
 import { BookmarksClient } from './bookmarks-client';
 import {
@@ -78,7 +78,7 @@ async function getVersesBatch(
 
 async function getBookmarks(): Promise<EnrichedBookmark[]> {
   const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect('/login');
@@ -124,8 +124,10 @@ async function getBookmarks(): Promise<EnrichedBookmark[]> {
   const translationId = normalizeTranslationId(preferences?.translation_id, fallbackTranslation);
 
   const surahIds = bookmarks.map(b => b.surah_id);
-  const chapters = await getChapters();
-  const versesMap = await getVersesBatch(surahIds, translationId);
+  const [chapters, versesMap] = await Promise.all([
+    getChapters(),
+    getVersesBatch(surahIds, translationId),
+  ]);
 
   const enrichedBookmarks: EnrichedBookmark[] = bookmarks.map((bookmark) => {
     const chapter = chapters.find((c: ChapterData) => c.id === bookmark.surah_id);

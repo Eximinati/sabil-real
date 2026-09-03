@@ -221,6 +221,7 @@ export const EN_COPY: AppCopy = {
     emptyDescription: 'As you write during the journey, your reflections will gather here gently.',
     openTodayJourney: "Open today's journey",
     viewLesson: 'View lesson',
+    dayLabel: 'Day',
   },
   quran: {
     pageSubtitle: 'Quran reading companion',

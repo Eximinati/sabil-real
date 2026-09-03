@@ -22,7 +22,9 @@ export default function LoginPage() {
     return raw && isValidRedirectPath(raw) ? raw : null;
   }, [searchParams]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!email || !password) {
       setError(copy.auth.errors.enterEmailPassword);
       return;
@@ -114,10 +116,14 @@ export default function LoginPage() {
         </div>
       )}
 
-<div className="space-y-4">
+<form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor="login-email" className="sr-only">{copy.auth.login.emailPlaceholder}</label>
           <input
+            id="login-email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={copy.auth.login.emailPlaceholder}
@@ -126,8 +132,12 @@ export default function LoginPage() {
         </div>
 
         <div>
+          <label htmlFor="login-password" className="sr-only">{copy.auth.login.passwordPlaceholder}</label>
           <input
+            id="login-password"
+            name="password"
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={copy.auth.login.passwordPlaceholder}
@@ -136,7 +146,7 @@ export default function LoginPage() {
         </div>
 
         <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading}
           className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
@@ -172,6 +182,7 @@ export default function LoginPage() {
         </div>
 
         <button
+          type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
           className="w-full bg-[var(--color-surface)] text-[var(--color-text)] py-3 rounded-lg font-medium border border-[var(--color-border)] hover:bg-[var(--color-bg)] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
@@ -184,7 +195,7 @@ export default function LoginPage() {
           </svg>
           {copy.auth.shared.continueWithGoogle}
         </button>
-      </div>
+      </form>
 
       <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
         {copy.auth.login.noAccount}{' '}
