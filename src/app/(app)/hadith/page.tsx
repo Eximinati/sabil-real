@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
-import { supabaseServer } from '@/lib/supabase-server';
+import { getAuthUser } from '@/lib/supabase-server';
 import { HadithBrowser } from '@/components/hadith-browser';
+import { getCachedHadithCollections } from '@/lib/api-utils';
 
 interface PageProps {
   searchParams: Promise<{ collection?: string; number?: string }>;
@@ -9,14 +10,20 @@ interface PageProps {
 export const dynamic = 'force-dynamic';
 
 export default async function HadithPage({ searchParams }: PageProps) {
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect('/login');
   }
 
   const { collection, number } = await searchParams;
+  const initialCollections = await getCachedHadithCollections().catch(() => undefined);
 
-  return <HadithBrowser initialCollection={collection} initialNumber={number} />;
+  return (
+    <HadithBrowser
+      initialCollection={collection}
+      initialNumber={number}
+      initialCollections={initialCollections}
+    />
+  );
 }

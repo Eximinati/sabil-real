@@ -1,5 +1,5 @@
 import { VerseReaderClient } from '@/components/verse-reader-client';
-import { supabaseServer } from '@/lib/supabase-server';
+import { getAuthUser } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
 import { getApiUrl } from '@/lib/api-url';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -41,8 +41,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
     );
   }
 
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   let defaultTranslationId = getDefaultTranslationIdForLanguage(language);
   if (user) {

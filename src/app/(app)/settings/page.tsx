@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { supabaseServer } from '@/lib/supabase-server';
+import { getAuthUser } from '@/lib/supabase-server';
 import { getUserPreferences } from '@/lib/journey';
 import { PreferencesForm } from '@/components/preferences-form';
 import { getCachedTranslations, getCachedTafsirs } from '@/lib/api-utils';
@@ -9,16 +9,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const { dictionary: copy, language } = await getServerDictionary();
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect('/login');
   }
 
-  const preferences = await getUserPreferences(user.id);
-
-  const [translations, tafsirs] = await Promise.all([
+  const [preferences, translations, tafsirs] = await Promise.all([
+    getUserPreferences(user.id),
     getCachedTranslations(),
     getCachedTafsirs(),
   ]);
@@ -133,6 +131,8 @@ export default async function SettingsPage() {
               initialRemindersEnabled={preferences.reminders_enabled}
               initialReminderTime={reminderTimeValue}
               initialReminderLanguage={preferences.reminder_language}
+              initialTranslations={translations}
+              initialTafsirs={tafsirs}
             />
           </div>
         </div>

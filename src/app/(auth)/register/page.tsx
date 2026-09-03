@@ -19,7 +19,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
 
     if (!fullName || !email || !password || !confirmPassword) {
@@ -119,10 +120,14 @@ export default function RegisterPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor="register-name" className="sr-only">{copy.auth.register.fullNamePlaceholder}</label>
           <input
+            id="register-name"
+            name="name"
             type="text"
+            autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder={copy.auth.register.fullNamePlaceholder}
@@ -131,8 +136,12 @@ export default function RegisterPage() {
         </div>
 
         <div>
+          <label htmlFor="register-email" className="sr-only">{copy.auth.register.emailPlaceholder}</label>
           <input
+            id="register-email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={copy.auth.register.emailPlaceholder}
@@ -141,8 +150,12 @@ export default function RegisterPage() {
         </div>
 
         <div>
+          <label htmlFor="register-password" className="sr-only">{copy.auth.register.passwordPlaceholder}</label>
           <input
+            id="register-password"
+            name="password"
             type="password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={copy.auth.register.passwordPlaceholder}
@@ -151,8 +164,12 @@ export default function RegisterPage() {
         </div>
 
         <div>
+          <label htmlFor="register-confirm-password" className="sr-only">{copy.auth.register.confirmPasswordPlaceholder}</label>
           <input
+            id="register-confirm-password"
+            name="confirmPassword"
             type="password"
+            autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder={copy.auth.register.confirmPasswordPlaceholder}
@@ -161,7 +178,7 @@ export default function RegisterPage() {
         </div>
 
         <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading}
           className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-medium hover:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
@@ -188,6 +205,7 @@ export default function RegisterPage() {
         </div>
 
         <button
+          type="button"
           onClick={handleGoogleSignUp}
           disabled={loading}
           className="w-full bg-[var(--color-surface)] text-[var(--color-text)] py-3 rounded-lg font-medium border border-[var(--color-border)] hover:bg-[var(--color-bg)] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
@@ -200,7 +218,7 @@ export default function RegisterPage() {
           </svg>
           {copy.auth.shared.continueWithGoogle}
         </button>
-      </div>
+      </form>
         </>
       )}
 

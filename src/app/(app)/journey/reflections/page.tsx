@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { supabaseServer } from '@/lib/supabase-server';
-import { getPublishedLessons, getUserReflection } from '@/lib/journey';
+import { supabaseServer, getAuthUser } from '@/lib/supabase-server';
+import { getPublishedLessons } from '@/lib/journey';
 import { getServerDictionary } from '@/lib/i18n/server';
 
 interface Reflection {
@@ -27,21 +27,21 @@ async function getReflections(userId: string): Promise<Reflection[]> {
 
 export default async function ReflectionsPage() {
   const { dictionary: copy, language } = await getServerDictionary();
-  const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect('/login');
   }
 
-  const lessons = await getPublishedLessons(language);
-  const reflections = await getReflections(user.id);
+  const [lessons, reflections] = await Promise.all([
+    getPublishedLessons(language),
+    getReflections(user.id),
+  ]);
   const isUrdu = language === 'ur';
 
-  const getLessonTitle = (lessonId: string) => {
-    const lesson = lessons.find(l => l.id === lessonId);
-    return lesson?.title || `Day ${lessonId}`;
-  };
+  const lessonTitleById = new Map(lessons.map(l => [l.id, l.title]));
+  const getLessonTitle = (reflection: Reflection) =>
+    lessonTitleById.get(reflection.lesson_id) || `Day ${reflection.day_number}`;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -89,7 +89,9 @@ export default async function ReflectionsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {reflections.map((reflection) => (
+          {reflections.map((reflection) => {
+            const isArabicScript = /[\u0600-\u06FF]/.test(reflection.reflection_text);
+            return (
             <div
               key={reflection.lesson_id}
               className="bg-[var(--color-surface)]/85 border border-[var(--color-border)] rounded-2xl p-5 md:p-6"
@@ -97,10 +99,10 @@ export default async function ReflectionsPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <span className="px-2.5 py-1 bg-[var(--color-accent)]/10 text-[var(--color-accent)] rounded text-xs font-medium">
-                    Day {reflection.day_number}
+                    {copy.reflections.dayLabel} {reflection.day_number}
                   </span>
                   <span className="text-sm text-[var(--color-text-muted)]">
-                    {getLessonTitle(reflection.lesson_id)}
+                    {getLessonTitle(reflection)}
                   </span>
                 </div>
                 <span className="text-xs text-[var(--color-text-muted)]">
@@ -109,10 +111,10 @@ export default async function ReflectionsPage() {
               </div>
               <p
                 className={`whitespace-pre-wrap text-[var(--color-text-secondary)] ${
-                  /[\u0600-\u06FF]/.test(reflection.reflection_text) ? 'font-urdu text-[17px] leading-[2.15]' : 'text-[16px] leading-[1.95]'
+                  isArabicScript ? 'font-urdu text-[17px] leading-[2.15]' : 'text-[16px] leading-[1.95]'
                 }`}
-                dir={/[\u0600-\u06FF]/.test(reflection.reflection_text) ? 'rtl' : 'ltr'}
-                data-script-direction={/[\u0600-\u06FF]/.test(reflection.reflection_text) ? 'rtl' : 'ltr'}
+                dir={isArabicScript ? 'rtl' : 'ltr'}
+                data-script-direction={isArabicScript ? 'rtl' : 'ltr'}
               >
                 {reflection.reflection_text}
               </p>
@@ -125,7 +127,8 @@ export default async function ReflectionsPage() {
                 </Link>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

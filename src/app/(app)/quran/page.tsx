@@ -36,7 +36,7 @@ export default async function QuranPage() {
         <p className={`text-[var(--color-text-muted)] mt-1 ${isUrdu ? 'font-urdu text-[16px] leading-[2.05]' : 'text-sm leading-[1.8]'}`}>{copy.quran.pageDescription}</p>
       </div>
 
-      <ContinueReading />
+      <ContinueReading chapters={chapters} />
 
       <SurahSearch chapters={chapters} />
     </div>

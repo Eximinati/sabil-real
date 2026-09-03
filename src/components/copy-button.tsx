@@ -38,7 +38,7 @@ export function CopyButton({ text, translation, className = '' }: CopyButtonProp
     <button
       onClick={handleCopy}
       className={`text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors flex-shrink-0 p-1 ${className}`}
-      title={uiCopy.copyTitle}
+      aria-label={uiCopy.copyTitle}
     >
       {copied ? (
         <span className="text-xs text-[var(--color-primary)] animate-fade-in">{uiCopy.copiedLabel}</span>

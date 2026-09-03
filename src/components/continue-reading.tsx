@@ -13,6 +13,16 @@ interface ReadingPosition {
   updated_at: string;
 }
 
+interface ChapterSummary {
+  id: number;
+  name_simple: string;
+  name_arabic: string;
+}
+
+interface ContinueReadingProps {
+  chapters?: ChapterSummary[];
+}
+
 function formatRelativeTime(
   dateString: string,
   copy: ReturnType<typeof useCopy>,
@@ -34,9 +44,9 @@ function formatRelativeTime(
   return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
-export function ContinueReading() {
+export function ContinueReading({ chapters: chaptersProp }: ContinueReadingProps) {
   const [positions, setPositions] = useState<ReadingPosition[]>([]);
-  const [chapters, setChapters] = useState<Record<number, { name_simple: string; name_arabic: string }>>({});
+  const [fetchedChapters, setFetchedChapters] = useState<ChapterSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
   const copy = useCopy();
@@ -45,26 +55,33 @@ export function ContinueReading() {
   const locale = language === 'ur' ? 'ur-PK' : 'en-US';
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/reading-progress?limit=5').then(r => r.json()),
-      fetch('/api/chapters').then(r => r.json()),
-    ])
+    const requests: Promise<any>[] = [fetch('/api/reading-progress?limit=5').then(r => r.json())];
+    if (!chaptersProp) {
+      requests.push(fetch('/api/chapters').then(r => r.json()));
+    }
+
+    Promise.all(requests)
       .then(([progressData, chaptersData]) => {
         if (progressData.positions && Array.isArray(progressData.positions)) {
           setPositions(progressData.positions.slice(0, 5));
         }
-        const chaptersArr = chaptersData.chapters || chaptersData;
-        const chaptersMap: Record<number, { name_simple: string; name_arabic: string }> = {};
-        chaptersArr.forEach((c: any) => {
-          chaptersMap[c.id] = { name_simple: c.name_simple, name_arabic: c.name_arabic };
-        });
-        setChapters(chaptersMap);
+        if (chaptersData) {
+          setFetchedChapters(chaptersData.chapters || chaptersData);
+        }
       })
       .catch(() => {
         toast.error(copy.quran.unableLoadHistory);
       })
       .finally(() => setLoading(false));
-  }, [copy.quran.unableLoadHistory, toast]);
+  }, [chaptersProp, copy.quran.unableLoadHistory, toast]);
+
+  const chapters = useMemo(() => {
+    const chaptersMap: Record<number, { name_simple: string; name_arabic: string }> = {};
+    (chaptersProp || fetchedChapters).forEach((c) => {
+      chaptersMap[c.id] = { name_simple: c.name_simple, name_arabic: c.name_arabic };
+    });
+    return chaptersMap;
+  }, [chaptersProp, fetchedChapters]);
 
   const sortedPositions = useMemo(() => {
     return [...positions].sort((a, b) => {
@@ -94,7 +111,7 @@ export function ContinueReading() {
       <p className="mb-4 text-center text-sm text-[var(--color-text-muted)]">
         {copy.quran.continueReadingDescription}
       </p>
-      <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-hide -mx-4 px-4">
+      <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-hide -mx-4">
         {sortedPositions.map((position) => {
           const chapter = chapters[position.surah_id];
           if (!chapter) return null;

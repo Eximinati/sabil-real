@@ -114,17 +114,20 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    // Single fetch covers both the response payload and cleanup decision,
+    // instead of a separate id-only select followed by a full refetch.
     const { data: allPositions } = await supabase
       .from('reading_positions')
-      .select('id, updated_at')
+      .select('*')
       .eq('user_id', user.id)
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
+      .limit(MAX_POSITIONS + 50);
 
     if (allPositions && allPositions.length > MAX_POSITIONS) {
       const idsToDelete = allPositions
         .slice(MAX_POSITIONS)
         .map(p => p.id);
-      
+
       const { error: deleteError } = await supabase
         .from('reading_positions')
         .delete()
@@ -135,16 +138,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: refreshedPositions } = await supabase
-      .from('reading_positions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(MAX_POSITIONS);
-
     return NextResponse.json({
       progress: position,
-      positions: refreshedPositions || [position],
+      positions: allPositions?.slice(0, MAX_POSITIONS) || [position],
     });
   } catch (error) {
     console.error('Error updating reading progress:', error);

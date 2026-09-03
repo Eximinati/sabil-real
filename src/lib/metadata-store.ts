@@ -3,6 +3,8 @@ interface CacheEntry {
   timestamp: number;
 }
 
+const MAX_CACHE_ENTRIES = 500;
+
 class ServerCache {
   private cache = new Map<string, CacheEntry>();
   private pending = new Map<string, Promise<unknown>>();
@@ -25,6 +27,10 @@ class ServerCache {
   }
 
   set<T>(url: string, data: T): void {
+    if (this.cache.size >= MAX_CACHE_ENTRIES && !this.cache.has(url)) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
     this.cache.set(url, { data, timestamp: Date.now() });
   }
 
