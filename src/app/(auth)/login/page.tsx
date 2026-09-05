@@ -7,6 +7,7 @@ import { signInWithGoogle } from '@/lib/google-auth';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
 import { isValidRedirectPath } from '@/lib/redirect-utils';
+import { checkAuthRateLimit } from '@/lib/rate-limit-client';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -33,23 +34,23 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const rateCheck = await fetch('/api/auth/check-rate-limit', { method: 'POST' });
-    if (!rateCheck.ok) {
-      const rateData = await rateCheck.json();
-      setError(rateData.error || 'Too many attempts. Please try again later.');
-      setLoading(false);
-      return;
-    }
+    try {
+      const rateCheck = await checkAuthRateLimit();
+      if (!rateCheck.allowed) {
+        setError(rateCheck.message || 'Too many attempts. Please try again later.');
+        return;
+      }
 
-    const { error } = await supabaseBrowser.auth.signInWithPassword({
-      email,
-      password,
-    });
+      const { error } = await supabaseBrowser.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
       let targetUrl: string;
 
       try {
@@ -83,8 +84,11 @@ export default function LoginPage() {
         targetUrl = redirectParam || '/journey';
       }
 
-      setLoading(false);
       window.location.href = targetUrl;
+    } catch {
+      setError(copy.common.toasts.somethingWentWrong);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,10 +96,15 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const { error } = await signInWithGoogle();
+    try {
+      const { error } = await signInWithGoogle();
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+      }
+    } catch {
+      setError(copy.common.toasts.somethingWentWrong);
+    } finally {
       setLoading(false);
     }
   };

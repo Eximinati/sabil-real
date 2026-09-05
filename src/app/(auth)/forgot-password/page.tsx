@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useCopy } from '@/hooks/use-copy';
+import { checkAuthRateLimit } from '@/lib/rate-limit-client';
 
 export default function ForgotPasswordPage() {
   const copy = useCopy();
@@ -22,24 +23,26 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError('');
 
-    const rateCheck = await fetch('/api/auth/check-rate-limit', { method: 'POST' });
-    if (!rateCheck.ok) {
-      const rateData = await rateCheck.json();
-      setError(rateData.error || 'Too many attempts. Please try again later.');
-      setLoading(false);
-      return;
-    }
+    try {
+      const rateCheck = await checkAuthRateLimit();
+      if (!rateCheck.allowed) {
+        setError(rateCheck.message || 'Too many attempts. Please try again later.');
+        return;
+      }
 
-    const { error: resetError } = await supabaseBrowser.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+      const { error: resetError } = await supabaseBrowser.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-    setLoading(false);
-
-    if (resetError) {
+      if (resetError) {
+        setError(copy.auth.forgotPassword.errorGeneric);
+      } else {
+        setSent(true);
+      }
+    } catch {
       setError(copy.auth.forgotPassword.errorGeneric);
-    } else {
-      setSent(true);
+    } finally {
+      setLoading(false);
     }
   };
 

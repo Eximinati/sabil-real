@@ -54,6 +54,8 @@ export function getRateLimitKey(request: NextRequest | Request, userId?: string)
   return userId || getClientIp(request);
 }
 
+const RATE_LIMIT_TIMEOUT_MS = 3000;
+
 export async function checkRateLimit(
   request: NextRequest | Request,
   endpoint: keyof typeof limits,
@@ -66,7 +68,21 @@ export async function checkRateLimit(
   const config = limits[endpoint] || limits.default;
   const identifier = getRateLimitKey(request, userId);
   const ratelimit = getRatelimiter(endpoint, config);
-  const result = await ratelimit.limit(identifier);
+
+  // Upstash's REST call has no built-in timeout: if the endpoint is
+  // unreachable (bad URL, network partition) the request can hang far
+  // longer than any user will wait. Race it against a hard timeout so a
+  // broken rate-limit backend degrades to "allowed" instead of hanging
+  // every sign-in attempt indefinitely.
+  const result = await Promise.race([
+    ratelimit.limit(identifier),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), RATE_LIMIT_TIMEOUT_MS)),
+  ]);
+
+  if (!result) {
+    console.error(`Rate limit check timed out after ${RATE_LIMIT_TIMEOUT_MS}ms, allowing request`);
+    return { allowed: true, remaining: 999, reset: 0 };
+  }
 
   return {
     allowed: result.success,
