@@ -6,6 +6,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { signInWithGoogle } from '@/lib/google-auth';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
+import { checkAuthRateLimit } from '@/lib/rate-limit-client';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -40,32 +41,34 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const rateCheck = await fetch('/api/auth/check-rate-limit', { method: 'POST' });
-    if (!rateCheck.ok) {
-      const rateData = await rateCheck.json();
-      setError(rateData.error || 'Too many attempts. Please try again later.');
-      setLoading(false);
-      return;
-    }
+    try {
+      const rateCheck = await checkAuthRateLimit();
+      if (!rateCheck.allowed) {
+        setError(rateCheck.message || 'Too many attempts. Please try again later.');
+        return;
+      }
 
-    const { data, error } = await supabaseBrowser.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          language_code: language,
+      const { data, error } = await supabaseBrowser.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            language_code: language,
+          },
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
+      });
 
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      setRegistered(true);
+      if (error) {
+        setError(error.message);
+      } else if (data.user) {
+        setRegistered(true);
+      }
+    } catch {
+      setError(copy.common.toasts.somethingWentWrong);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,10 +76,15 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
-    const { error } = await signInWithGoogle();
+    try {
+      const { error } = await signInWithGoogle();
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+      }
+    } catch {
+      setError(copy.common.toasts.somethingWentWrong);
+    } finally {
       setLoading(false);
     }
   };

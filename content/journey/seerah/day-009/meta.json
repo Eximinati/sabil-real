@@ -1,0 +1,24 @@
+{
+  "dayNumber": 9,
+  "lessonOrder": 9,
+  "journeyTrack": "seerah-365",
+  "arcIdentity": "era-00-first-religion",
+  "weekChapter": "The First Religion",
+  "emotionalNote": "steadiness-elevation",
+  "seerahReferences": ["Idris, raised to a high station"],
+  "quranAnchor": "19:56-57, 21:85",
+  "estimatedMinutes": 8,
+  "translationStatus": { "en": "ready", "ur": "ready" },
+  "qaStatus": {
+    "emotionally-safe": true,
+    "coherent-flow": true,
+    "pacing-balanced": true,
+    "quran-central": true,
+    "seerah-human": true,
+    "tafsir-light": true,
+    "reflection-sincere": true,
+    "beginner-safe": true,
+    "gentle-action": true,
+    "peaceful-close": true
+  }
+}

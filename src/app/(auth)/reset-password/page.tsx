@@ -49,16 +49,20 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    const { error: updateError } = await supabaseBrowser.auth.updateUser({
-      password,
-    });
+    try {
+      const { error: updateError } = await supabaseBrowser.auth.updateUser({
+        password,
+      });
 
-    setLoading(false);
-
-    if (updateError) {
+      if (updateError) {
+        setError(copy.auth.resetPassword.errorGeneric);
+      } else {
+        setSuccess(true);
+      }
+    } catch {
       setError(copy.auth.resetPassword.errorGeneric);
-    } else {
-      setSuccess(true);
+    } finally {
+      setLoading(false);
     }
   };
 
