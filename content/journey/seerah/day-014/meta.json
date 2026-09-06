@@ -1,0 +1,24 @@
+{
+  "dayNumber": 14,
+  "lessonOrder": 14,
+  "journeyTrack": "seerah-365",
+  "arcIdentity": "era-01-prophets-before-ibrahim",
+  "weekChapter": "Prophets Before Ibrahim",
+  "emotionalNote": "trust-obedience",
+  "seerahReferences": ["Nuh builds the ark amid his people's mockery"],
+  "quranAnchor": "11:37-38",
+  "estimatedMinutes": 8,
+  "translationStatus": { "en": "ready", "ur": "ready" },
+  "qaStatus": {
+    "emotionally-safe": true,
+    "coherent-flow": true,
+    "pacing-balanced": true,
+    "quran-central": true,
+    "seerah-human": true,
+    "tafsir-light": true,
+    "reflection-sincere": true,
+    "beginner-safe": true,
+    "gentle-action": true,
+    "peaceful-close": true
+  }
+}

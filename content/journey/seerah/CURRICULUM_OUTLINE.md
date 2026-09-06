@@ -15,7 +15,7 @@ Before history as we usually tell it: the Oneness of Allah declared before creat
 | 005 | Adam and Ḥawwā' in the Garden | Q 2:35–36, 7:19–22 | One tree, one instruction, and the whisper that made it feel bigger than it was. |
 | 006 | The First Tawbah | Q 2:37, 7:23 | "Our Lord, we have wronged ourselves" — the words that became every believer's return. |
 | 007 | Sent Down With a Promise | Q 20:123–124 | "Whoever follows My guidance will not go astray nor suffer" — guidance promised before the first footstep on earth. |
-| 008 | Hābīl and Qābīl | Q 5:27–31 | The first murder, the first grief, and the raven that taught a killer how to bury his brother. |
+| 008 | Hābīl and Qābīl | Q 5:27–32 | The first murder, the first grief, and the raven that taught a killer how to bury his brother — the range extends to 5:32 to include the "saved all mankind" verse the story itself draws as its lesson. |
 | 009 | Idrīs, the Raised One | Q 19:56–57, 21:85 | Truthful, patient, and raised to "a high station" — one of the earliest names in the chain of prophethood. |
 | 010 | One Message, Many Messengers | Q 21:25, 16:36 | "We did not send any messenger before you except that We revealed to him: there is no god but Me" — the thread that ties every day that follows to this first one. |
 

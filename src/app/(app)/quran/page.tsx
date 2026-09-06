@@ -19,6 +19,7 @@ export default async function QuranPage() {
   try {
     chapters = await getChaptersFromApi();
   } catch (e) {
+    console.error('QuranPage: failed to load chapters:', e);
     return (
       <div className="reading-screen px-6 md:px-[64px] pt-[44px] pb-[92px] md:pb-[48px]">
         <div className="p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] rounded-lg text-center">
