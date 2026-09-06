@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { getSystemCopyFromClient } from '@/lib/i18n/system-copy';
 
 export default function ErrorPage({
@@ -11,6 +11,10 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   const copy = useMemo(() => getSystemCopyFromClient().globalError, []);
+
+  useEffect(() => {
+    console.error('[App error boundary]', error);
+  }, [error]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--color-bg)]">
@@ -39,6 +43,12 @@ export default function ErrorPage({
         <p className="text-xs text-[var(--color-text-subtle)] mt-6" dir="rtl">
           {copy.verse}
         </p>
+
+        {error.digest && (
+          <p className="text-[10px] text-[var(--color-text-subtle)] mt-4 font-mono select-all">
+            Ref: {error.digest}
+          </p>
+        )}
       </div>
     </div>
   );
