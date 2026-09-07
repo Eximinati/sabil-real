@@ -113,6 +113,12 @@ export interface AppCopy {
       plannedBadge: string;
       disclaimerTitle: string;
       disclaimerBody: string;
+      sourceQuran: string;
+      sourceSeerah: string;
+      sourceHadith: string;
+      sourceHistory: string;
+      sourceReflection: string;
+      hadithSourcePrefix: string;
     };
     todayCard: {
       greetingMorning: string;

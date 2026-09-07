@@ -103,6 +103,12 @@ export const EN_COPY: AppCopy = {
       plannedBadge: 'Planned',
       disclaimerTitle: 'What this page is',
       disclaimerBody: 'A roadmap, not a launcher yet — days are not clickable into lessons here. Day-pacing follows a teaching order across sacred history, not a claim of precise historical dating.',
+      sourceQuran: 'Qur’an',
+      sourceSeerah: 'Seerah',
+      sourceHadith: 'Hadith',
+      sourceHistory: 'History',
+      sourceReflection: 'Reflection',
+      hadithSourcePrefix: 'Source',
     },
     todayCard: {
       greetingMorning: 'Good morning',

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCopy } from '@/hooks/use-copy';
 import { useLanguage } from '@/lib/i18n/context';
 import { SEERAH_PLAN_ERAS, SEERAH_PLAN_TOTAL_DAYS, type SeerahPlanDay } from '@/lib/journey-seerah-plan-data';
+import { parseDayRef, type ParsedDayRef } from '@/lib/journey-plan-ref-parser';
 
 const WRITTEN_THROUGH_DAY = 30;
 const DAYS_PER_MONTH = 30;
@@ -84,7 +85,74 @@ function DayBadge({ day, isUrdu, writtenLabel, plannedLabel }: { day: number; is
   );
 }
 
-function DayRow({ d, isUrdu, writtenLabel, plannedLabel }: { d: FlatDay; isUrdu: boolean; writtenLabel: string; plannedLabel: string }) {
+interface SourceLabels {
+  sourceSeerah: string;
+  sourceHadith: string;
+  sourceHistory: string;
+  sourceReflection: string;
+  hadithSourcePrefix: string;
+}
+
+const SOURCE_CHIP_STYLES: Record<string, string> = {
+  Quran: 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20',
+  Seerah: 'bg-[var(--color-bg)] text-[var(--color-text-muted)] border-[var(--color-border)]',
+  Hadith: 'bg-amber-50 text-amber-800 border-amber-200',
+  History: 'bg-[var(--color-bg)] text-[var(--color-text-muted)] border-[var(--color-border)]',
+  Reflection: 'bg-[var(--color-bg)] text-[var(--color-text-muted)] border-[var(--color-border)]',
+};
+
+function SourceChips({ parsed, labels }: { parsed: ParsedDayRef; labels: SourceLabels }) {
+  const chips: { key: string; text: string; kind: string }[] = [];
+
+  parsed.surahs.forEach((s) => {
+    chips.push({ key: `surah-${s.ayahRange}`, text: `${s.surahName} ${s.ayahRange}`, kind: 'Quran' });
+  });
+
+  if (parsed.sourceTypes.includes('Seerah')) {
+    chips.push({ key: 'seerah', text: labels.sourceSeerah, kind: 'Seerah' });
+  }
+  if (parsed.sourceTypes.includes('Hadith')) {
+    chips.push({
+      key: 'hadith',
+      text: parsed.hadithSource ? `${labels.sourceHadith} · ${parsed.hadithSource}` : labels.sourceHadith,
+      kind: 'Hadith',
+    });
+  }
+  if (parsed.sourceTypes.includes('History')) {
+    chips.push({ key: 'history', text: labels.sourceHistory, kind: 'History' });
+  }
+  if (parsed.sourceTypes.includes('Reflection')) {
+    chips.push({ key: 'reflection', text: labels.sourceReflection, kind: 'Reflection' });
+  }
+
+  return (
+    <>
+      {chips.map((chip) => (
+        <span
+          key={chip.key}
+          className={`text-[10px] font-medium rounded-full border px-2 py-0.5 whitespace-nowrap ${SOURCE_CHIP_STYLES[chip.kind]}`}
+        >
+          {chip.text}
+        </span>
+      ))}
+    </>
+  );
+}
+
+function DayRow({
+  d,
+  isUrdu,
+  writtenLabel,
+  plannedLabel,
+  sourceLabels,
+}: {
+  d: FlatDay;
+  isUrdu: boolean;
+  writtenLabel: string;
+  plannedLabel: string;
+  sourceLabels: SourceLabels;
+}) {
+  const parsed = useMemo(() => parseDayRef(d.ref, d.day), [d.ref, d.day]);
   return (
     <div className="flex items-start gap-3 py-2.5 border-b border-[var(--color-border)] last:border-b-0">
       <span className="flex-none font-mono text-[11px] text-[var(--color-primary)] pt-0.5 w-9 tabular-nums">
@@ -93,12 +161,12 @@ function DayRow({ d, isUrdu, writtenLabel, plannedLabel }: { d: FlatDay; isUrdu:
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-2">
           <h4 className="text-sm font-medium text-[var(--color-text)]">{d.title}</h4>
-          <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-bg)] border border-[var(--color-border)] rounded px-1.5 py-0.5 whitespace-nowrap">
-            {d.ref}
-          </span>
           <DayBadge day={d.day} isUrdu={isUrdu} writtenLabel={writtenLabel} plannedLabel={plannedLabel} />
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{d.note}</p>
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <SourceChips parsed={parsed} labels={sourceLabels} />
+        </div>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">{d.note}</p>
       </div>
     </div>
   );
@@ -111,6 +179,7 @@ function CollapsibleGroup({
   writtenLabel,
   plannedLabel,
   daysSuffix,
+  sourceLabels,
 }: {
   group: DayGroup;
   defaultOpen: boolean;
@@ -118,6 +187,7 @@ function CollapsibleGroup({
   writtenLabel: string;
   plannedLabel: string;
   daysSuffix: string;
+  sourceLabels: SourceLabels;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const writtenCount = group.days.filter((d) => d.day <= WRITTEN_THROUGH_DAY).length;
@@ -150,7 +220,7 @@ function CollapsibleGroup({
       {open && (
         <div className="px-4 pb-2 pt-1 border-t border-[var(--color-border)]">
           {group.days.map((d) => (
-            <DayRow key={d.day} d={d} isUrdu={isUrdu} writtenLabel={writtenLabel} plannedLabel={plannedLabel} />
+            <DayRow key={d.day} d={d} isUrdu={isUrdu} writtenLabel={writtenLabel} plannedLabel={plannedLabel} sourceLabels={sourceLabels} />
           ))}
         </div>
       )}
@@ -167,6 +237,13 @@ export default function JourneyPlanPage() {
   const allDays = useMemo(() => buildFlatDays(), []);
   const monthGroups = useMemo(() => groupByMonth(allDays, copy.journey.plan.monthLabel), [allDays, copy.journey.plan.monthLabel]);
   const weekGroups = useMemo(() => groupByWeek(allDays, copy.journey.plan.weekLabel), [allDays, copy.journey.plan.weekLabel]);
+  const sourceLabels: SourceLabels = {
+    sourceSeerah: copy.journey.plan.sourceSeerah,
+    sourceHadith: copy.journey.plan.sourceHadith,
+    sourceHistory: copy.journey.plan.sourceHistory,
+    sourceReflection: copy.journey.plan.sourceReflection,
+    hadithSourcePrefix: copy.journey.plan.hadithSourcePrefix,
+  };
 
   const currentEraId = useMemo(() => {
     const containing = SEERAH_PLAN_ERAS.find((era) => WRITTEN_THROUGH_DAY >= era.dayStart && WRITTEN_THROUGH_DAY <= era.dayEnd);
@@ -281,6 +358,7 @@ export default function JourneyPlanPage() {
               writtenLabel={copy.journey.plan.writtenBadge}
               plannedLabel={copy.journey.plan.plannedBadge}
               daysSuffix={copy.journey.plan.daysSuffix}
+              sourceLabels={sourceLabels}
             />
           ))}
         </div>
@@ -297,6 +375,7 @@ export default function JourneyPlanPage() {
               writtenLabel={copy.journey.plan.writtenBadge}
               plannedLabel={copy.journey.plan.plannedBadge}
               daysSuffix={copy.journey.plan.daysSuffix}
+              sourceLabels={sourceLabels}
             />
           ))}
         </div>
@@ -318,6 +397,7 @@ export default function JourneyPlanPage() {
               writtenLabel={copy.journey.plan.writtenBadge}
               plannedLabel={copy.journey.plan.plannedBadge}
               daysSuffix={copy.journey.plan.daysSuffix}
+              sourceLabels={sourceLabels}
             />
           ))}
         </div>

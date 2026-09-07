@@ -101,6 +101,12 @@ export const UR_COPY: DeepPartial<AppCopy> = {
       plannedBadge: 'منصوبہ شدہ',
       disclaimerTitle: 'یہ صفحہ کیا ہے',
       disclaimerBody: 'ایک روڈ میپ، ابھی سبق کھولنے کا ذریعہ نہیں — یہاں دنوں پر کلک نہیں ہو سکتا۔ دنوں کی ترتیب مقدس تاریخ میں تعلیمی مقصد کے لیے ہے، درست تاریخی وقت کا دعویٰ نہیں۔',
+      sourceQuran: 'قرآن',
+      sourceSeerah: 'سیرت',
+      sourceHadith: 'حدیث',
+      sourceHistory: 'تاریخ',
+      sourceReflection: 'تدبر',
+      hadithSourcePrefix: 'ماخذ',
     },
     todayCard: {
       greetingMorning: 'صبح بخیر',
