@@ -90,6 +90,29 @@ export interface AppCopy {
       returnAfterLongPauseNotice: string;
       revisitHeading: string;
       revisitDescription: string;
+      viewFullPlanLabel: string;
+      viewFullPlanDescription: string;
+    };
+    plan: {
+      pageTitle: string;
+      pageSubtitle: string;
+      backToJourney: string;
+      statsDaysTotal: string;
+      statsEras: string;
+      statsWritten: string;
+      viewPhase: string;
+      viewMonth: string;
+      viewWeek: string;
+      viewDay: string;
+      dayLabel: string;
+      monthLabel: string;
+      weekLabel: string;
+      phaseLabel: string;
+      daysSuffix: string;
+      writtenBadge: string;
+      plannedBadge: string;
+      disclaimerTitle: string;
+      disclaimerBody: string;
     };
     todayCard: {
       greetingMorning: string;
