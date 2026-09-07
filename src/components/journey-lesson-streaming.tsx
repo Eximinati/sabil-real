@@ -500,9 +500,9 @@ export function StreamingLessonShell({
         </>
       ) : (
         <>
-          {shouldShowCanonicalIncompleteWarning && (
+          {shouldShowCanonicalIncompleteWarning && process.env.NODE_ENV === 'development' && (
             <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-              Canonical journey metadata is incomplete for this day. Showing legacy fallback flow.
+              [Dev only] Canonical journey metadata is incomplete for this day. Showing legacy fallback flow.
             </div>
           )}
           <div className="reading-section">

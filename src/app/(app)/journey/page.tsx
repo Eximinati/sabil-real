@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { getAuthUser } from '@/lib/supabase-server';
 import {
   getPublishedLessons,
@@ -157,6 +158,21 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
       />
 
       <DailyIntentionCard nextLessonDay={currentLesson?.day_number} />
+
+      <Link
+        href="/journey/plan"
+        className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/85 px-5 py-4 transition-colors hover:border-[var(--color-primary)]/40"
+      >
+        <div>
+          <h2 className="text-sm font-medium text-[var(--color-text)]">{copy.journey.page.viewFullPlanLabel}</h2>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">{copy.journey.page.viewFullPlanDescription}</p>
+        </div>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)]">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      </Link>
 
       {lessons.length > 0 && (
         <details className="group rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-5 md:p-6">
